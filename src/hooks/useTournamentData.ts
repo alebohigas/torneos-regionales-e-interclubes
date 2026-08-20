@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
+import { getTorneoId } from '@/hooks/useTorneoId';
 import {
   getMenuUrl,
   getSponsorsUrl,
