@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
+import { getTorneoId } from '@/hooks/useTorneoId';
 import {
   getMenuUrl,
   getSponsorsUrl,
@@ -47,8 +48,9 @@ export const useSponsors = () => {
 
 /** Fetch tournament general info */
 export const useTournamentInfo = () => {
+  const torneoId = getTorneoId();
   return useQuery<TournamentInfo>({
-    queryKey: ['tournament'],
+    queryKey: ['tournament', torneoId],
     queryFn: async () => {
       const data = await apiFetch<any>(getTournamentUrl());
       return {
@@ -64,6 +66,12 @@ export const useTournamentInfo = () => {
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: POLL_STATIC || false,
+    /** No insistir si no hay torneo configurado para este dominio. */
+    enabled: !!torneoId,
+    /** Máximo 10 intentos si el endpoint falla; luego "no hay torneo". */
+    retry: 10,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false,
   });
 };
 
