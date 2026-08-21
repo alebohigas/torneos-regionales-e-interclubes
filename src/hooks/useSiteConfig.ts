@@ -427,6 +427,11 @@ export interface AnuncioConfig {
 export interface SiteConfig {
   domain: string;
   torneoid: number | null;
+  /**
+   * Gira activa (`gira.giraid`). Es el eje del sitio en el modelo por giras:
+   * agrupa varias copas (`copas.giraid`) y varios torneos (`torneo.giraid`).
+   */
+  giraid: number | null;
   menu_order: Record<string, number> | null;
   visibility: Record<string, boolean> | null;
   menu_groups: any[] | null;
