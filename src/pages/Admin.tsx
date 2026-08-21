@@ -285,6 +285,8 @@ const AdminDashboard = () => {
   };
   const navigate = useNavigate();
   const { torneoId, setTorneoId } = useTorneoId();
+  /** Gira activa: si tiene uso = 0 se levanta una alerta arriba del panel. */
+  const { data: activeGira } = useGiraInfo();
   const { data: siteConfig, isLoading: isLoadingSiteConfig } = useSiteConfig();
   const saveSiteConfig = useSaveSiteConfig();
   const { toast } = useToast();
