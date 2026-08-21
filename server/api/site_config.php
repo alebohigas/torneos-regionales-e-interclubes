@@ -413,6 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'torneoid'              => (int)$row['torneoid'],
+            'giraid'                => $hasGiraId && $row['giraid'] !== null && $row['giraid'] !== '' ? (int)$row['giraid'] : null,
             'menu_order'            => $row['menu_order'] ? json_decode($row['menu_order'], true) : null,
             'visibility'            => $row['visibility'] ? json_decode($row['visibility'], true) : null,
             'menu_groups'           => $row['menu_groups'] ? json_decode($row['menu_groups'], true) : null,
