@@ -95,3 +95,20 @@ mysqldump -h IP_VIEJA -u USER -p torneos site_config convocatoria_content > cust
 mysql -h 70.35.203.117 -u USER -p golftour < custom.sql
 ```
 Luego actualizar `domain` y `torneoid` de las filas copiadas.
+
+## Catálogo geográfico (countries / states / cities)
+
+`golftour` no trae estas tablas. Se crean y pueblan con dos migraciones generadas desde el
+dataset público [dr5hn/countries-states-cities-database](https://github.com/dr5hn/countries-states-cities-database):
+
+| Archivo | Contenido |
+| --- | --- |
+| `server/migrations/2026_08_21_seed_geo_countries_states.sql` | `CREATE TABLE` de las 3 tablas + 250 países (nombre en español) + 5,308 estados/provincias del mundo |
+| `server/migrations/2026_08_21_seed_geo_cities.sql` | 45,508 ciudades de MX, US, CA, ES, AR, BR, CL, CO, CR, DO, GT, PA, PE (México: 9,321) |
+
+Notas:
+- Correr en ese orden. Ambas son idempotentes (`ON DUPLICATE KEY UPDATE`), se pueden re-ejecutar.
+- Se conservan los IDs originales del dataset (México = `142`, sus 32 estados incluidos).
+- Estructura exacta que espera `api/locations.php`: `countries(id,name)`, `states(id,id_country,name)`,
+  `cities(id,id_state,name)`.
+- Si más adelante hace falta otro país en ciudades, regenerar agregando su ISO2 a `CITY_COUNTRIES`.
