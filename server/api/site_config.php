@@ -439,6 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'torneoid'              => null,
+            'giraid'                => null,
             'menu_order'            => null,
             'visibility'            => null,
             'menu_groups'           => null,
