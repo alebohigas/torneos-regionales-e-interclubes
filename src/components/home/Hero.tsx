@@ -134,10 +134,20 @@ const Hero = () => {
             </div>
           )}
 
-          {/* Rest of tournament name (e.g. "TORNEO ANUAL SEMANA SANTA") */}
+          {/* Nombre de la gira (o del torneo como fallback) */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-foreground mb-4 animate-fade-in-up animation-delay-100">
             {parsed.rest || 'Torneo de Golf'}
           </h1>
+
+          {/* Gira con uso = 0: la competencia ya concluyó */}
+          {giraFinished && (
+            <div className="mb-6 animate-fade-in-up animation-delay-100">
+              <span className="inline-block rounded-md bg-destructive px-4 py-2 text-sm md:text-base font-semibold uppercase tracking-wide text-destructive-foreground">
+                Copa terminada
+              </span>
+            </div>
+          )}
+
 
           {/* Club name in gold italic */}
           <p className="text-xl md:text-2xl font-display italic text-secondary mb-8 animate-fade-in-up animation-delay-200">
