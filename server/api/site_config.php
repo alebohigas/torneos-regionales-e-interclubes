@@ -508,7 +508,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $insertFields[] = 'torneoid';
         $insertValues[] = $tid;
     }
-    
+
+    // Gira activa (eje del sitio en el modelo por giras)
+    if ($hasGiraId && array_key_exists('giraid', $body)) {
+        $gid = $body['giraid'] === null || $body['giraid'] === '' ? 'NULL' : (int)$body['giraid'];
+        $fields[] = "giraid = $gid";
+        $insertFields[] = 'giraid';
+        $insertValues[] = $gid;
+    }
+
     if (array_key_exists('menu_order', $body)) {
         $val = $body['menu_order'] !== null ? "'" . esc($conn, json_encode($body['menu_order'])) . "'" : 'NULL';
         $fields[] = "menu_order = $val";
