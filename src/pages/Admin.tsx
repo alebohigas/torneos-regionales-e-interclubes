@@ -444,6 +444,18 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
+      {/* Alerta global: la gira activa está marcada como terminada (uso = 0) */}
+      {activeGira && activeGira.uso === 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Copa terminada</AlertTitle>
+          <AlertDescription>
+            La gira activa <strong>{activeGira.name}</strong> (ID {activeGira.giraid}) tiene{' '}
+            <code>uso = 0</code>. El sitio público muestra el aviso “COPA TERMINADA”.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tabs for different admin sections */}
       <Tabs defaultValue={staffDefaultTab} className="space-y-6">
         {/*
