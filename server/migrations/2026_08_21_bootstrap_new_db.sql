@@ -56,40 +56,31 @@ CREATE TABLE IF NOT EXISTS site_config (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Si site_config ya existía con menos columnas, se completan aquí.
--- (MySQL 5.7 no soporta ADD COLUMN IF NOT EXISTS; usamos SQL dinámico.)
-DROP PROCEDURE IF EXISTS sp_add_site_config_col;
-CREATE PROCEDURE sp_add_site_config_col(IN colName VARCHAR(64))
-BEGIN
-  IF (SELECT COUNT(*) FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME  = 'site_config'
-          AND COLUMN_NAME = colName) = 0 THEN
-    SET @s = CONCAT('ALTER TABLE site_config ADD COLUMN `', colName, '` TEXT DEFAULT NULL');
-    PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-  END IF;
-END;
+-- Sin CREATE PROCEDURE (evita necesidad de DELIMITER en Workbench/MariaDB):
+-- se arma un solo ALTER dinámico con las columnas que falten.
+SET @cols = 'menu_order,visibility,menu_groups,page_group_assignments,live_scoring_config,sponsors_config,eventos_config,avisos_config,menus_config,premios_config,hoteles_config,theme_config,stats_config,stats_page_config,popup_config,anuncio_config,home_config,historial_config,hero_config,modules_config';
 
-CALL sp_add_site_config_col('menu_order');
-CALL sp_add_site_config_col('visibility');
-CALL sp_add_site_config_col('menu_groups');
-CALL sp_add_site_config_col('page_group_assignments');
-CALL sp_add_site_config_col('live_scoring_config');
-CALL sp_add_site_config_col('sponsors_config');
-CALL sp_add_site_config_col('eventos_config');
-CALL sp_add_site_config_col('avisos_config');
-CALL sp_add_site_config_col('menus_config');
-CALL sp_add_site_config_col('premios_config');
-CALL sp_add_site_config_col('hoteles_config');
-CALL sp_add_site_config_col('theme_config');
-CALL sp_add_site_config_col('stats_config');
-CALL sp_add_site_config_col('stats_page_config');
-CALL sp_add_site_config_col('popup_config');
-CALL sp_add_site_config_col('anuncio_config');
-CALL sp_add_site_config_col('home_config');
-CALL sp_add_site_config_col('historial_config');
-CALL sp_add_site_config_col('hero_config');
-CALL sp_add_site_config_col('modules_config');
-DROP PROCEDURE IF EXISTS sp_add_site_config_col;
+SET @missing = (
+  SELECT GROUP_CONCAT(CONCAT('ADD COLUMN `', c.col, '` TEXT DEFAULT NULL') SEPARATOR ', ')
+  FROM (
+    SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(@cols, ',', n.i), ',', -1)) AS col
+    FROM (SELECT 1 i UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+          UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+          UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
+          UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20) n
+  ) c
+  WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS ic
+    WHERE ic.TABLE_SCHEMA = DATABASE()
+      AND ic.TABLE_NAME   = 'site_config'
+      AND ic.COLUMN_NAME  = c.col
+  )
+);
+
+SET @s = IF(@missing IS NULL OR @missing = '',
+            'SELECT ''site_config ya tiene todas las columnas'' AS info',
+            CONCAT('ALTER TABLE site_config ', @missing));
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- ---------------------------------------------------------------------------
 -- 2. convocatoria_content — secciones editables de /convocatoria y /reglas
