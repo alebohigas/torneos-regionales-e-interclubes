@@ -36,6 +36,11 @@ const parseTournamentName = (name: string) => {
 const Hero = () => {
   const { data: tournamentInfo } = useTournamentInfo();
   const { data: siteConfig } = useSiteConfig();
+  /**
+   * Gira activa (eje del sitio). Su nombre es el título del hero; cuando
+   * `uso = 0` la gira ya terminó y se muestra el aviso "COPA TERMINADA".
+   */
+  const { data: gira } = useGiraInfo();
 
   /**
    * Resuelve un slot del hero:
