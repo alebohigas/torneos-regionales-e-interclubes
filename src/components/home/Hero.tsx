@@ -76,20 +76,26 @@ const Hero = () => {
   const slot1 = resolveSlot(cfg1, fallback1);
   const slot2 = resolveSlot(cfg2, fallback2);
 
-  /** Parse tournament name into roman numeral and rest */
-  const parsed = tournamentInfo?.name
-    ? parseTournamentName(tournamentInfo.name)
+  /**
+   * Título del hero: nombre de la GIRA cuando está configurada; si no,
+   * cae al nombre del torneo (instalaciones sin modelo de giras).
+   */
+  const heroName = gira?.name || tournamentInfo?.name || '';
+  /** Gira terminada => aviso público "COPA TERMINADA". */
+  const giraFinished = !!gira && gira.uso === 0;
+
+  /** Parse name into roman numeral and rest */
+  const parsed = heroName
+    ? parseTournamentName(heroName)
     : { roman: '', rest: '' };
 
-  /** Set document/tab title dynamically from tournament name + club */
+  /** Set document/tab title dynamically from gira/tournament name + club */
   useEffect(() => {
-    if (tournamentInfo?.name) {
-      const club = tournamentInfo.club || '';
-      document.title = club
-        ? `${tournamentInfo.name} | ${club}`
-        : tournamentInfo.name;
+    if (heroName) {
+      const club = tournamentInfo?.club || '';
+      document.title = club ? `${heroName} | ${club}` : heroName;
     }
-  }, [tournamentInfo?.name, tournamentInfo?.club]);
+  }, [heroName, tournamentInfo?.club]);
 
   /** Format date range for display */
   /** Format date range avoiding timezone offset issues by parsing as UTC */
