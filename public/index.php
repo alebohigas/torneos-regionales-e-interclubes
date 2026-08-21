@@ -167,12 +167,6 @@ if ($ov) {
 }
 
 header('Content-Type: text/html; charset=utf-8');
-// El shell HTML referencia assets con hash. Nunca debe quedar cacheado entre
-// despliegues, porque conservaría el nombre del bundle anterior y React
-// arrancaría con rutas obsoletas aunque el nuevo build ya estuviera publicado.
-// Los propios assets /assets/* sí pueden cachearse porque su nombre cambia
-// cuando cambia su contenido.
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Expires: 0');
+// Que los scrapers no cacheen agresivamente para poder iterar
+header('Cache-Control: public, max-age=300');
 echo $html;
