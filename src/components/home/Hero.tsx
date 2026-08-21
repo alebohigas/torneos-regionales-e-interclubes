@@ -17,6 +17,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
+import { useGiraInfo } from '@/hooks/useGiraData';
 
 /** Regex to match leading Roman numerals (I, V, X, L, C, D, M) */
 const ROMAN_NUMERAL_REGEX = /^([IVXLCDM]+)\s+(.+)$/;
