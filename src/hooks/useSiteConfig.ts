@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '@/config/api';
 import { DEFAULT_SUPERADMIN_PASSWORD, getSuperAdminPassword } from '@/lib/superAdminAuth';
 import { setStoredTorneoId } from '@/hooks/useTorneoId';
+import { setStoredGiraId } from '@/hooks/useGiraId';
 import type { ModulesConfig } from '@/modules/moduleState';
 
 // ============= Types =============
