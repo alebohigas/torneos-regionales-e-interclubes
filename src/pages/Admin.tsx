@@ -521,6 +521,9 @@ const AdminDashboard = () => {
 
         {/* Configuration Tab */}
         <TabsContent value="config" className="space-y-4">
+          {/* Gira activa: eje de la información del sitio (site_config.giraid) */}
+          <AdminGira />
+
           {/* Server-side torneoid config */}
           <Card>
             <CardHeader>
