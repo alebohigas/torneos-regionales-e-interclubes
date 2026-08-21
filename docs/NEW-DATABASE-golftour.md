@@ -32,7 +32,19 @@ Funciones legacy presentes: `f_club`, `f_clubid`, `f_empates`, `f_score_dia`,
 `clubs_registro`, `premios`, `menu`, `patrocinadores`, `usuario_areas`,
 `usuario_sesion`, `countries` / `states` / `cities`.
 
-Migración base: `server/migrations/2026_08_21_bootstrap_new_db.sql` (idempotente).
+Migraciones base (idempotentes, correr en orden):
+1. `server/migrations/2026_08_21_bootstrap_new_db.sql` — `site_config` (con todas
+   sus columnas `*_config`), `convocatoria_content`, `registro_form_fields`,
+   `usuario_areas`, `usuario_sesion`.
+2. `server/migrations/2026_08_21_bootstrap_new_db_part2.sql` — `registro_precios`,
+   `registro_socio_tipos`, `registro_preferente_config`, `clubs_registro`,
+   `categorias_reglas`, `banderas`, `menu`, `patrocinadores`, `bracket_config`,
+   `bracket_matches`, `countries/states/cities` **y los `ALTER TABLE registro`**
+   con todas las columnas nuevas (socio, precios, token, correos, akron_*).
+
+**No existe `reglas_config`.** Las condiciones de competencia y reglas locales
+viven en `convocatoria_content`, en las filas `section_id = 'reglas_intro_cards'`
+y `section_id = 'reglas_locales'` (JSON). Igual que el resto de la convocatoria.
 
 ### 2.2 Tablas/vistas legacy de competencias — NO existen en esta BD
 Competencias laterales y skins no tienen soporte aquí:
@@ -67,7 +79,7 @@ La tabla `registro` existe pero le faltan las columnas que agregamos:
 ## 3. Orden recomendado de trabajo
 
 1. `credentials.php` apuntando a `golftour` (hecho).
-2. Correr `2026_08_21_bootstrap_new_db.sql`.
+2. Correr `2026_08_21_bootstrap_new_db.sql` y luego `..._part2.sql`.
 3. Insertar la fila de `site_config` con `domain` + `torneoid` correctos
    (o hacerlo desde `/admin`).
 4. `/setup`: apagar módulos sin soporte de datos (competencias, skins, brackets,
