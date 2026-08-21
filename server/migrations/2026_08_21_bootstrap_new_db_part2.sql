@@ -232,57 +232,69 @@ CREATE TABLE IF NOT EXISTS `cities` (
 -- 9. ALTERs a la tabla legacy `registro` — columnas que agregó la app nueva.
 --    La `registro` de esta BD trae sólo las columnas originales.
 -- ---------------------------------------------------------------------------
-DROP PROCEDURE IF EXISTS sp_add_col;
-CREATE PROCEDURE sp_add_col(IN tbl VARCHAR(64), IN col VARCHAR(64), IN def TEXT)
-BEGIN
-  IF (SELECT COUNT(*) FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = tbl) = 1
-     AND (SELECT COUNT(*) FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = tbl AND COLUMN_NAME = col) = 0 THEN
-    SET @s = CONCAT('ALTER TABLE `', tbl, '` ADD COLUMN `', col, '` ', def);
-    PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-  END IF;
-END;
+-- Sin CREATE PROCEDURE (evita DELIMITER en Workbench/MariaDB): se listan las
+-- columnas en una tabla temporal y se aplica un solo ALTER con las que falten.
+DROP TEMPORARY TABLE IF EXISTS tmp_reg_cols;
+CREATE TEMPORARY TABLE tmp_reg_cols (col VARCHAR(64) PRIMARY KEY, def TEXT NOT NULL);
 
--- Socio / identificación
-CALL sp_add_col('registro','reg_es_socio',       'VARCHAR(2) DEFAULT NULL');
-CALL sp_add_col('registro','reg_tipo_socio',     'VARCHAR(20) DEFAULT NULL');
-CALL sp_add_col('registro','reg_numsocio',       'VARCHAR(45) DEFAULT NULL');
-CALL sp_add_col('registro','reg_cargo_socio',    'VARCHAR(2) DEFAULT NULL');
-CALL sp_add_col('registro','reg_ghin',           'VARCHAR(45) DEFAULT NULL');
-CALL sp_add_col('registro','reg_sexo',           'VARCHAR(1) DEFAULT NULL');
-CALL sp_add_col('registro','reg_fechanac',       'DATE DEFAULT NULL');
-CALL sp_add_col('registro','reg_edad',           'INT(11) DEFAULT NULL');
-CALL sp_add_col('registro','reg_talla_gorra',    'VARCHAR(12) DEFAULT NULL');
--- Precio / pago
-CALL sp_add_col('registro','reg_precio_estimado',  'DECIMAL(10,2) DEFAULT NULL');
-CALL sp_add_col('registro','reg_precio_regla_id',  'INT(11) DEFAULT NULL');
-CALL sp_add_col('registro','reg_precio_moneda',    "VARCHAR(6) DEFAULT 'MXN'");
-CALL sp_add_col('registro','reg_monto_confirmado', 'DECIMAL(10,2) DEFAULT NULL');
-CALL sp_add_col('registro','reg_pago_verificado',  'TINYINT(1) NOT NULL DEFAULT 0');
-CALL sp_add_col('registro','reg_notas',            'TEXT DEFAULT NULL');
--- Comprobante y token público
-CALL sp_add_col('registro','reg_archivo_mime',  'VARCHAR(120) DEFAULT NULL');
-CALL sp_add_col('registro','reg_token',         'CHAR(64) DEFAULT NULL');
--- Control de correos
-CALL sp_add_col('registro','reg_email_count',   'INT(11) NOT NULL DEFAULT 0');
-CALL sp_add_col('registro','reg_email_last',    'DATETIME DEFAULT NULL');
-CALL sp_add_col('registro','reg_welcome_count', 'INT(11) NOT NULL DEFAULT 0');
-CALL sp_add_col('registro','reg_welcome_last',  'DATETIME DEFAULT NULL');
--- Auditoría de hora del cliente
-CALL sp_add_col('registro','reg_client_utc',       'DATETIME DEFAULT NULL');
-CALL sp_add_col('registro','reg_client_tz_offset', 'INT(11) DEFAULT NULL');
--- Campos opcionales usados por torneos con kit (Akron)
-CALL sp_add_col('registro','akron_talla',         'VARCHAR(12) DEFAULT NULL');
-CALL sp_add_col('registro','akron_talla_guante',  'VARCHAR(12) DEFAULT NULL');
-CALL sp_add_col('registro','akron_calzado',       'VARCHAR(12) DEFAULT NULL');
-CALL sp_add_col('registro','akron_edad',          'INT(11) DEFAULT NULL');
-CALL sp_add_col('registro','akron_codigo',        'VARCHAR(45) DEFAULT NULL');
-CALL sp_add_col('registro','akron_codigo_admin',  'VARCHAR(45) DEFAULT NULL');
-CALL sp_add_col('registro','akron_monto_pago',    'DECIMAL(10,2) DEFAULT NULL');
+INSERT INTO tmp_reg_cols (col, def) VALUES
+  -- Socio / identificación
+  ('reg_es_socio',          'VARCHAR(2) DEFAULT NULL'),
+  ('reg_tipo_socio',        'VARCHAR(20) DEFAULT NULL'),
+  ('reg_numsocio',          'VARCHAR(45) DEFAULT NULL'),
+  ('reg_cargo_socio',       'VARCHAR(2) DEFAULT NULL'),
+  ('reg_ghin',              'VARCHAR(45) DEFAULT NULL'),
+  ('reg_sexo',              'VARCHAR(1) DEFAULT NULL'),
+  ('reg_fechanac',          'DATE DEFAULT NULL'),
+  ('reg_edad',              'INT(11) DEFAULT NULL'),
+  ('reg_talla_gorra',       'VARCHAR(12) DEFAULT NULL'),
+  -- Precio / pago
+  ('reg_precio_estimado',   'DECIMAL(10,2) DEFAULT NULL'),
+  ('reg_precio_regla_id',   'INT(11) DEFAULT NULL'),
+  ('reg_precio_moneda',     "VARCHAR(6) DEFAULT 'MXN'"),
+  ('reg_monto_confirmado',  'DECIMAL(10,2) DEFAULT NULL'),
+  ('reg_pago_verificado',   'TINYINT(1) NOT NULL DEFAULT 0'),
+  ('reg_notas',             'TEXT DEFAULT NULL'),
+  -- Comprobante y token público
+  ('reg_archivo_mime',      'VARCHAR(120) DEFAULT NULL'),
+  ('reg_token',             'CHAR(64) DEFAULT NULL'),
+  -- Control de correos
+  ('reg_email_count',       'INT(11) NOT NULL DEFAULT 0'),
+  ('reg_email_last',        'DATETIME DEFAULT NULL'),
+  ('reg_welcome_count',     'INT(11) NOT NULL DEFAULT 0'),
+  ('reg_welcome_last',      'DATETIME DEFAULT NULL'),
+  -- Auditoría de hora del cliente
+  ('reg_client_utc',        'DATETIME DEFAULT NULL'),
+  ('reg_client_tz_offset',  'INT(11) DEFAULT NULL'),
+  -- Campos opcionales usados por torneos con kit (Akron)
+  ('akron_talla',           'VARCHAR(12) DEFAULT NULL'),
+  ('akron_talla_guante',    'VARCHAR(12) DEFAULT NULL'),
+  ('akron_calzado',         'VARCHAR(12) DEFAULT NULL'),
+  ('akron_edad',            'INT(11) DEFAULT NULL'),
+  ('akron_codigo',          'VARCHAR(45) DEFAULT NULL'),
+  ('akron_codigo_admin',    'VARCHAR(45) DEFAULT NULL'),
+  ('akron_monto_pago',      'DECIMAL(10,2) DEFAULT NULL');
 
-DROP PROCEDURE IF EXISTS sp_add_col;
+SET @missing_reg = (
+  SELECT GROUP_CONCAT(CONCAT('ADD COLUMN `', t.col, '` ', t.def) SEPARATOR ', ')
+  FROM tmp_reg_cols t
+  WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS ic
+    WHERE ic.TABLE_SCHEMA = DATABASE()
+      AND ic.TABLE_NAME   = 'registro'
+      AND ic.COLUMN_NAME  = t.col
+  )
+);
+
+SET @has_registro = (SELECT COUNT(*) FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registro');
+
+SET @s = IF(@has_registro = 0 OR @missing_reg IS NULL OR @missing_reg = '',
+            'SELECT ''registro: sin cambios pendientes'' AS info',
+            CONCAT('ALTER TABLE `registro` ', @missing_reg));
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+DROP TEMPORARY TABLE IF EXISTS tmp_reg_cols;
 
 -- ---------------------------------------------------------------------------
 -- 10. Match Play: columna de 3er lugar (sólo si existe elimin_salidas_cat)
