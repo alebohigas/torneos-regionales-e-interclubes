@@ -572,6 +572,11 @@ export const useSiteConfig = () => {
         setStoredTorneoId(String(config.torneoid));
       }
 
+      // Sync giraid (eje del sitio en el modelo por giras).
+      if (config.giraid) {
+        setStoredGiraId(String(config.giraid));
+      }
+
       // Sync menu order
       if (config.menu_order) {
         localStorage.setItem(MENU_ORDER_KEY, JSON.stringify(config.menu_order));
