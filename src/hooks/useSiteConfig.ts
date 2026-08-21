@@ -474,6 +474,8 @@ export interface SiteConfig {
 export interface SaveConfigPayload {
   password: string;
   torneoid?: number;
+  /** Gira activa (`gira.giraid`) sobre la que se basa todo el sitio. */
+  giraid?: number | null;
   menu_order?: Record<string, number> | null;
   visibility?: Record<string, boolean> | null;
   menu_groups?: any[] | null;
