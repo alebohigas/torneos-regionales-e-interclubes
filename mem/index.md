@@ -75,3 +75,4 @@
 - [Resultados partial rounds](mem://features/resultados-partial-rounds) — Show in-progress rounds with En vivo badge; Total stays closed-only; Live mirrors Hoy when no closed rounds yet
 - [O'Yes 300 competition](mem://features/oyes-300-competition) — Premio independiente: usa oyesx/oyesxjug, ganadores absolutos por hoyo sin filtro de categoría. NO confundir con O'Yes regular ni con Driver/Approach
 - [No SQL GRANT statements on IONOS](mem://constraints/no-sql-grants-on-ionos) — MySQL migrations must not include GRANT/privilege statements
+- [Modelo por giras](mem://architecture/gira-based-model) — gira.giraid como eje del sitio, grupocopas, uso=0 COPA TERMINADA

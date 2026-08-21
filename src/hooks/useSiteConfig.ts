@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '@/config/api';
 import { DEFAULT_SUPERADMIN_PASSWORD, getSuperAdminPassword } from '@/lib/superAdminAuth';
 import { setStoredTorneoId } from '@/hooks/useTorneoId';
+import { setStoredGiraId } from '@/hooks/useGiraId';
 import type { ModulesConfig } from '@/modules/moduleState';
 
 // ============= Types =============
@@ -427,6 +428,11 @@ export interface AnuncioConfig {
 export interface SiteConfig {
   domain: string;
   torneoid: number | null;
+  /**
+   * Gira activa (`gira.giraid`). Es el eje del sitio en el modelo por giras:
+   * agrupa varias copas (`copas.giraid`) y varios torneos (`torneo.giraid`).
+   */
+  giraid: number | null;
   menu_order: Record<string, number> | null;
   visibility: Record<string, boolean> | null;
   menu_groups: any[] | null;
@@ -469,6 +475,8 @@ export interface SiteConfig {
 export interface SaveConfigPayload {
   password: string;
   torneoid?: number;
+  /** Gira activa (`gira.giraid`) sobre la que se basa todo el sitio. */
+  giraid?: number | null;
   menu_order?: Record<string, number> | null;
   visibility?: Record<string, boolean> | null;
   menu_groups?: any[] | null;
@@ -563,6 +571,11 @@ export const useSiteConfig = () => {
       // mounted `useTorneoId()` consumer is notified and refetches its data.
       if (config.torneoid) {
         setStoredTorneoId(String(config.torneoid));
+      }
+
+      // Sync giraid (eje del sitio en el modelo por giras).
+      if (config.giraid) {
+        setStoredGiraId(String(config.giraid));
       }
 
       // Sync menu order

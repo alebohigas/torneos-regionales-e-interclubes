@@ -328,9 +328,35 @@ function site_config_has_modules_config($conn) {
 
 $hasModulesConfig = site_config_has_modules_config($conn);
 
+/**
+ * Detect whether the `giraid` column exists. En el modelo por giras (BD
+ * golftour) el sitio se basa en una GIRA (`gira.giraid`), que agrupa varias
+ * copas (`copas.giraid`) y varios torneos (`torneo.giraid`). Self-healing:
+ * crea la columna en el primer uso (no-op si no hay privilegios de ALTER).
+ */
+function site_config_has_giraid($conn) {
+    static $hasColumn = null;
+    if ($hasColumn !== null) return $hasColumn;
+    $result = $conn->query("SHOW COLUMNS FROM site_config LIKE 'giraid'");
+    $hasColumn = $result && $result->num_rows > 0;
+    if (!$hasColumn) {
+        if (@$conn->query("ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid) en la que se basa el sitio'")) {
+            $hasColumn = true;
+        } else {
+            error_log('site_config: could not add giraid column: ' . $conn->error);
+        }
+    }
+    return $hasColumn;
+}
+
+$hasGiraId = site_config_has_giraid($conn);
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Return full config for current domain
     $selectFields = 'torneoid, menu_order, visibility, menu_groups, page_group_assignments';
+    if ($hasGiraId) {
+        $selectFields .= ', giraid';
+    }
     if ($hasLiveScoringConfig) {
         $selectFields .= ', live_scoring_config';
     }
@@ -387,6 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'torneoid'              => (int)$row['torneoid'],
+            'giraid'                => $hasGiraId && $row['giraid'] !== null && $row['giraid'] !== '' ? (int)$row['giraid'] : null,
             'menu_order'            => $row['menu_order'] ? json_decode($row['menu_order'], true) : null,
             'visibility'            => $row['visibility'] ? json_decode($row['visibility'], true) : null,
             'menu_groups'           => $row['menu_groups'] ? json_decode($row['menu_groups'], true) : null,
@@ -412,6 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'torneoid'              => null,
+            'giraid'                => null,
             'menu_order'            => null,
             'visibility'            => null,
             'menu_groups'           => null,
@@ -480,7 +508,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $insertFields[] = 'torneoid';
         $insertValues[] = $tid;
     }
-    
+
+    // Gira activa (eje del sitio en el modelo por giras)
+    if ($hasGiraId && array_key_exists('giraid', $body)) {
+        $gid = $body['giraid'] === null || $body['giraid'] === '' ? 'NULL' : (int)$body['giraid'];
+        $fields[] = "giraid = $gid";
+        $insertFields[] = 'giraid';
+        $insertValues[] = $gid;
+    }
+
     if (array_key_exists('menu_order', $body)) {
         $val = $body['menu_order'] !== null ? "'" . esc($conn, json_encode($body['menu_order'])) . "'" : 'NULL';
         $fields[] = "menu_order = $val";

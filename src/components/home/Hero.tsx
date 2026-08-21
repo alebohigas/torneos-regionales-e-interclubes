@@ -17,6 +17,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
+import { useGiraInfo } from '@/hooks/useGiraData';
 
 /** Regex to match leading Roman numerals (I, V, X, L, C, D, M) */
 const ROMAN_NUMERAL_REGEX = /^([IVXLCDM]+)\s+(.+)$/;
@@ -36,6 +37,11 @@ const parseTournamentName = (name: string) => {
 const Hero = () => {
   const { data: tournamentInfo } = useTournamentInfo();
   const { data: siteConfig } = useSiteConfig();
+  /**
+   * Gira activa (eje del sitio). Su nombre es el título del hero; cuando
+   * `uso = 0` la gira ya terminó y se muestra el aviso "COPA TERMINADA".
+   */
+  const { data: gira } = useGiraInfo();
 
   /**
    * Resuelve un slot del hero:
@@ -70,20 +76,26 @@ const Hero = () => {
   const slot1 = resolveSlot(cfg1, fallback1);
   const slot2 = resolveSlot(cfg2, fallback2);
 
-  /** Parse tournament name into roman numeral and rest */
-  const parsed = tournamentInfo?.name
-    ? parseTournamentName(tournamentInfo.name)
+  /**
+   * Título del hero: nombre de la GIRA cuando está configurada; si no,
+   * cae al nombre del torneo (instalaciones sin modelo de giras).
+   */
+  const heroName = gira?.name || tournamentInfo?.name || '';
+  /** Gira terminada => aviso público "COPA TERMINADA". */
+  const giraFinished = !!gira && gira.uso === 0;
+
+  /** Parse name into roman numeral and rest */
+  const parsed = heroName
+    ? parseTournamentName(heroName)
     : { roman: '', rest: '' };
 
-  /** Set document/tab title dynamically from tournament name + club */
+  /** Set document/tab title dynamically from gira/tournament name + club */
   useEffect(() => {
-    if (tournamentInfo?.name) {
-      const club = tournamentInfo.club || '';
-      document.title = club
-        ? `${tournamentInfo.name} | ${club}`
-        : tournamentInfo.name;
+    if (heroName) {
+      const club = tournamentInfo?.club || '';
+      document.title = club ? `${heroName} | ${club}` : heroName;
     }
-  }, [tournamentInfo?.name, tournamentInfo?.club]);
+  }, [heroName, tournamentInfo?.club]);
 
   /** Format date range for display */
   /** Format date range avoiding timezone offset issues by parsing as UTC */
@@ -122,10 +134,20 @@ const Hero = () => {
             </div>
           )}
 
-          {/* Rest of tournament name (e.g. "TORNEO ANUAL SEMANA SANTA") */}
+          {/* Nombre de la gira (o del torneo como fallback) */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-foreground mb-4 animate-fade-in-up animation-delay-100">
             {parsed.rest || 'Torneo de Golf'}
           </h1>
+
+          {/* Gira con uso = 0: la competencia ya concluyó */}
+          {giraFinished && (
+            <div className="mb-6 animate-fade-in-up animation-delay-100">
+              <span className="inline-block rounded-md bg-destructive px-4 py-2 text-sm md:text-base font-semibold uppercase tracking-wide text-destructive-foreground">
+                Copa terminada
+              </span>
+            </div>
+          )}
+
 
           {/* Club name in gold italic */}
           <p className="text-xl md:text-2xl font-display italic text-secondary mb-8 animate-fade-in-up animation-delay-200">

@@ -32,6 +32,7 @@ import AdminCategoriasReglas from '@/components/admin/AdminCategoriasReglas';
 import AdminBrackets from '@/components/admin/AdminBrackets';
 import AdminMatchPlay from '@/components/admin/AdminMatchPlay';
 import AdminThemePalette from '@/components/admin/AdminThemePalette';
+import AdminGira from '@/components/admin/AdminGira';
 import AdminShowcase300 from '@/components/admin/AdminShowcase300';
 import AdminStats from '@/components/admin/AdminStats';
 import AdminStatsPage from '@/components/admin/AdminStatsPage';
@@ -76,8 +77,11 @@ import {
   Swords,
   Megaphone,
   History,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useGiraInfo } from '@/hooks/useGiraData';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { useSiteConfig, useSaveSiteConfig } from '@/hooks/useSiteConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -281,6 +285,8 @@ const AdminDashboard = () => {
   };
   const navigate = useNavigate();
   const { torneoId, setTorneoId } = useTorneoId();
+  /** Gira activa: si tiene uso = 0 se levanta una alerta arriba del panel. */
+  const { data: activeGira } = useGiraInfo();
   const { data: siteConfig, isLoading: isLoadingSiteConfig } = useSiteConfig();
   const saveSiteConfig = useSaveSiteConfig();
   const { toast } = useToast();
@@ -443,6 +449,18 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
+      {/* Alerta global: la gira activa está marcada como terminada (uso = 0) */}
+      {activeGira && activeGira.uso === 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Copa terminada</AlertTitle>
+          <AlertDescription>
+            La gira activa <strong>{activeGira.name}</strong> (ID {activeGira.giraid}) tiene{' '}
+            <code>uso = 0</code>. El sitio público muestra el aviso “COPA TERMINADA”.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tabs for different admin sections */}
       <Tabs defaultValue={staffDefaultTab} className="space-y-6">
         {/*
@@ -521,6 +539,9 @@ const AdminDashboard = () => {
 
         {/* Configuration Tab */}
         <TabsContent value="config" className="space-y-4">
+          {/* Gira activa: eje de la información del sitio (site_config.giraid) */}
+          <AdminGira />
+
           {/* Server-side torneoid config */}
           <Card>
             <CardHeader>
