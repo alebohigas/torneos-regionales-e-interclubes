@@ -509,13 +509,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $insertValues[] = $tid;
     }
 
-    // Gira activa (eje del sitio en el modelo por giras)
-    if ($hasGiraId && array_key_exists('giraid', $body)) {
+    // Gira activa (eje del sitio en el modelo por giras).
+    // Si la columna no existe y el usuario MySQL no tiene ALTER, se avisa en
+    // claro en vez de descartar el valor en silencio (antes "guardaba" sin error).
+    if (array_key_exists('giraid', $body)) {
+        if (!$hasGiraId) {
+            json_error("Missing DB column giraid in site_config. Run: ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid) en la que se basa el sitio';", 500);
+        }
         $gid = $body['giraid'] === null || $body['giraid'] === '' ? 'NULL' : (int)$body['giraid'];
         $fields[] = "giraid = $gid";
         $insertFields[] = 'giraid';
         $insertValues[] = $gid;
     }
+
 
     if (array_key_exists('menu_order', $body)) {
         $val = $body['menu_order'] !== null ? "'" . esc($conn, json_encode($body['menu_order'])) . "'" : 'NULL';
