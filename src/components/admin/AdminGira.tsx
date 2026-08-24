@@ -52,11 +52,17 @@ const AdminGira = () => {
     saveSiteConfig.mutate(
       { giraid: value, password: getSuperAdminPassword() },
       {
-        onSuccess: () =>
+        onSuccess: (res: any) => {
+          const confirmed = res?.giraid;
           toast({
             title: 'Gira configurada',
-            description: `La gira ${value} aplica para todos los visitantes de este dominio.`,
-          }),
+            description:
+              confirmed != null && Number(confirmed) !== value
+                ? `El servidor guardó la gira ${confirmed}, no la ${value}. Revisa el dominio configurado.`
+                : `La gira ${value} aplica para todos los visitantes de este dominio.`,
+            variant: confirmed != null && Number(confirmed) !== value ? 'destructive' : undefined,
+          });
+        },
         onError: (err: any) =>
           toast({
             title: 'Error al guardar en servidor',
@@ -65,6 +71,7 @@ const AdminGira = () => {
           }),
       }
     );
+
   };
 
   return (
