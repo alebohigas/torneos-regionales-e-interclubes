@@ -53,8 +53,18 @@ $LOGOS_BASE_URL = '/api/logo.php?file=';
 $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);
 
 if ($conn->connect_error) {
+    // Se incluye el detalle real (host/puerto/errno) SIN la contraseña para
+    // poder diagnosticar credenciales, IP no autorizada o puerto cerrado.
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
+    echo json_encode([
+        'error'  => 'Database connection failed',
+        'detail' => $conn->connect_error,
+        'errno'  => $conn->connect_errno,
+        'host'   => $DB_HOST,
+        'port'   => (int)$DB_PORT,
+        'db'     => $DB_NAME,
+        'user'   => $DB_USER,
+    ]);
     exit;
 }
 
