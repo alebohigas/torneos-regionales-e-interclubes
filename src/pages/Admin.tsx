@@ -82,7 +82,6 @@ import {
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useGiraInfo } from '@/hooks/useGiraData';
-import { useTorneoId } from '@/hooks/useTorneoId';
 import { useSiteConfig, useSaveSiteConfig } from '@/hooks/useSiteConfig';
 import { useToast } from '@/hooks/use-toast';
 import { getSuperAdminPassword } from '@/lib/superAdminAuth';
@@ -284,13 +283,11 @@ const AdminDashboard = () => {
     });
   };
   const navigate = useNavigate();
-  const { torneoId, setTorneoId } = useTorneoId();
   /** Gira activa: si tiene uso = 0 se levanta una alerta arriba del panel. */
   const { data: activeGira } = useGiraInfo();
   const { data: siteConfig, isLoading: isLoadingSiteConfig } = useSiteConfig();
   const saveSiteConfig = useSaveSiteConfig();
   const { toast } = useToast();
-  const [torneoInput, setTorneoInput] = useState(torneoId);
   
   const menuItems = getAllMenuItems();
   const visibleCount = Object.values(visibilitySettings).filter(Boolean).length;
