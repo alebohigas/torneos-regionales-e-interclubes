@@ -747,11 +747,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (!$conn->query($sql)) {
         json_error('Failed to save config: ' . $conn->error);
     }
-    
+
+    // Relee lo guardado para que el cliente confirme el valor real en BD
+    // (evita "guardado" aparente cuando el dominio o la columna no coinciden).
+    $savedGiraId = null;
+    if ($hasGiraId) {
+        $check = $conn->query("SELECT giraid FROM site_config WHERE domain = '$domain' LIMIT 1");
+        if ($check && ($r = $check->fetch_assoc())) {
+            $savedGiraId = $r['giraid'] !== null ? (int)$r['giraid'] : null;
+        }
+    }
+
     json_response([
         'domain' => $_SERVER['HTTP_HOST'],
         'saved'  => true,
+        'giraid' => $savedGiraId,
     ]);
+
 } else {
     json_error('Method not allowed', 405);
 }
