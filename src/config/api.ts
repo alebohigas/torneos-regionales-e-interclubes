@@ -99,6 +99,18 @@ export const getPlayersApiUrl = (catId: string, opts: { skin?: boolean } = {}): 
     ...(opts.skin ? { skin: '1' } : {}),
   })}`;
 
+/**
+ * FIELD-GIRA: categorías seed (categorias_tmp + jugadores_seed).
+ */
+export const getFieldGiraCategoriesUrl = (): string =>
+  `${API_BASE_URL}/field_gira.php${buildQuery()}`;
+
+/**
+ * FIELD-GIRA: jugadores seed de una categoría (jugadores_seed + clubs).
+ */
+export const getFieldGiraPlayersUrl = (catId: string): string =>
+  `${API_BASE_URL}/field_gira.php${buildQuery({ catid: catId })}`;
+
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;
 
