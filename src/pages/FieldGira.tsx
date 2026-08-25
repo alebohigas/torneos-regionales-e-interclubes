@@ -118,7 +118,6 @@ const FieldGira = () => {
                       <TableHeader>
                         <TableRow className="bg-primary hover:bg-primary">
                           <TableHead className="text-primary-foreground font-bold text-center">Club</TableHead>
-                          <TableHead className="text-primary-foreground font-bold text-center">No.</TableHead>
                           <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
                           <TableHead className="text-primary-foreground font-bold text-center">
                             Fecha de nacimiento
@@ -140,7 +139,6 @@ const FieldGira = () => {
                                   }}
                                 />
                               </TableCell>
-                              <TableCell className="text-center">{player.numjugador || '—'}</TableCell>
                               {/* Nombre recortado a 4 renglones en móvil (.player-name-clamp) */}
                               <TableCell className="player-name-cell">
                                 <span className="player-name-clamp">{player.name}</span>
@@ -150,7 +148,7 @@ const FieldGira = () => {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                               <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               No hay jugadores registrados en esta categoría
                             </TableCell>
