@@ -29,8 +29,8 @@ $SMTP_FROM_NAME = 'Speitour Registros';
 $SMTP_REPLY_TO  = 'noreply@speitour.mx';
 
 // ============= Tabla de usuarios de la app =============
-// Tabla usada para staff temporal y el superadmin. En golftour los usuarios
-// reales viven en `usuarios2`. Cuando se haga DROP a `usuarios` y se renombre
-// `usuarios2` -> `usuarios`, cambia este valor a 'usuarios' (o comenta la
-// línea y la app autodetecta la tabla existente).
-$USERS_TABLE = 'usuarios2';
+// La app usa `usuarios` (los datos de `usuarios2` se copiaron ahí con la
+// migración 2026_08_25_copy_usuarios2_into_usuarios.sql). Solo define esta
+// variable si necesitas apuntar a otra tabla.
+// $USERS_TABLE = 'usuarios';
+
