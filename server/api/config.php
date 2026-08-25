@@ -453,13 +453,12 @@ function is_superadmin_session() {
     return true;
 }
 
-/** Persiste un nuevo hash del superadmin en `usuarios` (upsert). */
+/** Persiste un nuevo hash del superadmin en `app_auth` (upsert). */
 function set_superadmin_password_hash($conn, $hash) {
-    $key = SUPERADMIN_USER_KEY;
-    $tipo = SUPERADMIN_TIPO;
+    ensure_app_auth_table($conn);
     $h = esc($conn, $hash);
-    $sql = "INSERT INTO usuarios (usuario, pwd, tipo, activo)
-              VALUES ('$key', '$h', $tipo, 1)
-              ON DUPLICATE KEY UPDATE pwd=VALUES(pwd), tipo=VALUES(tipo), activo=1";
+    $sql = "INSERT INTO app_auth (k, v) VALUES ('superadmin_pwd_hash', '$h')
+              ON DUPLICATE KEY UPDATE v=VALUES(v)";
     if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
+
 }
