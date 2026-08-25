@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $where = "tipo = 99";
     if ($torneoid > 0) $where .= " AND torneoid = $torneoid";
     $rows = query_all($conn, "SELECT id, usuario, nombre, torneoid, desde, hasta, activo, estatus
-                                FROM usuarios WHERE $where ORDER BY id DESC");
+                                FROM " . USERS_TABLE . " WHERE $where ORDER BY id DESC");
     foreach ($rows as &$r) {
         $uid = (int)$r['id'];
         $areas = [];
@@ -82,7 +82,7 @@ if ($action === 'create') {
     }
     // Único
     $ue = esc($conn, $usuario);
-    $ex = query_one($conn, "SELECT id FROM usuarios WHERE usuario = '$ue' LIMIT 1");
+    $ex = query_one($conn, "SELECT id FROM " . USERS_TABLE . " WHERE usuario = '$ue' LIMIT 1");
     if ($ex) json_error('Usuario ya existe', 409);
 
     $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -90,7 +90,7 @@ if ($action === 'create') {
     $he = esc($conn, $hash);
     $de = esc($conn, $desde);
     $ha = esc($conn, $hasta);
-    $sql = "INSERT INTO usuarios (usuario, nombre, pwd, torneoid, desde, hasta, activo, estatus, tipo)
+    $sql = "INSERT INTO " . USERS_TABLE . " (usuario, nombre, pwd, torneoid, desde, hasta, activo, estatus, tipo)
             VALUES ('$ue','$ne','$he',$torneoid,'$de','$ha',1,'activo',99)";
     if (!$conn->query($sql)) json_error('Insert failed: ' . $conn->error, 500);
     $uid = $conn->insert_id;
@@ -112,7 +112,7 @@ if ($action === 'update') {
         $sets[] = "pwd = '" . esc($conn, $h) . "'";
     }
     if ($sets) {
-        $sql = "UPDATE usuarios SET " . implode(', ', $sets) . " WHERE id = $id AND tipo = 99";
+        $sql = "UPDATE " . USERS_TABLE . " SET " . implode(', ', $sets) . " WHERE id = $id AND tipo = 99";
         if (!$conn->query($sql)) json_error('Update failed: ' . $conn->error, 500);
     }
     if (isset($body['areas'])) sync_areas($conn, $id, $body['areas'], $VALID_AREAS);
@@ -128,7 +128,7 @@ if ($action === 'delete') {
     if (!$id) json_error('Missing id', 400);
     $conn->query("DELETE FROM usuario_sesion WHERE usuario_id = $id");
     $conn->query("DELETE FROM usuario_areas WHERE usuario_id = $id");
-    $conn->query("DELETE FROM usuarios WHERE id = $id AND tipo = 99");
+    $conn->query("DELETE FROM " . USERS_TABLE . " WHERE id = $id AND tipo = 99");
     json_response(['ok' => true]);
 }
 

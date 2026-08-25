@@ -28,7 +28,7 @@ if ($usuario === '' || $password === '') json_error('Missing credentials', 400);
 
 $u = esc($conn, $usuario);
 $row = query_one($conn, "SELECT id, usuario, nombre, torneoid, pwd, activo, estatus, desde, hasta
-                           FROM usuarios WHERE usuario = '$u' LIMIT 1");
+                           FROM " . USERS_TABLE . " WHERE usuario = '$u' LIMIT 1");
 if (!$row) json_error('Credenciales inválidas', 401);
 
 // Validación de password
@@ -42,7 +42,7 @@ if ($looksHashed && password_verify($password, $pwd)) {
     $hash = password_hash($password, PASSWORD_DEFAULT);
     $h = esc($conn, $hash);
     $id = (int)$row['id'];
-    $conn->query("UPDATE usuarios SET pwd='$h' WHERE id=$id");
+    $conn->query("UPDATE " . USERS_TABLE . " SET pwd='$h' WHERE id=$id");
     $ok = true;
 }
 if (!$ok) json_error('Credenciales inválidas', 401);

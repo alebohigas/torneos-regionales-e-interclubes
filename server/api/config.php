@@ -324,7 +324,7 @@ function superadmin_password_hash_from_db($conn) {
     $hash = null;
 
     $key = SUPERADMIN_USER_KEY;
-    $r = @$conn->query("SELECT pwd FROM usuarios WHERE usuario='$key' LIMIT 1");
+    $r = @$conn->query("SELECT pwd FROM " . USERS_TABLE . " WHERE usuario='$key' LIMIT 1");
     if ($r && $r->num_rows > 0) {
         $row = $r->fetch_assoc();
         $stored = (string)($row['pwd'] ?? '');
@@ -443,7 +443,7 @@ function set_superadmin_password_hash($conn, $hash) {
         json_error('La columna usuarios.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios_table.sql', 500);
     }
 
-    $sql = "INSERT INTO usuarios (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
+    $sql = "INSERT INTO " . USERS_TABLE . " (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
               VALUES ('$key', '$h', 0, $tipo, 0, 'ACTIVO', 'Superadmin', NOW())
               ON DUPLICATE KEY UPDATE pwd=VALUES(pwd), tipo=VALUES(tipo), estatus='ACTIVO'";
     if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
