@@ -21,6 +21,7 @@ const iconMap: Record<string, React.ElementType> = {
   convocatoria: FileText,
   eventos: Calendar,
   jugadores: Users,
+  'field-gira': Users,
   salidas: Clock,
   'live-scoring': Radio,
   live: Radio,
