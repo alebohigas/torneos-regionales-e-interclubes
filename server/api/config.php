@@ -454,7 +454,7 @@ function set_superadmin_password_hash($conn, $hash) {
     $len = ($r && $r->num_rows > 0) ? (int)$r->fetch_assoc()['len'] : 255;
     if ($r) $r->free();
     if ($len > 0 && $len < strlen($hash)) {
-        json_error('La columna ' . USERS_TABLE . '.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios2_table.sql', 500);
+        json_error('La columna ' . USERS_TABLE . '.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_copy_usuarios2_into_usuarios.sql', 500);
     }
 
     $sql = "INSERT INTO " . USERS_TABLE . " (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
