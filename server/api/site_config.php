@@ -351,6 +351,167 @@ function site_config_has_giraid($conn) {
 
 $hasGiraId = site_config_has_giraid($conn);
 
+/**
+ * Diagnóstico seguro para el guardado de /admin/config → Gira activa.
+ * No imprime contraseñas ni hashes; sólo longitudes, presencia de valores,
+ * columnas/tablas encontradas y si la contraseña enviada sí valida.
+ */
+function site_config_debug_snapshot($conn, $domain, $body = []) {
+    global $DB_HOST, $DB_USER, $DB_NAME, $DB_PORT, $DB_PASS;
+
+    $payloadKeys = is_array($body) ? array_keys($body) : [];
+    $requestedGiraId = is_array($body) && array_key_exists('giraid', $body) ? $body['giraid'] : null;
+    $password = is_array($body) ? (string)($body['password'] ?? '') : '';
+
+    $tableExists = false;
+    $siteColumns = [];
+    $domainRow = null;
+    $giraRow = null;
+    $usersTableExists = false;
+    $usersColumns = [];
+    $superadminRow = null;
+
+    $tableCheck = @$conn->query("SHOW TABLES LIKE 'site_config'");
+    $tableExists = $tableCheck && $tableCheck->num_rows > 0;
+    if ($tableCheck) $tableCheck->free();
+
+    if ($tableExists) {
+        $cols = @$conn->query("SHOW COLUMNS FROM site_config");
+        if ($cols) {
+            while ($c = $cols->fetch_assoc()) {
+                $siteColumns[$c['Field']] = [
+                    'type' => $c['Type'],
+                    'null' => $c['Null'],
+                    'key'  => $c['Key'],
+                ];
+            }
+            $cols->free();
+        }
+
+        $domainEsc = esc($conn, $domain);
+        $row = @$conn->query("SELECT domain, giraid FROM site_config WHERE domain = '$domainEsc' LIMIT 1");
+        if ($row && $row->num_rows > 0) {
+            $r = $row->fetch_assoc();
+            $domainRow = [
+                'exists' => true,
+                'domain' => $r['domain'],
+                'giraid' => $r['giraid'] !== null ? (int)$r['giraid'] : null,
+            ];
+        } else {
+            $domainRow = ['exists' => false];
+        }
+        if ($row) $row->free();
+    }
+
+    if ($requestedGiraId !== null && $requestedGiraId !== '') {
+        $gid = (int)$requestedGiraId;
+        $gira = @$conn->query("SELECT giraid, nombre, uso FROM gira WHERE giraid = $gid LIMIT 1");
+        if ($gira && $gira->num_rows > 0) {
+            $g = $gira->fetch_assoc();
+            $giraRow = [
+                'exists' => true,
+                'giraid' => (int)$g['giraid'],
+                'nombre' => $g['nombre'],
+                'uso'    => (int)$g['uso'],
+            ];
+        } else {
+            $giraRow = ['exists' => false, 'requested_giraid' => $gid];
+        }
+        if ($gira) $gira->free();
+    }
+
+    $usersTable = defined('USERS_TABLE') ? USERS_TABLE : 'usuarios';
+    $usersTableEsc = esc($conn, $usersTable);
+    $ut = @$conn->query("SHOW TABLES LIKE '$usersTableEsc'");
+    $usersTableExists = $ut && $ut->num_rows > 0;
+    if ($ut) $ut->free();
+
+    if ($usersTableExists) {
+        $uc = @$conn->query("SHOW COLUMNS FROM " . $usersTable);
+        if ($uc) {
+            while ($c = $uc->fetch_assoc()) {
+                if (in_array($c['Field'], ['id', 'usuario', 'pwd', 'tipo', 'estatus', 'activo', 'clubid', 'torneoid', 'nombre'], true)) {
+                    $usersColumns[$c['Field']] = [
+                        'type' => $c['Type'],
+                        'null' => $c['Null'],
+                        'key'  => $c['Key'],
+                    ];
+                }
+            }
+            $uc->free();
+        }
+
+        $key = SUPERADMIN_USER_KEY;
+        $sr = @$conn->query("SELECT usuario, LENGTH(pwd) pwd_len, tipo, estatus" .
+            (array_key_exists('activo', $usersColumns) ? ", activo" : "") .
+            " FROM " . $usersTable . " WHERE usuario='$key' LIMIT 1");
+        if ($sr && $sr->num_rows > 0) {
+            $s = $sr->fetch_assoc();
+            $superadminRow = [
+                'exists' => true,
+                'pwd_length' => (int)$s['pwd_len'],
+                'tipo' => isset($s['tipo']) ? (int)$s['tipo'] : null,
+                'estatus' => $s['estatus'] ?? null,
+                'activo' => array_key_exists('activo', $s) ? (int)$s['activo'] : null,
+            ];
+        } else {
+            $superadminRow = ['exists' => false];
+        }
+        if ($sr) $sr->free();
+    }
+
+    return [
+        'api_build' => defined('API_BUILD') ? API_BUILD : 'unknown',
+        'request' => [
+            'method' => $_SERVER['REQUEST_METHOD'] ?? null,
+            'host_header' => $_SERVER['HTTP_HOST'] ?? null,
+            'domain_key_used' => $domain,
+            'payload_keys' => $payloadKeys,
+            'requested_giraid' => $requestedGiraId,
+        ],
+        'credentials' => [
+            'credentials_php_exists' => file_exists(__DIR__ . '/credentials.php'),
+            'db_host' => $DB_HOST ?? null,
+            'db_port' => isset($DB_PORT) ? (int)$DB_PORT : null,
+            'db_name' => $DB_NAME ?? null,
+            'db_user' => $DB_USER ?? null,
+            'db_pass_length' => is_string($DB_PASS ?? null) ? strlen($DB_PASS) : 0,
+            'db_pass_has_outer_spaces' => is_string($DB_PASS ?? null) ? (trim($DB_PASS) !== $DB_PASS) : false,
+            'users_table' => $usersTable,
+        ],
+        'auth' => [
+            'php_session_valid' => is_superadmin_session(),
+            'body_password_present' => $password !== '',
+            'body_password_length' => strlen($password),
+            'header_password_present' => !empty($_SERVER['HTTP_X_SUPERADMIN_PASSWORD']),
+            'stored_hash_exists' => (bool)superadmin_password_hash_from_db($conn),
+            'default_fallback_active' => !superadmin_password_hash_from_db($conn),
+            'password_matches_superadmin' => $password !== '' ? is_superadmin_password($conn, $password) : false,
+            'staff_token_present' => is_array($body) && (!empty($body['staff_token']) || !empty($_GET['staff_token']) || !empty($_SERVER['HTTP_AUTHORIZATION'])),
+        ],
+        'schema' => [
+            'site_config_table_exists' => $tableExists,
+            'site_config_columns' => $siteColumns,
+            'site_config_domain_row' => $domainRow,
+            'gira_lookup' => $giraRow,
+            'users_table_exists' => $usersTableExists,
+            'users_columns' => $usersColumns,
+            'superadmin_row' => $superadminRow,
+        ],
+    ];
+}
+
+/** Error JSON local que SIEMPRE incluye debug para este endpoint. */
+function site_config_debug_error($message, $status, $debug) {
+    http_response_code($status);
+    $jsonOptions = JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | (defined('JSON_INVALID_UTF8_SUBSTITUTE') ? JSON_INVALID_UTF8_SUBSTITUTE : 0);
+    echo json_encode(fix_mojibake_deep([
+        'error' => $message,
+        'debug' => $debug,
+    ]), $jsonOptions);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Return full config for current domain
     $selectFields = 'menu_order, visibility, menu_groups, page_group_assignments';
@@ -467,6 +628,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (!$body) {
         json_error('Invalid JSON body', 400);
     }
+
+    $wantsSaveDebug = !empty($body['_debug_save']) || !empty($_GET['save_debug']);
     
     // Auth: superadmin password or a normal staff user with permission for the edited area.
     $password = $body['password'] ?? '';
@@ -493,15 +656,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
         if (!$staffAllowed) {
-            json_error('Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.', 401, [
-                'auth_debug' => [
-                    'has_session'       => is_superadmin_session(),
-                    'body_password'     => $password !== '',
-                    'header_password'   => !empty($_SERVER['HTTP_X_SUPERADMIN_PASSWORD']),
-                    'stored_hash'       => (bool)superadmin_password_hash_from_db($conn),
-                    'default_fallback'  => !superadmin_password_hash_from_db($conn),
-                ],
-            ]);
+            site_config_debug_error(
+                'Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.',
+                401,
+                site_config_debug_snapshot($conn, $domain, $body)
+            );
         }
 
     }
@@ -516,7 +675,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // claro en vez de descartar el valor en silencio (antes "guardaba" sin error).
     if (array_key_exists('giraid', $body)) {
         if (!$hasGiraId) {
-            json_error("Missing DB column giraid in site_config. Run: ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid) en la que se basa el sitio';", 500);
+            site_config_debug_error(
+                "Missing DB column giraid in site_config. Run: ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid) en la que se basa el sitio';",
+                500,
+                site_config_debug_snapshot($conn, $domain, $body)
+            );
         }
         $gid = $body['giraid'] === null || $body['giraid'] === '' ? 'NULL' : (int)$body['giraid'];
         $fields[] = "giraid = $gid";
@@ -741,7 +904,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ON DUPLICATE KEY UPDATE $updateClause";
     
     if (!$conn->query($sql)) {
-        json_error('Failed to save config: ' . $conn->error);
+        $debug = site_config_debug_snapshot($conn, $domain, $body);
+        $debug['sql_error'] = $conn->error;
+        $debug['sql_errno'] = $conn->errno;
+        $debug['sql_preview'] = preg_replace('/password[^,)]*/i', 'password=***', $sql);
+        site_config_debug_error('Failed to save config: ' . $conn->error, 500, $debug);
     }
 
     // Relee lo guardado para que el cliente confirme el valor real en BD
@@ -754,11 +921,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    json_response([
+    $response = [
         'domain' => $_SERVER['HTTP_HOST'],
         'saved'  => true,
         'giraid' => $savedGiraId,
-    ]);
+    ];
+
+    if ($wantsSaveDebug) {
+        $response['debug'] = site_config_debug_snapshot($conn, $domain, $body);
+    }
+
+    json_response($response);
 
 } else {
     json_error('Method not allowed', 405);
