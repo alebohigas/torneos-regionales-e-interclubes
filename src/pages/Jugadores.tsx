@@ -21,8 +21,10 @@ const Jugadores = () => {
   /** Currently selected category (null = show grid) */
   const [selectedCategory, setSelectedCategory] = useState<CategoryDetail | null>(null);
 
-  // Fetch categories from API
-  const { data: categories = [], isLoading: loadingCats } = useCategories();
+  // Fetch categories from API (solo categorías con jugadores inscritos,
+  // replicando el query legacy: categorias JOIN jugadores, estatus>0)
+  const { data: categories = [], isLoading: loadingCats } = useCategories({ withPlayers: true });
+
   const { data: tournamentInfo } = useTournamentInfo();
   /** Atlas CC (torneoid=354) pidió sustituir el contador de jugadores
    *  por la palabra "CATEGORÍAS" en el header de esta página. */
