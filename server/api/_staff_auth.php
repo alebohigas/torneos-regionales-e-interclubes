@@ -35,7 +35,7 @@ function staff_validate_token($conn, $token) {
     $sql = "SELECT s.usuario_id, s.expira, u.usuario, u.nombre, u.torneoid,
                    u.estatus, u.activo, u.desde, u.hasta
               FROM usuario_sesion s
-              JOIN usuarios u ON u.id = s.usuario_id
+              JOIN " . USERS_TABLE . " u ON u.id = s.usuario_id
              WHERE s.token = '$tok'
              LIMIT 1";
     $r = $conn->query($sql);
