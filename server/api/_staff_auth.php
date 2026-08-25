@@ -32,7 +32,7 @@ function staff_extract_token($body) {
 function staff_validate_token($conn, $token) {
     if (!$token || !preg_match('/^[a-f0-9]{32,128}$/i', $token)) return null;
     $tok = $conn->real_escape_string($token);
-    $sql = "SELECT s.usuario_id, s.expira, u.usuario, u.nombre, u.torneoid,
+    $sql = "SELECT s.usuario_id, s.expira, u.usuario, u.nombre, u.torneoid, u.tipo,
                    u.estatus, u.activo, u.desde, u.hasta
               FROM usuario_sesion s
               JOIN " . USERS_TABLE . " u ON u.id = s.usuario_id
@@ -67,6 +67,8 @@ function staff_validate_token($conn, $token) {
         'usuario'    => $row['usuario'],
         'nombre'     => $row['nombre'],
         'torneoid'   => (int)$row['torneoid'],
+        'tipo'       => (int)($row['tipo'] ?? 0),
+        'is_superadmin' => (int)($row['tipo'] ?? 0) === SUPERADMIN_TIPO,
         'areas'      => $areas,
         'expira'     => $row['expira'],
     ];
@@ -80,6 +82,7 @@ function assert_admin_or_area($conn, $body, $area, $adminPwd = 'admin2025') {
     if (isset($body['password']) && is_superadmin_password($conn, $body['password'])) return null;
     $token = staff_extract_token($body);
     $info = staff_validate_token($conn, $token);
+    if ($info && !empty($info['is_superadmin'])) return $info;
     if ($info && in_array($area, $info['areas'], true)) {
         return $info;
     }
@@ -90,6 +93,7 @@ function assert_admin_or_area($conn, $body, $area, $adminPwd = 'admin2025') {
 function staff_check_area($conn, $body, $area) {
     $token = staff_extract_token($body);
     $info = staff_validate_token($conn, $token);
+    if ($info && !empty($info['is_superadmin'])) return $info;
     if ($info && in_array($area, $info['areas'], true)) return $info;
     return null;
 }

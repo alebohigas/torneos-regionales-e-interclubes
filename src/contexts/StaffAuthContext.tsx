@@ -24,6 +24,8 @@ export interface StaffSession {
   usuario: string;
   nombre: string;
   torneoid: number;
+  tipo?: number;
+  is_superadmin?: boolean;
   areas: StaffArea[];
   expira: string;
 }
@@ -31,7 +33,7 @@ export interface StaffSession {
 interface Ctx {
   session: StaffSession | null;
   loading: boolean;
-  login: (usuario: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  login: (usuario: string, password: string) => Promise<{ ok: boolean; error?: string; isSuperadmin?: boolean }>;
   logout: () => Promise<void>;
   hasArea: (a: StaffArea) => boolean;
 }
@@ -64,6 +66,8 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
           usuario: data.usuario,
           nombre: data.nombre,
           torneoid: data.torneoid,
+          tipo: data.tipo,
+          is_superadmin: !!data.is_superadmin,
           areas: data.areas || [],
           expira: data.expira,
         });
@@ -95,10 +99,12 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
         usuario: data.usuario,
         nombre: data.nombre,
         torneoid: data.torneoid,
+        tipo: data.tipo,
+        is_superadmin: !!data.is_superadmin,
         areas: data.areas || [],
         expira: data.expira,
       });
-      return { ok: true };
+      return { ok: true, isSuperadmin: !!data.is_superadmin };
     } catch (e: any) {
       return { ok: false, error: e.message || 'Network error' };
     } finally {

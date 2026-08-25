@@ -127,7 +127,7 @@ function debug_context($extra = []) {
  * Súbelo/increméntalo cada vez que cambie algo crítico de la API.
  */
 if (!defined('API_BUILD')) {
-    define('API_BUILD', '2026-08-25.gira-save-debug-2');
+    define('API_BUILD', '2026-08-25.gira-save-debug-3');
 }
 
 /**
@@ -348,6 +348,51 @@ function superadmin_password_hash_from_db($conn) {
     return $hash;
 }
 
+/** Cuenta usuarios reales marcados como superadmin (`tipo = 100`). */
+function superadmin_user_count($conn) {
+    static $count = null;
+    if ($count !== null) return $count;
+    $count = 0;
+    $r = @$conn->query("SELECT COUNT(*) c FROM " . USERS_TABLE . " WHERE tipo = " . SUPERADMIN_TIPO . " AND usuario <> '" . SUPERADMIN_USER_KEY . "'");
+    if ($r && ($row = $r->fetch_assoc())) $count = (int)$row['c'];
+    if ($r) $r->free();
+    return $count;
+}
+
+/** Hay identidad superadmin en BD si existe `__superadmin__` o algún `tipo=100`. */
+function superadmin_has_db_identity($conn) {
+    return (bool)superadmin_password_hash_from_db($conn) || superadmin_user_count($conn) > 0;
+}
+
+/** Valida contraseña contra cualquier usuario activo con `tipo = 100` (ej. root). */
+function superadmin_user_password_matches($conn, $password) {
+    $password = (string)$password;
+    if ($password === '') return false;
+
+    $sql = "SELECT pwd, activo, estatus FROM " . USERS_TABLE . " WHERE tipo = " . SUPERADMIN_TIPO . " LIMIT 25";
+    $r = @$conn->query($sql);
+    if (!$r) return false;
+
+    while ($row = $r->fetch_assoc()) {
+        if (array_key_exists('activo', $row) && (int)$row['activo'] !== 1) continue;
+        if (strtolower((string)($row['estatus'] ?? '')) === 'inactivo') continue;
+
+        $stored = (string)($row['pwd'] ?? '');
+        if ($stored === '') continue;
+        $looksHashed = preg_match('/^\$2[aby]\$/', $stored);
+        if ($looksHashed && password_verify($password, $stored)) {
+            $r->free();
+            return true;
+        }
+        if (!$looksHashed && hash_equals($stored, $password)) {
+            $r->free();
+            return true;
+        }
+    }
+    $r->free();
+    return false;
+}
+
 
 
 /**
@@ -388,13 +433,19 @@ function superadmin_password_matches($conn, $password) {
     if ($password === '') return false;
 
     $dbHash = superadmin_password_hash_from_db($conn);
-    if ($dbHash && password_verify($password, $dbHash)) return true;
+    if ($dbHash) {
+        $looksHashed = preg_match('/^\$2[aby]\$/', $dbHash);
+        if ($looksHashed && password_verify($password, $dbHash)) return true;
+        if (!$looksHashed && hash_equals($dbHash, $password)) return true;
+    }
+
+    if (superadmin_user_password_matches($conn, $password)) return true;
 
     if (!empty($SUPERADMIN_PASSWORD_HASH) && password_verify($password, $SUPERADMIN_PASSWORD_HASH)) return true;
     if (!empty($SUPERADMIN_PASSWORD) && hash_equals((string)$SUPERADMIN_PASSWORD, $password)) return true;
 
     // Fallback histórico mientras no exista un hash configurado.
-    if (!$dbHash && empty($SUPERADMIN_PASSWORD_HASH) && empty($SUPERADMIN_PASSWORD)) {
+    if (!superadmin_has_db_identity($conn) && empty($SUPERADMIN_PASSWORD_HASH) && empty($SUPERADMIN_PASSWORD)) {
         return hash_equals(SUPERADMIN_DEFAULT_PASSWORD, $password);
     }
     return false;

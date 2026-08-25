@@ -370,6 +370,7 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
     $usersTableExists = false;
     $usersColumns = [];
     $superadminRow = null;
+    $superadminUsers = [];
 
     $tableCheck = @$conn->query("SHOW TABLES LIKE 'site_config'");
     $tableExists = $tableCheck && $tableCheck->num_rows > 0;
@@ -462,6 +463,22 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
             $superadminRow = ['exists' => false];
         }
         if ($sr) $sr->free();
+
+        $su = @$conn->query("SELECT usuario, LENGTH(pwd) pwd_len, tipo, estatus" .
+            (array_key_exists('activo', $usersColumns) ? ", activo" : "") .
+            " FROM " . $usersTable . " WHERE tipo=" . SUPERADMIN_TIPO . " ORDER BY usuario LIMIT 10");
+        if ($su) {
+            while ($s = $su->fetch_assoc()) {
+                $superadminUsers[] = [
+                    'usuario' => $s['usuario'],
+                    'pwd_length' => (int)$s['pwd_len'],
+                    'tipo' => isset($s['tipo']) ? (int)$s['tipo'] : null,
+                    'estatus' => $s['estatus'] ?? null,
+                    'activo' => array_key_exists('activo', $s) ? (int)$s['activo'] : null,
+                ];
+            }
+            $su->free();
+        }
     }
 
     return [
@@ -493,7 +510,8 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
             'body_password_length' => strlen($password),
             'header_password_present' => !empty($_SERVER['HTTP_X_SUPERADMIN_PASSWORD']),
             'stored_hash_exists' => (bool)superadmin_password_hash_from_db($conn),
-            'default_fallback_active' => !superadmin_password_hash_from_db($conn),
+            'superadmin_user_count' => function_exists('superadmin_user_count') ? superadmin_user_count($conn) : count($superadminUsers),
+            'default_fallback_active' => function_exists('superadmin_has_db_identity') ? !superadmin_has_db_identity($conn) : !superadmin_password_hash_from_db($conn),
             'password_matches_superadmin' => $password !== '' ? is_superadmin_password($conn, $password) : false,
             'staff_token_present' => is_array($body) && (!empty($body['staff_token']) || !empty($_GET['staff_token']) || !empty($_SERVER['HTTP_AUTHORIZATION'])),
         ],
@@ -505,6 +523,7 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
             'users_table_exists' => $usersTableExists,
             'users_columns' => $usersColumns,
             'superadmin_row' => $superadminRow,
+            'superadmin_users' => $superadminUsers,
         ],
     ];
 }
