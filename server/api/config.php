@@ -127,7 +127,7 @@ function debug_context($extra = []) {
  * Súbelo/increméntalo cada vez que cambie algo crítico de la API.
  */
 if (!defined('API_BUILD')) {
-    define('API_BUILD', '2026-08-25.gira-save-debug-3');
+    define('API_BUILD', '2026-08-25.tipo1-superadmin-1');
 }
 
 /**
@@ -309,10 +309,8 @@ function esc($conn, $value) {
 }
 
 // ============= Superadmin Password Helpers =============
-// Reutilizamos la tabla de usuarios existente (`usuarios2` en golftour, que es
-// la que trae los datos reales). El superadmin se guarda como un
-// row reservado con usuario='__superadmin__' y tipo=100 usando la columna
-// `pwd` (la misma que el resto). NO se crea ninguna tabla nueva.
+// En golftour, `usuarios.tipo = 1` es el nivel más alto. Esos usuarios legacy
+// (admin/root/ROOT GT/etc.) son superadmin reales de la app.
 
 // Tabla de usuarios de la app (staff + superadmin).
 // Por defecto `usuarios`: los datos de `usuarios2` se copiaron ahí con la
@@ -329,7 +327,50 @@ if (!defined('USERS_TABLE')) {
 
 const SUPERADMIN_DEFAULT_PASSWORD = 'admin2025';
 const SUPERADMIN_USER_KEY = '__superadmin__';
-const SUPERADMIN_TIPO = 100;
+const SUPERADMIN_TIPO = 1;
+
+/** Compatibilidad: tipo=1 es el superadmin real; tipo=100 solo cubre datos creados por migraciones anteriores. */
+function is_superadmin_tipo($tipo) {
+    $tipo = (int)$tipo;
+    return $tipo === SUPERADMIN_TIPO || $tipo === 100;
+}
+
+/** SQL para filtrar usuarios con nivel superadmin. */
+function superadmin_tipo_where($column = 'tipo') {
+    $column = preg_replace('/[^A-Za-z0-9_\.]/', '', (string)$column);
+    return $column . ' IN (' . SUPERADMIN_TIPO . ', 100)';
+}
+
+/** Verifica columnas opcionales de `usuarios` sin tronar instalaciones legacy. */
+function users_table_has_column($conn, $column) {
+    static $cache = [];
+    $column = (string)$column;
+    if (isset($cache[$column])) return $cache[$column];
+    $c = esc($conn, $column);
+    $t = esc($conn, USERS_TABLE);
+    $r = @$conn->query("SELECT 1 FROM information_schema.COLUMNS
+                         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$t'
+                           AND COLUMN_NAME = '$c' LIMIT 1");
+    $cache[$column] = (bool)($r && $r->num_rows > 0);
+    if ($r) $r->free();
+    return $cache[$column];
+}
+
+/** `0000-00-00` en legacy significa sin límite real, no fecha expirada. */
+function legacy_date_is_set($value) {
+    $value = trim((string)$value);
+    return $value !== '' && !preg_match('/^0{4}-0{2}-0{2}/', $value);
+}
+
+/** Soporta bcrypt moderno y passwords planos legacy. */
+function password_matches_stored_value($password, $stored) {
+    $password = (string)$password;
+    $stored = (string)$stored;
+    if ($password === '' || $stored === '') return false;
+    $looksHashed = preg_match('/^\$2[aby]\$/', $stored);
+    if ($looksHashed) return password_verify($password, $stored);
+    return hash_equals($stored, $password);
+}
 
 /** Lee el hash del superadmin desde `usuarios` (row reservado). */
 function superadmin_password_hash_from_db($conn) {
@@ -348,28 +389,29 @@ function superadmin_password_hash_from_db($conn) {
     return $hash;
 }
 
-/** Cuenta usuarios reales marcados como superadmin (`tipo = 100`). */
+/** Cuenta usuarios reales marcados como superadmin (`tipo = 1`). */
 function superadmin_user_count($conn) {
     static $count = null;
     if ($count !== null) return $count;
     $count = 0;
-    $r = @$conn->query("SELECT COUNT(*) c FROM " . USERS_TABLE . " WHERE tipo = " . SUPERADMIN_TIPO . " AND usuario <> '" . SUPERADMIN_USER_KEY . "'");
+    $r = @$conn->query("SELECT COUNT(*) c FROM " . USERS_TABLE . " WHERE " . superadmin_tipo_where() . " AND usuario <> '" . SUPERADMIN_USER_KEY . "'");
     if ($r && ($row = $r->fetch_assoc())) $count = (int)$row['c'];
     if ($r) $r->free();
     return $count;
 }
 
-/** Hay identidad superadmin en BD si existe `__superadmin__` o algún `tipo=100`. */
+/** Hay identidad superadmin en BD si existe `__superadmin__` o algún `tipo=1`. */
 function superadmin_has_db_identity($conn) {
     return (bool)superadmin_password_hash_from_db($conn) || superadmin_user_count($conn) > 0;
 }
 
-/** Valida contraseña contra cualquier usuario activo con `tipo = 100` (ej. root). */
+/** Valida contraseña contra cualquier usuario activo con `tipo = 1` (ej. admin/root/ROOT GT). */
 function superadmin_user_password_matches($conn, $password) {
     $password = (string)$password;
     if ($password === '') return false;
 
-    $sql = "SELECT pwd, activo, estatus FROM " . USERS_TABLE . " WHERE tipo = " . SUPERADMIN_TIPO . " LIMIT 25";
+    $pwd2Select = users_table_has_column($conn, 'pwd2') ? ', pwd2' : '';
+    $sql = "SELECT pwd$pwd2Select, activo, estatus FROM " . USERS_TABLE . " WHERE " . superadmin_tipo_where() . " LIMIT 50";
     $r = @$conn->query($sql);
     if (!$r) return false;
 
@@ -377,14 +419,11 @@ function superadmin_user_password_matches($conn, $password) {
         if (array_key_exists('activo', $row) && (int)$row['activo'] !== 1) continue;
         if (strtolower((string)($row['estatus'] ?? '')) === 'inactivo') continue;
 
-        $stored = (string)($row['pwd'] ?? '');
-        if ($stored === '') continue;
-        $looksHashed = preg_match('/^\$2[aby]\$/', $stored);
-        if ($looksHashed && password_verify($password, $stored)) {
+        if (password_matches_stored_value($password, $row['pwd'] ?? '')) {
             $r->free();
             return true;
         }
-        if (!$looksHashed && hash_equals($stored, $password)) {
+        if (array_key_exists('pwd2', $row) && password_matches_stored_value($password, $row['pwd2'] ?? '')) {
             $r->free();
             return true;
         }
@@ -434,9 +473,7 @@ function superadmin_password_matches($conn, $password) {
 
     $dbHash = superadmin_password_hash_from_db($conn);
     if ($dbHash) {
-        $looksHashed = preg_match('/^\$2[aby]\$/', $dbHash);
-        if ($looksHashed && password_verify($password, $dbHash)) return true;
-        if (!$looksHashed && hash_equals($dbHash, $password)) return true;
+        if (password_matches_stored_value($password, $dbHash)) return true;
     }
 
     if (superadmin_user_password_matches($conn, $password)) return true;
