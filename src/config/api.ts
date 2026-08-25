@@ -100,9 +100,16 @@ export const getTournamentStatsUrl = (): string => `${API_BASE_URL}/tournament.p
  * @param opts.skin  When true, appends `?skin=1` so the endpoint returns
  *                   only categories with SKIN GAME players (Skeenjuga=1)
  *                   and counts only those players. Used by /skinplayers.
+ * @param opts.withPlayers  When true, appends `?withplayers=1` para replicar
+ *                   el query legacy de /jugadores (INNER JOIN categorias +
+ *                   jugadores, estatus>0): solo categorías con jugadores.
  */
-export const getCategoriesUrl = (opts: { skin?: boolean } = {}): string =>
-  `${API_BASE_URL}/categories.php${buildQuery(opts.skin ? { skin: '1' } : {})}`;
+export const getCategoriesUrl = (opts: { skin?: boolean; withPlayers?: boolean } = {}): string =>
+  `${API_BASE_URL}/categories.php${buildQuery({
+    ...(opts.skin ? { skin: '1' } : {}),
+    ...(opts.withPlayers ? { withplayers: '1' } : {}),
+  })}`;
+
 
 /**
  * Players by category ID.
