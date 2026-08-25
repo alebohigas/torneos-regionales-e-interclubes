@@ -427,12 +427,25 @@ function is_superadmin_session() {
     return true;
 }
 
-/** Persiste un nuevo hash del superadmin en `app_auth` (upsert). */
+/** Persiste el hash del superadmin en `usuarios` (row reservado, upsert). */
 function set_superadmin_password_hash($conn, $hash) {
-    ensure_app_auth_table($conn);
     $h = esc($conn, $hash);
-    $sql = "INSERT INTO app_auth (k, v) VALUES ('superadmin_pwd_hash', '$h')
-              ON DUPLICATE KEY UPDATE v=VALUES(v)";
-    if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
+    $key = SUPERADMIN_USER_KEY;
+    $tipo = SUPERADMIN_TIPO;
 
+    // Verifica que la columna pwd admita el hash completo (bcrypt = 60 chars).
+    $r = @$conn->query("SELECT CHARACTER_MAXIMUM_LENGTH len FROM information_schema.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios'
+                            AND COLUMN_NAME = 'pwd' LIMIT 1");
+    $len = ($r && $r->num_rows > 0) ? (int)$r->fetch_assoc()['len'] : 255;
+    if ($r) $r->free();
+    if ($len > 0 && $len < strlen($hash)) {
+        json_error('La columna usuarios.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios_table.sql', 500);
+    }
+
+    $sql = "INSERT INTO usuarios (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
+              VALUES ('$key', '$h', 0, $tipo, 0, 'ACTIVO', 'Superadmin', NOW())
+              ON DUPLICATE KEY UPDATE pwd=VALUES(pwd), tipo=VALUES(tipo), estatus='ACTIVO'";
+    if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
 }
+
