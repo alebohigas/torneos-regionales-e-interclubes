@@ -447,7 +447,7 @@ function registro_pk_col($conn) {
 
 // ============= POST submission (public) =============
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'verify')) {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
     $torneoCol = registro_torneo_col($conn);
     $pkCol = registro_pk_col($conn);
 
@@ -921,7 +921,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
      * Returns { exists: bool } to let the form warn before submit.
      */
     if (optional_param('action') === 'check_email') {
-        $torneoid = (int) require_param('torneoid');
+        $torneoid = (int) require_torneoid($conn);
         $email    = trim((string) optional_param('email', ''));
         $nombre   = trim((string) optional_param('nombre', ''));
         $apellido = trim((string) optional_param('apellido', ''));

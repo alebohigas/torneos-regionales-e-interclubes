@@ -94,7 +94,7 @@ function ensure_section_column($conn) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
 
     if (!registro_fields_table_exists($conn)) {
         json_response(['fields' => $DEFAULT_FIELDS, 'source' => 'defaults']);

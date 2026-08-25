@@ -108,7 +108,7 @@ function auto_seed_from_precios($conn, $torneoid) {
 // GET — lista (con auto-seed)
 // ===========================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
 
     if (!reglas_table_exists($conn)) {
         json_response(['rules' => [], 'source' => 'no_table']);

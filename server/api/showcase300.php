@@ -29,7 +29,7 @@
  */
 require_once 'config.php';
 
-$torneoid = (int) require_param('torneoid');
+$torneoid = (int) require_torneoid($conn);
 $tipo     = strtolower(optional_param('tipo', ''));
 
 $VALID = ['driver', 'driverp', 'approach', 'putt', 'oyes', 'oyesx'];

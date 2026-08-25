@@ -142,7 +142,7 @@ function rule_specificity($rule) {
 // GET — lista o match
 // ===========================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
     $action   = optional_param('action', 'list');
 
     if (!precios_table_exists($conn)) {

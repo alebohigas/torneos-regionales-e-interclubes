@@ -27,7 +27,7 @@
  */
 require_once 'config.php';
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 
 /** Safe wrapper: return [] on failure instead of aborting with json_error. */

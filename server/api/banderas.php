@@ -75,7 +75,7 @@ function normalize_bandera($r) {
 // GET
 // ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
     $today    = date('Y-m-d');
     $tomorrow = date('Y-m-d', strtotime('+1 day'));
 

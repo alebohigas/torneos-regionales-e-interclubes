@@ -38,7 +38,7 @@ function convocatoria_content_table_exists($conn) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
 
     if (!convocatoria_content_table_exists($conn)) {
         json_response(['sections' => []]);
