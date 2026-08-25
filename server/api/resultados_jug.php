@@ -77,22 +77,69 @@ if ($hasNeto)   $groupExtras .= ', a.numganadorneto';
 if ($hasGross)  $groupExtras .= ', a.numganadorgross';
 if ($hasLegacy) $groupExtras .= ', a.numjugprem';
 
-$sql = "SELECT a.categoria_id, a.categoria, a.abreviatura, a.sistema, a.formato,
+$sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura, a.sistema, a.formato,
                a.estilo, a.gross, a.porcentaje, a.salida, a.hoyosajugar,
+               a.hcpIdxMin, a.hcpIdxMax, a.hoyosacorte,
                $netoExpr as numganadorneto,
                $grossExpr as numganadorgross,
                COUNT(b.id) as playerCount
         FROM categorias a
         JOIN jugadores b ON (a.categoria_id = b.categoriaid)
-        WHERE a.categoria_id = $cid
-        GROUP BY a.categoria_id, a.categoria, a.abreviatura, a.sistema, a.formato,
-                 a.estilo, a.gross, a.porcentaje, a.salida, a.hoyosajugar"
+        WHERE a.estatus > 0 AND a.categoria_id = $cid
+        GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura, a.sistema, a.formato,
+                 a.estilo, a.gross, a.porcentaje, a.salida, a.hoyosajugar,
+                 a.hcpIdxMin, a.hcpIdxMax, a.hoyosacorte"
         . $groupExtras;
 
 $catInfo = query_one($conn, $sql);
 debug_log_query('Category info', $sql);
 if (!$catInfo) {
     json_error('Category not found', 404);
+}
+
+/**
+ * El torneo del reporte se toma de la categoría (legacy: $torneoid = categorias.torneo_id),
+ * así el endpoint funciona incluso si el cliente manda un torneoid distinto.
+ */
+if (!empty($catInfo['torneo_id'])) {
+    $torneoid = $catInfo['torneo_id'];
+    $tid = esc($conn, $torneoid);
+}
+
+// ============= Helpers de detección de esquema =============
+/** ¿Existe la columna en la tabla de la base activa? */
+function gira_column_exists($conn, $table, $column) {
+    $t = esc($conn, $table);
+    $c = esc($conn, $column);
+    $res = @$conn->query("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$t'
+                            AND COLUMN_NAME = '$c' LIMIT 1");
+    if (!$res) return false;
+    $ok = $res->num_rows > 0;
+    $res->free();
+    return $ok;
+}
+
+/** ¿Existe la función almacenada en la base activa? */
+function gira_routine_exists($conn, $name) {
+    $n = esc($conn, $name);
+    $res = @$conn->query("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES
+                          WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = '$n' LIMIT 1");
+    if (!$res) return false;
+    $ok = $res->num_rows > 0;
+    $res->free();
+    return $ok;
+}
+
+/** ¿Existe la tabla o vista en la base activa? */
+function gira_relation_exists($conn, $name) {
+    $n = esc($conn, $name);
+    $res = @$conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$n' LIMIT 1");
+    if (!$res) return false;
+    $ok = $res->num_rows > 0;
+    $res->free();
+    return $ok;
 }
 
 /**
@@ -106,6 +153,25 @@ if (strtoupper($catInfo['formato'] ?? '') === 'PAREJAS') {
     require __DIR__ . '/resultados_parejas.php';
     exit;
 }
+
+/**
+ * Dispatcher GOLFTOUR (esquema de giras): esa base no tiene las vistas
+ * v_cd_ulttar_sa/_so ni la semántica statlsc usada abajo; en su lugar expone
+ * f_score_dia / f_torneoso / v_cd_ulttar y campo_tee con id_campo/id_tee.
+ * Se puede forzar con ?legacy=1 para pruebas.
+ */
+$forceGira = (optional_param('legacy', '0') === '1');
+$isGiraSchema = $forceGira || (
+    gira_routine_exists($conn, 'f_score_dia')
+    && gira_routine_exists($conn, 'f_torneoso')
+    && gira_relation_exists($conn, 'v_cd_ulttar')
+    && !gira_relation_exists($conn, 'v_cd_ulttar_sa')
+);
+if ($isGiraSchema) {
+    require __DIR__ . '/resultados_jug_gira.php';
+    exit;
+}
+
 
 $sistema = strtoupper($catInfo['sistema']);
 $formato = strtoupper($catInfo['formato']);

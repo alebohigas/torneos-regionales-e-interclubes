@@ -18,7 +18,7 @@ $sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
                COUNT(b.id) as playerCount
         FROM categorias a
         JOIN jugadores b ON (a.categoria_id = b.categoriaid)
-        WHERE a.estatus = 1 AND a.torneo_id = $tid
+        WHERE a.estatus > 0 AND a.torneo_id = $tid
         GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
                  a.sistema, a.formato, a.estilo, a.gross,
                  a.hcpIdxMin, a.hcpIdxMax, a.porcentaje,
