@@ -309,9 +309,13 @@ function esc($conn, $value) {
 }
 
 // ============= Superadmin Password Helpers =============
-// Reutilizamos la tabla `usuarios` existente. El superadmin se guarda como un
+// Reutilizamos la tabla de usuarios existente (`usuarios2` en golftour, que es
+// la que trae los datos reales). El superadmin se guarda como un
 // row reservado con usuario='__superadmin__' y tipo=100 usando la columna
 // `pwd` (la misma que el resto). NO se crea ninguna tabla nueva.
+
+// Tabla de usuarios de la app (staff + superadmin).
+if (!defined('USERS_TABLE')) define('USERS_TABLE', 'usuarios2');
 
 const SUPERADMIN_DEFAULT_PASSWORD = 'admin2025';
 const SUPERADMIN_USER_KEY = '__superadmin__';
@@ -435,12 +439,12 @@ function set_superadmin_password_hash($conn, $hash) {
 
     // Verifica que la columna pwd admita el hash completo (bcrypt = 60 chars).
     $r = @$conn->query("SELECT CHARACTER_MAXIMUM_LENGTH len FROM information_schema.COLUMNS
-                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios'
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" . USERS_TABLE . "'
                             AND COLUMN_NAME = 'pwd' LIMIT 1");
     $len = ($r && $r->num_rows > 0) ? (int)$r->fetch_assoc()['len'] : 255;
     if ($r) $r->free();
     if ($len > 0 && $len < strlen($hash)) {
-        json_error('La columna usuarios.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios_table.sql', 500);
+        json_error('La columna ' . USERS_TABLE . '.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios2_table.sql', 500);
     }
 
     $sql = "INSERT INTO " . USERS_TABLE . " (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
