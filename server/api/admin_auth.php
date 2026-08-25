@@ -22,6 +22,7 @@ $action = $_GET['action'] ?? $body['action'] ?? 'login';
 if ($action === 'login') {
     $password = (string)($body['password'] ?? '');
     if (!is_superadmin_password($conn, $password)) json_error('Unauthorized', 401);
+    establish_superadmin_session();
     json_response(['ok' => true]);
 }
 
@@ -34,6 +35,7 @@ if ($action === 'change_password') {
     if (hash_equals($current, $new)) json_error('La nueva contraseña debe ser distinta', 400);
 
     set_superadmin_password_hash($conn, password_hash($new, PASSWORD_DEFAULT));
+    establish_superadmin_session();
     json_response(['ok' => true, 'changed' => true]);
 }
 

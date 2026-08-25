@@ -1,7 +1,6 @@
 /**
  * Hero Section
- * Displays tournament name (split: Roman numeral + rest), dates, and club name
- * Data fetched from tournament.php via useTournamentInfo hook
+ * Displays the active gira name and status.
  * 
  * Tournament names follow the pattern: "XLVI TORNEO ANUAL SEMANA SANTA"
  * - Roman numeral prefix is displayed large in gold (secondary)
@@ -11,9 +10,7 @@
  */
 
 import { useEffect } from 'react';
-import { useTournamentInfo } from '@/hooks/useTournamentData';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
@@ -35,7 +32,6 @@ const parseTournamentName = (name: string) => {
 };
 
 const Hero = () => {
-  const { data: tournamentInfo } = useTournamentInfo();
   const { data: siteConfig } = useSiteConfig();
   /**
    * Gira activa (eje del sitio). Su nombre es el título del hero; cuando
@@ -53,10 +49,7 @@ const Hero = () => {
    *   - Slot 1 → /convocatoria (o /salidas en Atlas CC 354)
    *   - Slot 2 → /jugadores
    */
-  const isAtlas354 = String(tournamentInfo?.id ?? '') === '354';
-  const fallback1 = isAtlas354
-    ? { label: 'Ver Salidas',       href: '/salidas' }
-    : { label: 'Ver Convocatoria',  href: '/convocatoria' };
+  const fallback1 = { label: 'Ver Convocatoria', href: '/convocatoria' };
   const fallback2 = { label: 'Ver Jugadores', href: '/jugadores' };
 
   const resolveSlot = (pageId: string | null | undefined, fallback: { label: string; href: string }) => {
@@ -77,10 +70,9 @@ const Hero = () => {
   const slot2 = resolveSlot(cfg2, fallback2);
 
   /**
-   * Título del hero: nombre de la GIRA cuando está configurada; si no,
-   * cae al nombre del torneo (instalaciones sin modelo de giras).
+   * Título del hero: nombre de la GIRA configurada.
    */
-  const heroName = gira?.name || tournamentInfo?.name || '';
+  const heroName = gira?.name || '';
   /** Gira terminada => aviso público "COPA TERMINADA". */
   const giraFinished = !!gira && gira.uso === 0;
 
@@ -89,24 +81,12 @@ const Hero = () => {
     ? parseTournamentName(heroName)
     : { roman: '', rest: '' };
 
-  /** Set document/tab title dynamically from gira/tournament name + club */
+  /** Set document/tab title dynamically from the active gira. */
   useEffect(() => {
     if (heroName) {
-      const club = tournamentInfo?.club || '';
-      document.title = club ? `${heroName} | ${club}` : heroName;
+      document.title = heroName;
     }
-  }, [heroName, tournamentInfo?.club]);
-
-  /** Format date range for display */
-  /** Format date range avoiding timezone offset issues by parsing as UTC */
-  const formatDate = (start: string, end: string) => {
-    const [sy, sm, sd] = start.split('-').map(Number);
-    const [ey, em, ed] = end.split('-').map(Number);
-    const startDate = new Date(sy, sm - 1, sd);
-    const endDate = new Date(ey, em - 1, ed);
-    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
-    return `Del ${startDate.toLocaleDateString('es-MX', options)} al ${endDate.toLocaleDateString('es-MX', { ...options, year: 'numeric' })}`;
-  };
+  }, [heroName]);
 
   return (
     <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
@@ -114,9 +94,7 @@ const Hero = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: tournamentInfo?.heroImageUrl 
-            ? `url('${tournamentInfo.heroImageUrl}')` 
-            : `url('https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&w=1920&q=80')`,
+          backgroundImage: `url('/images/hero-home.jpg')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-golf-dark/70 via-golf-dark/50 to-golf-dark/80" />
@@ -149,30 +127,7 @@ const Hero = () => {
           )}
 
 
-          {/* Club name in gold italic */}
-          <p className="text-xl md:text-2xl font-display italic text-secondary mb-8 animate-fade-in-up animation-delay-200">
-            {tournamentInfo?.club || ''}
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 animate-fade-in-up animation-delay-300">
-            {tournamentInfo?.startDate && tournamentInfo?.endDate && (
-              <div className="flex items-center gap-2 text-primary-foreground/90">
-                <Calendar className="h-5 w-5 text-secondary" />
-                <span className="text-lg">{formatDate(tournamentInfo.startDate, tournamentInfo.endDate)}</span>
-              </div>
-            )}
-            {tournamentInfo?.venue && (
-              <>
-                <span className="hidden sm:block text-primary-foreground/50">|</span>
-                <div className="flex items-center gap-2 text-primary-foreground/90">
-                  <MapPin className="h-5 w-5 text-secondary" />
-                  <span className="text-lg">{tournamentInfo.venue}</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-400">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up animation-delay-400">
             <Button asChild size="lg" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-gold font-semibold px-8">
               <Link to={slot1.href}>{slot1.label}</Link>
             </Button>

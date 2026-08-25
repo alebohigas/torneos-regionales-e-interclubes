@@ -470,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
     // Auth: superadmin password or a normal staff user with permission for the edited area.
     $password = $body['password'] ?? '';
-    if (!is_superadmin_password($conn, $password)) {
+    if (!is_superadmin_session() && !is_superadmin_password($conn, $password)) {
         $fieldAreas = [
             'live_scoring_config'    => 'live',
             'sponsors_config'        => 'uploads',
@@ -705,7 +705,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
      * reactivarlo ningún usuario de staff (ver /setup).
      */
     if (array_key_exists('modules_config', $body)) {
-        if (!is_superadmin_password($conn, $password)) {
+        if (!is_superadmin_session() && !is_superadmin_password($conn, $password)) {
             json_error('Solo el superadmin puede cambiar los módulos', 403);
         }
         if (!$hasModulesConfig) {

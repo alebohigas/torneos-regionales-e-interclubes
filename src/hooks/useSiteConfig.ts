@@ -539,6 +539,7 @@ const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: 
 
   const res = await fetch(`${API_BASE_URL}/site_config.php`, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       'X-Superadmin-Password': effectivePayload.password,

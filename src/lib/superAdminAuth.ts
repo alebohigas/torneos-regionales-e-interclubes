@@ -48,6 +48,7 @@ export const validateSuperAdminPassword = async (password: string): Promise<bool
   try {
     const response = await fetch(`${API_BASE_URL}/admin_auth.php?action=login`, {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
     });
@@ -72,6 +73,7 @@ export const changeSuperAdminPassword = async (
 ): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/admin_auth.php?action=change_password`, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });

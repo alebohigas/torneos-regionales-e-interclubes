@@ -390,6 +390,39 @@ function is_superadmin_password($conn, $password) {
     return false;
 }
 
+/** Inicia una sesión PHP segura y limitada al mismo sitio. */
+function superadmin_session_start() {
+    if (session_status() === PHP_SESSION_ACTIVE) return;
+    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
+    session_start();
+}
+
+/** Registra una autenticación de superadmin válida para esta pestaña/sesión. */
+function establish_superadmin_session() {
+    superadmin_session_start();
+    session_regenerate_id(true);
+    $_SESSION['superadmin_authenticated_at'] = time();
+}
+
+/** La sesión administrativa expira tras 8 horas de inactividad. */
+function is_superadmin_session() {
+    superadmin_session_start();
+    $authenticatedAt = (int)($_SESSION['superadmin_authenticated_at'] ?? 0);
+    if ($authenticatedAt <= 0 || time() - $authenticatedAt > 28800) {
+        unset($_SESSION['superadmin_authenticated_at']);
+        return false;
+    }
+    $_SESSION['superadmin_authenticated_at'] = time();
+    return true;
+}
+
 /** Persiste un nuevo hash del superadmin en `usuarios` (upsert). */
 function set_superadmin_password_hash($conn, $hash) {
     $key = SUPERADMIN_USER_KEY;
