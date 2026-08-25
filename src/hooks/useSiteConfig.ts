@@ -472,6 +472,8 @@ export interface SiteConfig {
 /** Payload for saving config (all fields optional except password) */
 export interface SaveConfigPayload {
   password: string;
+  /** Devuelve diagnóstico del guardado; no incluye contraseñas ni hashes. */
+  _debug_save?: boolean;
   /** Gira activa (`gira.giraid`) sobre la que se basa todo el sitio. */
   giraid?: number | null;
   menu_order?: Record<string, number> | null;
@@ -530,7 +532,16 @@ const fetchSiteConfig = async (): Promise<SiteConfig> => {
 /**
  * Save config fields to server
  */
-const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: string; saved: boolean; giraid: number | null }> => {
+export interface SaveSiteConfigResult {
+  domain: string;
+  saved: boolean;
+  giraid: number | null;
+  debug?: unknown;
+}
+
+export type SiteConfigSaveError = Error & { debug?: unknown };
+
+const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<SaveSiteConfigResult> => {
   /** Always submit the active session password, even from legacy admin forms. */
   const effectivePayload = {
     ...payload,
@@ -548,7 +559,9 @@ const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: 
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || 'Failed to save config');
+    const error = new Error(err.error || 'Failed to save config') as SiteConfigSaveError;
+    error.debug = err.debug ?? err.auth_debug;
+    throw error;
   }
   return res.json();
 };

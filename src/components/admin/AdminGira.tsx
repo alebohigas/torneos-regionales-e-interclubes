@@ -19,9 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2, Loader2, Route } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clipboard, Loader2, Route } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useSiteConfig, useSaveSiteConfig } from '@/hooks/useSiteConfig';
+import { useSiteConfig, useSaveSiteConfig, type SiteConfigSaveError } from '@/hooks/useSiteConfig';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useGiraInfo, useGirasList } from '@/hooks/useGiraData';
 import { getSuperAdminPassword } from '@/lib/superAdminAuth';
@@ -35,6 +35,9 @@ const AdminGira = () => {
   const saveSiteConfig = useSaveSiteConfig();
 
   const [input, setInput] = useState(giraId);
+  const [saveDebug, setSaveDebug] = useState<unknown>(null);
+
+  const formattedDebug = saveDebug ? JSON.stringify(saveDebug, null, 2) : '';
 
   /** Refleja el valor del servidor cuando resuelve. */
   useEffect(() => {
@@ -48,10 +51,12 @@ const AdminGira = () => {
   const handleSave = () => {
     const value = parseInt(input, 10);
     if (!Number.isFinite(value)) return;
+    setSaveDebug(null);
     saveSiteConfig.mutate(
-      { giraid: value, password: getSuperAdminPassword() },
+      { giraid: value, password: getSuperAdminPassword(), _debug_save: true },
       {
         onSuccess: (res) => {
+          setSaveDebug(res?.debug ?? null);
           const confirmed = res?.giraid;
           if (confirmed == null || Number(confirmed) !== value) {
             toast({
@@ -67,15 +72,26 @@ const AdminGira = () => {
             description: `La gira ${value} aplica para todos los visitantes de este dominio.`,
           });
         },
-        onError: (err: any) =>
+        onError: (err: SiteConfigSaveError) => {
+          setSaveDebug(err.debug ?? { error: err?.message ?? err });
           toast({
             title: 'Error al guardar en servidor',
             description: `${err?.message ?? err}. No se modificó la gira activa.`,
             variant: 'destructive',
-          }),
+          });
+        },
       }
     );
 
+  };
+
+  const handleCopyDebug = async () => {
+    if (!formattedDebug) return;
+    await navigator.clipboard.writeText(formattedDebug);
+    toast({
+      title: 'Debug copiado',
+      description: 'Pega este diagnóstico para revisar exactamente qué está fallando.',
+    });
   };
 
   return (
@@ -155,6 +171,26 @@ const AdminGira = () => {
               <CheckCircle2 className="h-4 w-4 text-primary" />
               Gira local: <span className="font-mono font-bold">{giraId}</span>
             </p>
+          )}
+
+          {saveDebug && (
+            <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-destructive">Debug de guardado</p>
+                  <p className="text-xs text-muted-foreground">
+                    No contiene contraseñas ni hashes; sólo indica qué tabla, columna, sesión o valor falló.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={handleCopyDebug} className="gap-2">
+                  <Clipboard className="h-4 w-4" />
+                  Copiar
+                </Button>
+              </div>
+              <pre className="max-h-80 overflow-auto rounded-md bg-background p-3 text-xs text-foreground whitespace-pre-wrap">
+                {formattedDebug}
+              </pre>
+            </div>
           )}
         </div>
 
