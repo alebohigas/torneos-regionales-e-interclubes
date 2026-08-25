@@ -11,14 +11,9 @@ const Footer = () => {
   const { data: siteConfig } = useSiteConfig();
 
   /**
-   * Override de tagline por torneo. Atlas CC (torneoid=354) pidió una
-   * variante ligeramente distinta ("...más importante de México").
-   */
-  /**
    * Prioridad del tagline:
    *   1. Override manual desde /admin → Estadísticas Página → Slogan del footer.
-   *   2. Override histórico por torneo (Atlas CC 354).
-   *   3. Default global.
+   *   2. Default global para la gira.
    */
   const adminTagline = siteConfig?.stats_page_config?.overrides?.footerTagline?.trim();
   const tagline =

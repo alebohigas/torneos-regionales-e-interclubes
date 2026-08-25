@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
 import { useGiraInfo } from '@/hooks/useGiraData';
+import heroImage from '@/assets/competicion-hero.jpg';
 
 /** Regex to match leading Roman numerals (I, V, X, L, C, D, M) */
 const ROMAN_NUMERAL_REGEX = /^([IVXLCDM]+)\s+(.+)$/;
@@ -94,7 +95,7 @@ const Hero = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/images/hero-home.jpg')`,
+          backgroundImage: `url('${heroImage}')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-golf-dark/70 via-golf-dark/50 to-golf-dark/80" />
