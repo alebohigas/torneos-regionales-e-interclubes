@@ -36,16 +36,20 @@ interface PlayersApiResponse {
  * @param opts.skin  When true, only categories with SKIN GAME players
  *                   (Skeenjuga=1) are returned, with counts filtered
  *                   to skin-enrolled players only. Used by /skinplayers.
+ * @param opts.withPlayers  When true, only categories with at least one
+ *                   player (INNER JOIN categorias+jugadores, estatus>0).
+ *                   Usado por /jugadores.
  */
-export const useCategories = (opts: { skin?: boolean } = {}) => {
+export const useCategories = (opts: { skin?: boolean; withPlayers?: boolean } = {}) => {
   return useQuery<CategoryDetail[]>({
     // Distinct key so /jugadores and /skinplayers caches don't collide.
-    queryKey: ['categories', opts.skin ? 'skin' : 'all'],
-    queryFn: () => apiFetch<CategoryDetail[]>(getCategoriesUrl({ skin: opts.skin })),
+    queryKey: ['categories', opts.skin ? 'skin' : 'all', opts.withPlayers ? 'withplayers' : 'any'],
+    queryFn: () => apiFetch<CategoryDetail[]>(getCategoriesUrl({ skin: opts.skin, withPlayers: opts.withPlayers })),
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });
 };
+
 
 // ============= Players by Category =============
 
