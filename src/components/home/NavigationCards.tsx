@@ -41,6 +41,7 @@ const descriptionMap: Record<string, string> = {
   convocatoria: 'Información sobre inscripciones, fechas y requisitos',
   eventos: 'Calendario de actividades y eventos del torneo',
   jugadores: 'Lista completa de participantes inscritos',
+  'field-gira': 'Field de la gira por categoría',
   salidas: 'Horarios de salida y grupos de juego',
   'live-scoring': 'Resultados en tiempo real durante el torneo',
   live: 'Resultados en vivo y scoring en tiempo real',
