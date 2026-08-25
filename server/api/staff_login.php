@@ -52,12 +52,14 @@ if (password_matches_stored_value($password, $pwd)) {
 }
 if (!$ok) json_error('Credenciales inválidas', 401);
 
-// Verificar estatus + rango fechas. En legacy, 0000-00-00 significa sin límite.
+// Verificar estatus + rango fechas. En legacy, tipo=1 es superadmin y no se
+// bloquea por `desde/hasta`; varios roots históricos traen fechas vencidas.
+$isSuperadmin = is_superadmin_tipo($row['tipo'] ?? 0);
 if ((int)$row['activo'] !== 1) json_error('Usuario inactivo', 403);
 if (strtolower((string)$row['estatus']) === 'inactivo') json_error('Usuario inactivo', 403);
 $today = (new DateTime('today'))->format('Y-m-d');
-if (legacy_date_is_set($row['desde'] ?? null) && $today < $row['desde']) json_error('Acceso aún no inicia (' . $row['desde'] . ')', 403);
-if (legacy_date_is_set($row['hasta'] ?? null) && $today > $row['hasta']) json_error('Acceso expirado (' . $row['hasta'] . ')', 403);
+if (!$isSuperadmin && legacy_date_is_set($row['desde'] ?? null) && $today < $row['desde']) json_error('Acceso aún no inicia (' . $row['desde'] . ')', 403);
+if (!$isSuperadmin && legacy_date_is_set($row['hasta'] ?? null) && $today > $row['hasta']) json_error('Acceso expirado (' . $row['hasta'] . ')', 403);
 
 // Generar token
 $token = bin2hex(random_bytes(32));
@@ -72,7 +74,6 @@ $te = esc($conn, $token);
 $ee = esc($conn, $expira);
 $conn->query("INSERT INTO usuario_sesion (usuario_id, token, expira) VALUES ($uid, '$te', '$ee')");
 
-$isSuperadmin = is_superadmin_tipo($row['tipo'] ?? 0);
 if ($isSuperadmin) {
     establish_superadmin_session();
 }
