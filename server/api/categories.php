@@ -125,7 +125,7 @@ $sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
         LEFT JOIN campo_tee ct ON (ct.salidaid = a.salida AND ct.campoid = (
             SELECT campo FROM caljuego WHERE categoriaid = a.categoria_id LIMIT 1
         ))
-        WHERE a.estatus = 1 AND a.torneo_id = $tid $skinCatFilter
+        WHERE a.estatus > 0 AND a.torneo_id = $tid $skinCatFilter
         GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
                  a.sistema, a.formato, a.estilo, a.hcpIdxMin, a.hcpIdxMax,
                  a.porcentaje, a.hoyosajugar, a.hoyosacorte, a.salida,
@@ -133,7 +133,8 @@ $sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
                  a.maxjugadores, a.hoyosxronda,
                  a.Skin_grupo_id, a.Skeenporcent$ageMinSel$ageMaxSel,
                  s.tee, s.color, ct.rating, ct.slope, ct.parcampo
-        " . ($skinOnly ? " HAVING playerCount > 0 " : "") . "
+        " . (($skinOnly || $onlyWithPlayers) ? " HAVING playerCount > 0 " : "") . "
+
         ORDER BY a.categoria_id ASC";
 
 $rows = query_all($conn, $sql);
