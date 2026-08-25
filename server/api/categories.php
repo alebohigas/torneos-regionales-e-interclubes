@@ -59,6 +59,19 @@ $playerJoinCond = $skinOnly
     : "(a.categoria_id = b.categoriaid)";
 $skinCatFilter = $skinOnly ? " AND a.catrel = 0 " : '';
 
+/**
+ * Optional `?withplayers=1` flag (usado por /jugadores).
+ * Replica el query legacy:
+ *   SELECT a.categoria_id, a.torneo_id, a.categoria, count(*) as tot
+ *   FROM categorias a JOIN jugadores b ON (a.categoria_id = b.categoriaid)
+ *   WHERE a.estatus > 0 AND a.torneo_id = $torneoid
+ *   GROUP BY categoria_id, a.torneo_id, a.categoria
+ * Es decir: solo categorías con al menos un jugador inscrito (INNER JOIN),
+ * de modo que el total de la página coincida con el conteo real del torneo.
+ */
+$onlyWithPlayers = isset($_GET['withplayers']) && $_GET['withplayers'] === '1';
+
+
 /** Detect new optional age-range columns added for the Pre-Registro feature. */
 $ageMinExists = $conn->query("SHOW COLUMNS FROM categorias LIKE 'age_range_min'");
 $ageMinExists = $ageMinExists && $ageMinExists->num_rows > 0;
