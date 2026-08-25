@@ -357,7 +357,7 @@ $hasGiraId = site_config_has_giraid($conn);
  * columnas/tablas encontradas y si la contraseña enviada sí valida.
  */
 function site_config_debug_snapshot($conn, $domain, $body = []) {
-    global $DB_HOST, $DB_USER, $DB_NAME, $DB_PORT, $DB_PASS;
+    global $DB_HOST, $DB_USER, $DB_NAME, $DB_PORT, $DB_PASS, $SUPERADMIN_PASSWORD, $SUPERADMIN_PASSWORD_HASH;
 
     $payloadKeys = is_array($body) ? array_keys($body) : [];
     $requestedGiraId = is_array($body) && array_key_exists('giraid', $body) ? $body['giraid'] : null;
@@ -383,6 +383,8 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
                     'type' => $c['Type'],
                     'null' => $c['Null'],
                     'key'  => $c['Key'],
+                    'default' => array_key_exists('Default', $c) ? $c['Default'] : null,
+                    'extra' => $c['Extra'] ?? '',
                 ];
             }
             $cols->free();
@@ -435,6 +437,8 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
                         'type' => $c['Type'],
                         'null' => $c['Null'],
                         'key'  => $c['Key'],
+                        'default' => array_key_exists('Default', $c) ? $c['Default'] : null,
+                        'extra' => $c['Extra'] ?? '',
                     ];
                 }
             }
@@ -478,6 +482,10 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
             'db_pass_length' => is_string($DB_PASS ?? null) ? strlen($DB_PASS) : 0,
             'db_pass_has_outer_spaces' => is_string($DB_PASS ?? null) ? (trim($DB_PASS) !== $DB_PASS) : false,
             'users_table' => $usersTable,
+            'superadmin_password_configured' => !empty($SUPERADMIN_PASSWORD),
+            'superadmin_password_length' => is_string($SUPERADMIN_PASSWORD ?? null) ? strlen($SUPERADMIN_PASSWORD) : 0,
+            'superadmin_password_has_outer_spaces' => is_string($SUPERADMIN_PASSWORD ?? null) ? (trim($SUPERADMIN_PASSWORD) !== $SUPERADMIN_PASSWORD) : false,
+            'superadmin_hash_configured' => !empty($SUPERADMIN_PASSWORD_HASH),
         ],
         'auth' => [
             'php_session_valid' => is_superadmin_session(),
@@ -656,10 +664,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
         if (!$staffAllowed) {
+            $debug = site_config_debug_snapshot($conn, $domain, $body);
+            $message = 'Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.';
+            if (!empty($debug['auth']['default_fallback_active']) && empty($debug['auth']['password_matches_superadmin'])) {
+                $message = 'Contraseña superadmin no inicializada en usuarios. Ingresa con la contraseña default o configura SUPERADMIN_PASSWORD en credentials.php y vuelve a intentar.';
+            }
             site_config_debug_error(
-                'Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.',
+                $message,
                 401,
-                site_config_debug_snapshot($conn, $domain, $body)
+                $debug
             );
         }
 
@@ -669,6 +682,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $fields = [];
     $insertFields = ['domain'];
     $insertValues = ["'$domain'"];
+
+    // Compatibilidad con instalaciones antiguas: `torneoid` ya no se usa como
+    // eje del sitio, pero si la columna legacy sigue NOT NULL sin DEFAULT,
+    // cualquier INSERT nuevo de `site_config` falla. Sólo se manda 0 al crear
+    // el row del dominio; nunca se actualiza ni se expone como configuración.
+    $legacyTorneoColumn = @$conn->query("SHOW COLUMNS FROM site_config LIKE 'torneoid'");
+    if ($legacyTorneoColumn && $legacyTorneoColumn->num_rows > 0) {
+        $legacyTorneoMeta = $legacyTorneoColumn->fetch_assoc();
+        $legacyTorneoNeedsInsertValue = ($legacyTorneoMeta['Null'] ?? '') === 'NO' && !array_key_exists('Default', $legacyTorneoMeta);
+        if (!$legacyTorneoNeedsInsertValue) {
+            $legacyTorneoNeedsInsertValue = ($legacyTorneoMeta['Null'] ?? '') === 'NO' && ($legacyTorneoMeta['Default'] ?? null) === null;
+        }
+        if ($legacyTorneoNeedsInsertValue) {
+            $insertFields[] = 'torneoid';
+            $insertValues[] = '0';
+        }
+    }
+    if ($legacyTorneoColumn) $legacyTorneoColumn->free();
     
     // Gira activa (eje del sitio en el modelo por giras).
     // Si la columna no existe y el usuario MySQL no tiene ALTER, se avisa en
