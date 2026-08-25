@@ -24,7 +24,7 @@ const Footer = () => {
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 gap-8">
-          {/* Tournament Info */}
+          {/* Gira Info */}
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center font-display font-bold text-xl text-secondary">GT</div>

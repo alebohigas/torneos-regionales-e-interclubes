@@ -2,10 +2,9 @@
  * Hero Section
  * Displays the active gira name and status.
  * 
- * Tournament names follow the pattern: "XLVI TORNEO ANUAL SEMANA SANTA"
+ * Gira names may follow the pattern: "XLVI TORNEO ANUAL SEMANA SANTA"
  * - Roman numeral prefix is displayed large in gold (secondary)
  * - Remaining name is displayed as h1 below
- * - Club name (from clubs table) shown in gold italic
  * - Document title is also set dynamically
  */
 
@@ -46,8 +45,8 @@ const Hero = () => {
    *   2. Verifica que la página exista y no esté oculta en visibility.
    *   3. Si falla cualquiera de los dos, cae al fallback del slot.
    *
-   * Fallbacks (compat con comportamiento previo):
-   *   - Slot 1 → /convocatoria (o /salidas en Atlas CC 354)
+   * Fallbacks:
+   *   - Slot 1 → /convocatoria
    *   - Slot 2 → /jugadores
    */
   const fallback1 = { label: 'Ver Convocatoria', href: '/convocatoria' };
@@ -113,9 +112,9 @@ const Hero = () => {
             </div>
           )}
 
-          {/* Nombre de la gira (o del torneo como fallback) */}
+          {/* Nombre de la gira */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-foreground mb-4 animate-fade-in-up animation-delay-100">
-            {parsed.rest || 'Torneo de Golf'}
+            {parsed.rest || 'Golf Tour'}
           </h1>
 
           {/* Gira con uso = 0: la competencia ya concluyó */}

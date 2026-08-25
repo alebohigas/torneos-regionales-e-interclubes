@@ -82,6 +82,20 @@ SET @s = IF(@missing IS NULL OR @missing = '',
             CONCAT('ALTER TABLE site_config ', @missing));
 PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
+-- giraid es numérico y por eso se agrega aparte de las columnas JSON/TEXT.
+SET @add_giraid = (
+  SELECT IF(
+    COUNT(*) = 0,
+    'ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT ''Gira activa (gira.giraid)''',
+    'SELECT ''site_config.giraid ya existe'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'site_config'
+    AND COLUMN_NAME = 'giraid'
+);
+PREPARE st FROM @add_giraid; EXECUTE st; DEALLOCATE PREPARE st;
+
 -- ---------------------------------------------------------------------------
 -- 2. convocatoria_content — secciones editables de /convocatoria y /reglas
 -- ---------------------------------------------------------------------------
