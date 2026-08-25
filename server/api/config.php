@@ -317,49 +317,23 @@ const SUPERADMIN_DEFAULT_PASSWORD = 'admin2025';
 const SUPERADMIN_USER_KEY = '__superadmin__';
 const SUPERADMIN_TIPO = 100;
 
-/**
- * Tabla propia para credenciales de la app. Necesaria porque en algunas BDs
- * legacy (p.ej. `golftour`) la tabla `usuarios` tiene `pwd VARCHAR(10)` y no
- * tiene columna `activo`: un hash bcrypt (60 chars) se truncaba y el INSERT
- * fallaba, dejando al superadmin sin contraseña persistida (401 al guardar).
- */
-function ensure_app_auth_table($conn) {
-    static $done = false;
-    if ($done) return;
-    @$conn->query("CREATE TABLE IF NOT EXISTS app_auth (
-        k VARCHAR(64) NOT NULL PRIMARY KEY,
-        v TEXT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    $done = true;
-}
-
-/** Lee el hash del superadmin (app_auth y, como respaldo, `usuarios`). */
+/** Lee el hash del superadmin desde `usuarios` (row reservado). */
 function superadmin_password_hash_from_db($conn) {
     static $hash = false;
     if ($hash !== false) return $hash;
     $hash = null;
 
-    ensure_app_auth_table($conn);
-    $r = @$conn->query("SELECT v FROM app_auth WHERE k='superadmin_pwd_hash' LIMIT 1");
-    if ($r && $r->num_rows > 0) {
-        $row = $r->fetch_assoc();
-        if (!empty($row['v'])) $hash = $row['v'];
-    }
-    if ($r) $r->free();
-    if ($hash) return $hash;
-
-    // Respaldo legacy: solo sirve si la columna admite el hash completo.
     $key = SUPERADMIN_USER_KEY;
     $r = @$conn->query("SELECT pwd FROM usuarios WHERE usuario='$key' LIMIT 1");
     if ($r && $r->num_rows > 0) {
         $row = $r->fetch_assoc();
-        $legacy = (string)($row['pwd'] ?? '');
-        if (strlen($legacy) >= 20) $hash = $legacy;
+        $stored = (string)($row['pwd'] ?? '');
+        if ($stored !== '') $hash = $stored;
     }
     if ($r) $r->free();
     return $hash;
 }
+
 
 
 /**
@@ -453,12 +427,25 @@ function is_superadmin_session() {
     return true;
 }
 
-/** Persiste un nuevo hash del superadmin en `app_auth` (upsert). */
+/** Persiste el hash del superadmin en `usuarios` (row reservado, upsert). */
 function set_superadmin_password_hash($conn, $hash) {
-    ensure_app_auth_table($conn);
     $h = esc($conn, $hash);
-    $sql = "INSERT INTO app_auth (k, v) VALUES ('superadmin_pwd_hash', '$h')
-              ON DUPLICATE KEY UPDATE v=VALUES(v)";
-    if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
+    $key = SUPERADMIN_USER_KEY;
+    $tipo = SUPERADMIN_TIPO;
 
+    // Verifica que la columna pwd admita el hash completo (bcrypt = 60 chars).
+    $r = @$conn->query("SELECT CHARACTER_MAXIMUM_LENGTH len FROM information_schema.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios'
+                            AND COLUMN_NAME = 'pwd' LIMIT 1");
+    $len = ($r && $r->num_rows > 0) ? (int)$r->fetch_assoc()['len'] : 255;
+    if ($r) $r->free();
+    if ($len > 0 && $len < strlen($hash)) {
+        json_error('La columna usuarios.pwd es muy corta (' . $len . '). Ejecuta la migración 2026_08_25_align_usuarios_table.sql', 500);
+    }
+
+    $sql = "INSERT INTO usuarios (usuario, pwd, clubid, tipo, torneoid, estatus, nombre, ultent)
+              VALUES ('$key', '$h', 0, $tipo, 0, 'ACTIVO', 'Superadmin', NOW())
+              ON DUPLICATE KEY UPDATE pwd=VALUES(pwd), tipo=VALUES(tipo), estatus='ACTIVO'";
+    if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
 }
+
