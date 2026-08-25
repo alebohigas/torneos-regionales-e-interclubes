@@ -1,13 +1,12 @@
 /**
  * Site Config Hook
- * Fetches server-side config (torneoid, menu_order, visibility, groups) for the current domain
+ * Fetches server-side config (giraid, menu_order, visibility, groups) for the current domain
  * Syncs to localStorage so all visitors share the same config set by admin
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '@/config/api';
 import { DEFAULT_SUPERADMIN_PASSWORD, getSuperAdminPassword } from '@/lib/superAdminAuth';
-import { setStoredTorneoId } from '@/hooks/useTorneoId';
 import { setStoredGiraId } from '@/hooks/useGiraId';
 import type { ModulesConfig } from '@/modules/moduleState';
 
@@ -427,7 +426,6 @@ export interface AnuncioConfig {
 /** Full server response for site config */
 export interface SiteConfig {
   domain: string;
-  torneoid: number | null;
   /**
    * Gira activa (`gira.giraid`). Es el eje del sitio en el modelo por giras:
    * agrupa varias copas (`copas.giraid`) y varios torneos (`torneo.giraid`).
@@ -474,7 +472,6 @@ export interface SiteConfig {
 /** Payload for saving config (all fields optional except password) */
 export interface SaveConfigPayload {
   password: string;
-  torneoid?: number;
   /** Gira activa (`gira.giraid`) sobre la que se basa todo el sitio. */
   giraid?: number | null;
   menu_order?: Record<string, number> | null;
@@ -506,7 +503,6 @@ export interface SaveConfigPayload {
 
 // ============= Constants =============
 
-const TORNEO_ID_KEY = 'golf-app-torneo-id';
 const MENU_ORDER_KEY = 'tournament_menu_item_order';
 const VISIBILITY_KEY = 'tournament_page_visibility';
 const GROUPS_KEY = 'tournament_menu_groups';
@@ -534,7 +530,7 @@ const fetchSiteConfig = async (): Promise<SiteConfig> => {
 /**
  * Save config fields to server
  */
-const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: string; saved: boolean }> => {
+const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: string; saved: boolean; giraid: number | null }> => {
   /** Always submit the active session password, even from legacy admin forms. */
   const effectivePayload = {
     ...payload,
@@ -543,7 +539,11 @@ const saveSiteConfigApi = async (payload: SaveConfigPayload): Promise<{ domain: 
 
   const res = await fetch(`${API_BASE_URL}/site_config.php`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Superadmin-Password': effectivePayload.password,
+    },
     body: JSON.stringify(effectivePayload),
   });
   if (!res.ok) {
@@ -566,12 +566,9 @@ export const useSiteConfig = () => {
     queryFn: async () => {
       const config = await fetchSiteConfig();
 
-      // Sync torneoid.
-      // Uses setStoredTorneoId (instead of a raw localStorage write) so every
-      // mounted `useTorneoId()` consumer is notified and refetches its data.
-      if (config.torneoid) {
-        setStoredTorneoId(String(config.torneoid));
-      }
+      // Esta instalación ya no tiene un torneo global. Borra cualquier valor
+      // heredado para impedir que giraid se reutilice como torneoid.
+      localStorage.removeItem('golf-app-torneo-id');
 
       // Sync giraid (eje del sitio en el modelo por giras).
       if (config.giraid) {
@@ -652,8 +649,7 @@ export const useSaveSiteConfig = () => {
     onSuccess: () => {
       // Invalidate to re-fetch fresh config
       queryClient.invalidateQueries({ queryKey: ['site-config'] });
-      queryClient.invalidateQueries({ queryKey: ['tournament'] });
-      queryClient.invalidateQueries({ queryKey: ['tournament-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['gira-info'] });
     },
   });
 };

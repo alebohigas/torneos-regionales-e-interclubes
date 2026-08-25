@@ -9,7 +9,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Superadmin-Password');
 
 // ============= PHP Error Output Guard =============
 // API endpoints must never emit PHP warning/fatal HTML around JSON responses.
@@ -388,6 +388,39 @@ function is_superadmin_password($conn, $password) {
         if (superadmin_password_matches($conn, $candidate)) return true;
     }
     return false;
+}
+
+/** Inicia una sesión PHP segura y limitada al mismo sitio. */
+function superadmin_session_start() {
+    if (session_status() === PHP_SESSION_ACTIVE) return;
+    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
+    session_start();
+}
+
+/** Registra una autenticación de superadmin válida para esta pestaña/sesión. */
+function establish_superadmin_session() {
+    superadmin_session_start();
+    session_regenerate_id(true);
+    $_SESSION['superadmin_authenticated_at'] = time();
+}
+
+/** La sesión administrativa expira tras 8 horas de inactividad. */
+function is_superadmin_session() {
+    superadmin_session_start();
+    $authenticatedAt = (int)($_SESSION['superadmin_authenticated_at'] ?? 0);
+    if ($authenticatedAt <= 0 || time() - $authenticatedAt > 28800) {
+        unset($_SESSION['superadmin_authenticated_at']);
+        return false;
+    }
+    $_SESSION['superadmin_authenticated_at'] = time();
+    return true;
 }
 
 /** Persiste un nuevo hash del superadmin en `usuarios` (upsert). */

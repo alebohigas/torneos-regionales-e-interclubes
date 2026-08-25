@@ -17,7 +17,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Shield, ChevronDown, MoreHorizontal, EyeOff } from 'lucide-react';
-import { useTournamentInfo } from '@/hooks/useTournamentData';
+import { useGiraInfo } from '@/hooks/useGiraData';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -166,7 +166,7 @@ const useOverflowMenu = (
 // ============= Component =============
 
 const Header = () => {
-  const { data: tournamentInfo } = useTournamentInfo();
+  const { data: gira } = useGiraInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const location = useLocation();
@@ -476,29 +476,9 @@ const Header = () => {
           {/* Logo */}
           <div ref={logoRef} className="flex-shrink-0 overflow-visible">
             <Link to="/" className="flex items-center gap-3 overflow-visible">
-              {(tournamentInfo?.logoHeaderUrl || tournamentInfo?.logoUrl) ? (
-                <img 
-                  src={tournamentInfo.logoHeaderUrl || tournamentInfo.logoUrl} 
-                  alt={tournamentInfo.name}
-                  // Mobile logo: larger visible height, auto width, and a
-                  // slight scale boost so logos with transparent padding still
-                  // look materially bigger inside the ribbon.
-                  // Desktop logo: original 96px square sizing is preserved.
-                  // Mobile: keeps the previously tuned size.
-                  // Desktop: enlarged to h-[5.5rem] with auto width so the
-                  // wide lockup (icon + wordmark) renders at its real aspect
-                  // ratio and visually fills the ribbon.
-                  // Mobile logo height set to 4rem (h-16) per user request.
-                  // Desktop: enlarged to h-[5.5rem] with auto width so the
-                  // wide lockup (icon + wordmark) renders at its real aspect
-                  // ratio and visually fills the ribbon.
-                  className="block h-[5rem] w-auto max-w-[13.3rem] origin-left scale-100 object-contain object-left md:h-[5.5rem] md:w-auto md:max-w-[16rem] md:scale-100 rounded-lg"
-                />
-              ) : (
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg gradient-hero flex items-center justify-center text-primary-foreground font-display font-bold text-xl">
-                  {tournamentInfo?.id || ''}
-                </div>
-              )}
+              <div className="flex min-h-12 max-w-[13.3rem] items-center rounded-lg px-3 py-2 font-display text-sm font-bold uppercase text-primary md:max-w-[16rem] md:text-base">
+                {gira?.name || 'Golf Tour'}
+              </div>
             </Link>
           </div>
 

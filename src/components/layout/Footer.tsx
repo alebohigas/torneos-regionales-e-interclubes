@@ -1,73 +1,38 @@
 /**
  * Footer Component
- * Tournament info, contact, and stats in footer
- * Data fetched from API via React Query hooks
- * Shows: tournament name (parsed), logo, location (city/state), phone, email, stats
+ * Active gira information in the footer.
  */
 
-import { useTournamentInfo, useTournamentStats } from '@/hooks/useTournamentData';
+import { useGiraInfo } from '@/hooks/useGiraData';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
-import { MapPin, Phone, Mail } from 'lucide-react';
-
-/** Parse Roman numeral prefix from tournament name */
-const parseTournamentName = (name: string) => {
-  const match = name?.match(/^([IVXLCDM]+)\s+(.+)$/i);
-  return match ? { numeral: match[1], rest: match[2] } : { numeral: '', rest: name || '' };
-};
 
 const Footer = () => {
-  const { data: tournamentInfo } = useTournamentInfo();
-  const { data: tournamentStats } = useTournamentStats();
+  const { data: gira } = useGiraInfo();
   const { data: siteConfig } = useSiteConfig();
 
-  const { numeral, rest } = parseTournamentName(tournamentInfo?.name || '');
-
-  /**
-   * Override de tagline por torneo. Atlas CC (torneoid=354) pidió una
-   * variante ligeramente distinta ("...más importante de México").
-   */
   /**
    * Prioridad del tagline:
    *   1. Override manual desde /admin → Estadísticas Página → Slogan del footer.
-   *   2. Override histórico por torneo (Atlas CC 354).
-   *   3. Default global.
+   *   2. Default global para la gira.
    */
   const adminTagline = siteConfig?.stats_page_config?.overrides?.footerTagline?.trim();
-  const isAtlas354 = String(tournamentInfo?.id ?? '') === '354';
   const tagline =
     adminTagline ||
-    (isAtlas354
-      ? 'El torneo de golf amateur más importante de México.'
-      : 'El torneo de golf amateur más importante del país.');
-
-  /** Build location string from city and state */
-  const location = [tournamentInfo?.city, tournamentInfo?.state].filter(Boolean).join(', ');
+    'El golf que conecta cada copa y cada torneo.';
 
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto py-12 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Tournament Info */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Gira Info */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              {/* Tournament logo or fallback */}
-              {(tournamentInfo?.logoUrl || tournamentInfo?.logoHeaderUrl) ? (
-                <img
-                  src={tournamentInfo.logoUrl || tournamentInfo.logoHeaderUrl}
-                  alt="Logo del torneo"
-                  className="w-12 h-12 rounded-lg object-contain bg-primary-foreground/10"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center font-display font-bold text-xl text-secondary">
-                  {numeral || '⛳'}
-                </div>
-              )}
+              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center font-display font-bold text-xl text-secondary">GT</div>
               <div>
                 <h3 className="font-display font-semibold">
-                  {numeral && <span className="text-secondary">{numeral} </span>}
-                  {rest}
+                  {gira?.name || 'Golf Tour'}
                 </h3>
-                <p className="text-sm text-primary-foreground/70">{tournamentInfo?.club || ''}</p>
+                {gira?.uso === 0 && <p className="text-sm text-primary-foreground/70">Copa terminada</p>}
               </div>
             </div>
             <p className="text-sm text-primary-foreground/80 leading-relaxed">
@@ -75,38 +40,12 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="font-display font-semibold text-lg mb-4">Contacto</h4>
-            <div className="space-y-3">
-              {/* Location: city, state */}
-              <div className="flex items-center gap-3 text-sm text-primary-foreground/80">
-                <MapPin className="h-4 w-4 text-secondary flex-shrink-0" />
-                <span>{location || tournamentInfo?.club || ''}</span>
-              </div>
-              {/* Phone from torneo.telefono */}
-              {tournamentInfo?.phone && (
-                <div className="flex items-center gap-3 text-sm text-primary-foreground/80">
-                  <Phone className="h-4 w-4 text-secondary flex-shrink-0" />
-                  <span>Tel: {tournamentInfo.phone}</span>
-                </div>
-              )}
-              {/* Email from torneo.correotorne */}
-              {tournamentInfo?.email && (
-                <div className="flex items-center gap-3 text-sm text-primary-foreground/80">
-                  <Mail className="h-4 w-4 text-secondary flex-shrink-0" />
-                  <span>{tournamentInfo.email}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
         </div>
 
-        {/* Copyright with club name */}
+        {/* Copyright */}
         <div className="mt-10 pt-6 border-t border-primary-foreground/20 text-center">
           <p className="text-sm text-primary-foreground/60">
-            © {new Date().getFullYear()} {tournamentInfo?.club || 'Club Campestre'}. Todos los derechos reservados.
+            © {new Date().getFullYear()} {gira?.name || 'Golf Tour'}. Todos los derechos reservados.
           </p>
         </div>
       </div>

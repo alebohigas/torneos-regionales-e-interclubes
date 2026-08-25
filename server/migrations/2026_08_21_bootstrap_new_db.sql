@@ -26,12 +26,12 @@
 -- ===========================================================================
 
 -- ---------------------------------------------------------------------------
--- 1. site_config — configuración por DOMINIO (torneoid, menús, visibilidad,
+-- 1. site_config — configuración por DOMINIO (giraid, menús, visibilidad,
 --    tema, heros, módulos de /setup, etc.)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS site_config (
   domain                 VARCHAR(255) NOT NULL PRIMARY KEY,
-  torneoid               INT NOT NULL,
+  giraid                 INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid)',
   menu_order             TEXT DEFAULT NULL COMMENT 'JSON pageId -> order',
   visibility             TEXT DEFAULT NULL COMMENT 'JSON pageId -> boolean',
   menu_groups            TEXT DEFAULT NULL COMMENT 'JSON array de grupos de menú',
@@ -81,6 +81,20 @@ SET @s = IF(@missing IS NULL OR @missing = '',
             'SELECT ''site_config ya tiene todas las columnas'' AS info',
             CONCAT('ALTER TABLE site_config ', @missing));
 PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+-- giraid es numérico y por eso se agrega aparte de las columnas JSON/TEXT.
+SET @add_giraid = (
+  SELECT IF(
+    COUNT(*) = 0,
+    'ALTER TABLE site_config ADD COLUMN giraid INT NULL DEFAULT NULL COMMENT ''Gira activa (gira.giraid)''',
+    'SELECT ''site_config.giraid ya existe'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'site_config'
+    AND COLUMN_NAME = 'giraid'
+);
+PREPARE st FROM @add_giraid; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- ---------------------------------------------------------------------------
 -- 2. convocatoria_content — secciones editables de /convocatoria y /reglas
@@ -141,8 +155,8 @@ CREATE TABLE IF NOT EXISTS usuario_sesion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------------
--- 5. Registrar el dominio nuevo con su torneoid.
+-- 5. Registrar el dominio nuevo con su giraid.
 --    EDITA los valores antes de correr (o hazlo después desde /admin).
 -- ---------------------------------------------------------------------------
--- INSERT INTO site_config (domain, torneoid) VALUES ('pruebas.golftour.mx', 000)
---   ON DUPLICATE KEY UPDATE torneoid = VALUES(torneoid);
+-- INSERT INTO site_config (domain, giraid) VALUES ('pruebas.golftour.mx', 19)
+--   ON DUPLICATE KEY UPDATE giraid = VALUES(giraid);
