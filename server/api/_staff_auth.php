@@ -49,9 +49,10 @@ function staff_validate_token($conn, $token) {
     if ($expira < $now) return null;
     if ((int)$row['activo'] !== 1) return null;
     if (strtolower((string)$row['estatus']) === 'inactivo') return null;
+    $isSuperadmin = is_superadmin_tipo($row['tipo'] ?? 0);
     $today = (new DateTime('today'))->format('Y-m-d');
-    if (legacy_date_is_set($row['desde'] ?? null) && $today < $row['desde']) return null;
-    if (legacy_date_is_set($row['hasta'] ?? null) && $today > $row['hasta']) return null;
+    if (!$isSuperadmin && legacy_date_is_set($row['desde'] ?? null) && $today < $row['desde']) return null;
+    if (!$isSuperadmin && legacy_date_is_set($row['hasta'] ?? null) && $today > $row['hasta']) return null;
 
     // Áreas
     $uid = (int)$row['usuario_id'];
@@ -68,7 +69,7 @@ function staff_validate_token($conn, $token) {
         'nombre'     => $row['nombre'],
         'torneoid'   => (int)$row['torneoid'],
         'tipo'       => (int)($row['tipo'] ?? 0),
-        'is_superadmin' => is_superadmin_tipo($row['tipo'] ?? 0),
+        'is_superadmin' => $isSuperadmin,
         'areas'      => $areas,
         'expira'     => $row['expira'],
     ];
