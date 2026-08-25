@@ -4,6 +4,7 @@
  * Points to PHP JSON API wrappers on the same domain
  */
 
+import { getGiraId } from '@/hooks/useGiraId';
 import { getTorneoId } from '@/hooks/useTorneoId';
 
 // ============= Base URL Configuration =============
@@ -58,6 +59,22 @@ const buildQuery = (params: Record<string, string> = {}): string => {
   return qs ? `?${qs}` : '';
 };
 
+/** Build query string for endpoints that are scoped by the active gira, not torneoid. */
+const buildGiraQuery = (params: Record<string, string> = {}, giraIdOverride?: string): string => {
+  const debugMode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('debug')
+    : null;
+  const giraId = (giraIdOverride ?? getGiraId()).trim();
+  const baseParams = giraId ? { giraid: giraId } : {};
+  const allParams = {
+    ...baseParams,
+    ...params,
+    ...(debugMode === '1' ? { debug: '1' } : {}),
+  };
+  const qs = new URLSearchParams(allParams).toString();
+  return qs ? `?${qs}` : '';
+};
+
 // ============= Endpoint Builders =============
 
 /** Health check */
@@ -102,14 +119,14 @@ export const getPlayersApiUrl = (catId: string, opts: { skin?: boolean } = {}): 
 /**
  * FIELD-GIRA: categorías seed (categorias_tmp + jugadores_seed).
  */
-export const getFieldGiraCategoriesUrl = (): string =>
-  `${API_BASE_URL}/field_gira.php${buildQuery()}`;
+export const getFieldGiraCategoriesUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/field_gira.php${buildGiraQuery({}, giraId)}`;
 
 /**
  * FIELD-GIRA: jugadores seed de una categoría (jugadores_seed + clubs).
  */
-export const getFieldGiraPlayersUrl = (catId: string): string =>
-  `${API_BASE_URL}/field_gira.php${buildQuery({ catid: catId })}`;
+export const getFieldGiraPlayersUrl = (catId: string, giraId?: string): string =>
+  `${API_BASE_URL}/field_gira.php${buildGiraQuery({ catid: catId }, giraId)}`;
 
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;

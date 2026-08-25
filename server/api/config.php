@@ -127,7 +127,7 @@ function debug_context($extra = []) {
  * Súbelo/increméntalo cada vez que cambie algo crítico de la API.
  */
 if (!defined('API_BUILD')) {
-    define('API_BUILD', '2026-08-25.tipo1-superadmin-1');
+    define('API_BUILD', '2026-08-25.field-gira-giraid-1');
 }
 
 /**

@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { getFieldGiraCategoriesUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
+import { useGiraId } from '@/hooks/useGiraId';
 
 // ============= Types =============
 
@@ -34,22 +35,28 @@ interface FieldGiraPlayersResponse {
 
 // ============= Categorías =============
 
-export const useFieldGiraCategories = () =>
-  useQuery<FieldGiraCategory[]>({
-    queryKey: ['field-gira-categories'],
-    queryFn: () => apiFetch<FieldGiraCategory[]>(getFieldGiraCategoriesUrl()),
+export const useFieldGiraCategories = () => {
+  const { giraId } = useGiraId();
+
+  return useQuery<FieldGiraCategory[]>({
+    queryKey: ['field-gira-categories', giraId],
+    queryFn: () => apiFetch<FieldGiraCategory[]>(getFieldGiraCategoriesUrl(giraId)),
+    enabled: !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });
+};
 
 // ============= Jugadores por categoría =============
 
-export const useFieldGiraPlayers = (catId: string | null, enabled = true) =>
-  useQuery<{ players: FieldGiraPlayer[]; playerCount: number; name: string }>({
-    queryKey: ['field-gira-players', catId],
+export const useFieldGiraPlayers = (catId: string | null, enabled = true) => {
+  const { giraId } = useGiraId();
+
+  return useQuery<{ players: FieldGiraPlayer[]; playerCount: number; name: string }>({
+    queryKey: ['field-gira-players', giraId, catId],
     queryFn: async () => {
       if (!catId) return { players: [], playerCount: 0, name: '' };
-      const data = await apiFetch<FieldGiraPlayersResponse>(getFieldGiraPlayersUrl(catId));
+      const data = await apiFetch<FieldGiraPlayersResponse>(getFieldGiraPlayersUrl(catId, giraId));
       const players = (data.players || []).map((p) => ({
         id: p.id,
         numjugador: p.numjugador || '',
@@ -63,7 +70,8 @@ export const useFieldGiraPlayers = (catId: string | null, enabled = true) =>
         name: data.category?.name ?? '',
       };
     },
-    enabled: enabled && !!catId,
+    enabled: enabled && !!catId && !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });
+};
