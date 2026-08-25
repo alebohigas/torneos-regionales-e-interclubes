@@ -1,14 +1,14 @@
 <?php
 /**
  * Site Config Endpoint
- * GET  /api/site_config.php  - Returns torneoid + menu_order for current domain
- * POST /api/site_config.php  - Saves torneoid and/or menu_order for current domain (admin)
+ * GET  /api/site_config.php  - Returns giraid + site settings for current domain
+ * POST /api/site_config.php  - Saves giraid and/or site settings for current domain (admin)
  * 
  * Uses `site_config` table:
  * 
  * CREATE TABLE IF NOT EXISTS site_config (
  *   domain VARCHAR(255) NOT NULL PRIMARY KEY,
- *   torneoid INT NOT NULL,
+ *   giraid INT NULL,
  *   menu_order TEXT DEFAULT NULL COMMENT 'JSON object mapping pageId to order number',
  *   visibility TEXT DEFAULT NULL COMMENT 'JSON object mapping pageId to boolean',
  *   menu_groups TEXT DEFAULT NULL COMMENT 'JSON array of menu group configs',
@@ -353,7 +353,7 @@ $hasGiraId = site_config_has_giraid($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Return full config for current domain
-    $selectFields = 'torneoid, menu_order, visibility, menu_groups, page_group_assignments';
+    $selectFields = 'menu_order, visibility, menu_groups, page_group_assignments';
     if ($hasGiraId) {
         $selectFields .= ', giraid';
     }
@@ -412,7 +412,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($row) {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
-            'torneoid'              => (int)$row['torneoid'],
             'giraid'                => $hasGiraId && $row['giraid'] !== null && $row['giraid'] !== '' ? (int)$row['giraid'] : null,
             'menu_order'            => $row['menu_order'] ? json_decode($row['menu_order'], true) : null,
             'visibility'            => $row['visibility'] ? json_decode($row['visibility'], true) : null,
@@ -438,7 +437,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
-            'torneoid'              => null,
             'giraid'                => null,
             'menu_order'            => null,
             'visibility'            => null,
@@ -494,7 +492,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $staffAllowed = true;
             }
         }
-        if (!$staffAllowed) json_error('Unauthorized', 401);
+        if (!$staffAllowed) json_error('Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.', 401);
     }
     
     // Build dynamic UPDATE fields from provided data
@@ -502,13 +500,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $insertFields = ['domain'];
     $insertValues = ["'$domain'"];
     
-    if (isset($body['torneoid'])) {
-        $tid = (int)$body['torneoid'];
-        $fields[] = "torneoid = $tid";
-        $insertFields[] = 'torneoid';
-        $insertValues[] = $tid;
-    }
-
     // Gira activa (eje del sitio en el modelo por giras).
     // Si la columna no existe y el usuario MySQL no tiene ALTER, se avisa en
     // claro en vez de descartar el valor en silencio (antes "guardaba" sin error).
@@ -728,12 +719,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
     if (empty($fields)) {
         json_error('No fields to update', 400);
-    }
-    
-    // Ensure torneoid has a default for INSERT
-    if (!isset($body['torneoid'])) {
-        $insertFields[] = 'torneoid';
-        $insertValues[] = 0;
     }
     
     $updateClause = implode(', ', $fields);

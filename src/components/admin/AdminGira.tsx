@@ -48,25 +48,29 @@ const AdminGira = () => {
   const handleSave = () => {
     const value = parseInt(input, 10);
     if (!Number.isFinite(value)) return;
-    setGiraId(String(value));
     saveSiteConfig.mutate(
       { giraid: value, password: getSuperAdminPassword() },
       {
-        onSuccess: (res: any) => {
+        onSuccess: (res) => {
           const confirmed = res?.giraid;
+          if (confirmed == null || Number(confirmed) !== value) {
+            toast({
+              title: 'La gira no quedó guardada',
+              description: `El servidor devolvió ${confirmed ?? 'un valor vacío'} en lugar de ${value}.`,
+              variant: 'destructive',
+            });
+            return;
+          }
+          setGiraId(String(confirmed));
           toast({
             title: 'Gira configurada',
-            description:
-              confirmed != null && Number(confirmed) !== value
-                ? `El servidor guardó la gira ${confirmed}, no la ${value}. Revisa el dominio configurado.`
-                : `La gira ${value} aplica para todos los visitantes de este dominio.`,
-            variant: confirmed != null && Number(confirmed) !== value ? 'destructive' : undefined,
+            description: `La gira ${value} aplica para todos los visitantes de este dominio.`,
           });
         },
         onError: (err: any) =>
           toast({
             title: 'Error al guardar en servidor',
-            description: `${err?.message ?? err}. Se guardó solo localmente.`,
+            description: `${err?.message ?? err}. No se modificó la gira activa.`,
             variant: 'destructive',
           }),
       }

@@ -26,12 +26,12 @@
 -- ===========================================================================
 
 -- ---------------------------------------------------------------------------
--- 1. site_config — configuración por DOMINIO (torneoid, menús, visibilidad,
+-- 1. site_config — configuración por DOMINIO (giraid, menús, visibilidad,
 --    tema, heros, módulos de /setup, etc.)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS site_config (
   domain                 VARCHAR(255) NOT NULL PRIMARY KEY,
-  torneoid               INT NOT NULL,
+  giraid                 INT NULL DEFAULT NULL COMMENT 'Gira activa (gira.giraid)',
   menu_order             TEXT DEFAULT NULL COMMENT 'JSON pageId -> order',
   visibility             TEXT DEFAULT NULL COMMENT 'JSON pageId -> boolean',
   menu_groups            TEXT DEFAULT NULL COMMENT 'JSON array de grupos de menú',
@@ -141,8 +141,8 @@ CREATE TABLE IF NOT EXISTS usuario_sesion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------------
--- 5. Registrar el dominio nuevo con su torneoid.
+-- 5. Registrar el dominio nuevo con su giraid.
 --    EDITA los valores antes de correr (o hazlo después desde /admin).
 -- ---------------------------------------------------------------------------
--- INSERT INTO site_config (domain, torneoid) VALUES ('pruebas.golftour.mx', 000)
---   ON DUPLICATE KEY UPDATE torneoid = VALUES(torneoid);
+-- INSERT INTO site_config (domain, giraid) VALUES ('pruebas.golftour.mx', 19)
+--   ON DUPLICATE KEY UPDATE giraid = VALUES(giraid);
