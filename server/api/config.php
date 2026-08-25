@@ -315,7 +315,22 @@ function esc($conn, $value) {
 // `pwd` (la misma que el resto). NO se crea ninguna tabla nueva.
 
 // Tabla de usuarios de la app (staff + superadmin).
-if (!defined('USERS_TABLE')) define('USERS_TABLE', 'usuarios2');
+// Configurable desde credentials.php con $USERS_TABLE, para que el día que se
+// haga DROP a `usuarios` y se renombre `usuarios2` -> `usuarios` baste con
+// cambiar ese valor (o borrarlo: el default detecta la tabla existente).
+if (!defined('USERS_TABLE')) {
+    $usersTable = isset($USERS_TABLE) ? trim((string)$USERS_TABLE) : '';
+    if ($usersTable === '' || !preg_match('/^[A-Za-z0-9_]+$/', $usersTable)) {
+        // Autodetección: usa `usuarios2` si existe, si no `usuarios`.
+        $usersTable = 'usuarios';
+        $rt = @$conn->query("SELECT 1 FROM information_schema.TABLES
+                              WHERE TABLE_SCHEMA = DATABASE()
+                                AND TABLE_NAME = 'usuarios2' LIMIT 1");
+        if ($rt && $rt->num_rows > 0) $usersTable = 'usuarios2';
+        if ($rt) $rt->free();
+    }
+    define('USERS_TABLE', $usersTable);
+}
 
 const SUPERADMIN_DEFAULT_PASSWORD = 'admin2025';
 const SUPERADMIN_USER_KEY = '__superadmin__';

@@ -27,3 +27,10 @@ $SMTP_USER      = 'registro.torneo01@speitour.mx';
 $SMTP_PASS      = 'your_shared_smtp_password';
 $SMTP_FROM_NAME = 'Speitour Registros';
 $SMTP_REPLY_TO  = 'noreply@speitour.mx';
+
+// ============= Tabla de usuarios de la app =============
+// Tabla usada para staff temporal y el superadmin. En golftour los usuarios
+// reales viven en `usuarios2`. Cuando se haga DROP a `usuarios` y se renombre
+// `usuarios2` -> `usuarios`, cambia este valor a 'usuarios' (o comenta la
+// línea y la app autodetecta la tabla existente).
+$USERS_TABLE = 'usuarios2';
