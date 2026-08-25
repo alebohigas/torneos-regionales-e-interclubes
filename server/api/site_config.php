@@ -492,7 +492,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $staffAllowed = true;
             }
         }
-        if (!$staffAllowed) json_error('Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.', 401);
+        if (!$staffAllowed) {
+            json_error('Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.', 401, [
+                'auth_debug' => [
+                    'has_session'       => is_superadmin_session(),
+                    'body_password'     => $password !== '',
+                    'header_password'   => !empty($_SERVER['HTTP_X_SUPERADMIN_PASSWORD']),
+                    'stored_hash'       => (bool)superadmin_password_hash_from_db($conn),
+                    'default_fallback'  => !superadmin_password_hash_from_db($conn),
+                ],
+            ]);
+        }
+
     }
     
     // Build dynamic UPDATE fields from provided data
