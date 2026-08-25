@@ -7,6 +7,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { getCategoriesUrl, getPlayersApiUrl, POLL_SLOW } from '@/config/api';
+import { useGiraId } from '@/hooks/useGiraId';
+
 import type { Player, CategoryDetail, ParejaGroup } from '@/data/playersData';
 
 // ============= Types =============
