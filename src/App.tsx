@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 import Convocatoria from "./pages/Convocatoria";
 import Eventos from "./pages/Eventos";
 import Jugadores from "./pages/Jugadores";
+import FieldGira from "./pages/FieldGira";
 import Salidas from "./pages/Salidas";
 import LiveScoring from "./pages/LiveScoring";
 import Live from "./pages/Live";
@@ -138,6 +139,8 @@ const App = () => (
               <Route path="/convocatoria" element={<ProtectedRoute pageId="convocatoria"><Convocatoria /></ProtectedRoute>} />
               <Route path="/eventos" element={<ProtectedRoute pageId="eventos"><Eventos /></ProtectedRoute>} />
               <Route path="/jugadores" element={<ProtectedRoute pageId="jugadores"><Jugadores /></ProtectedRoute>} />
+              {/* FIELD-GIRA: mismo layout que /jugadores pero con datos seed de la gira */}
+              <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
               <Route path="/salidas" element={<ProtectedRoute pageId="salidas"><Salidas /></ProtectedRoute>} />
               <Route path="/live-scoring" element={<ProtectedRoute pageId="live-scoring"><LiveScoring /></ProtectedRoute>} />
               <Route path="/live" element={<ProtectedRoute pageId="live"><Live /></ProtectedRoute>} />
