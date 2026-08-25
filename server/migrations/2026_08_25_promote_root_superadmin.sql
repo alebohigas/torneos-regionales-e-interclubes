@@ -8,7 +8,7 @@
 -- ===========================================================================
 
 UPDATE usuarios
-   SET tipo = 100,
+   SET tipo = 1,
        activo = 1,
        estatus = 'ACTIVO'
  WHERE usuario = 'root';
