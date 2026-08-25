@@ -125,6 +125,15 @@ const AdminLoginForm = ({ onLogin }: AdminLoginFormProps) => {
       setError(true);
       setErrorMsg(r.error || 'Credenciales inválidas');
       setPassword('');
+      return;
+    }
+    if (r.isSuperadmin) {
+      const superadminOk = await onLogin(password);
+      if (!superadminOk) {
+        setError(true);
+        setErrorMsg('Usuario superadmin inválido');
+        setPassword('');
+      }
     }
   };
 

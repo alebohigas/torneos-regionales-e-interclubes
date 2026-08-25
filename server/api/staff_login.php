@@ -27,7 +27,7 @@ $password = (string)($body['password'] ?? '');
 if ($usuario === '' || $password === '') json_error('Missing credentials', 400);
 
 $u = esc($conn, $usuario);
-$row = query_one($conn, "SELECT id, usuario, nombre, torneoid, pwd, activo, estatus, desde, hasta
+$row = query_one($conn, "SELECT id, usuario, nombre, torneoid, pwd, activo, estatus, desde, hasta, tipo
                            FROM " . USERS_TABLE . " WHERE usuario = '$u' LIMIT 1");
 if (!$row) json_error('Credenciales inválidas', 401);
 
@@ -67,6 +67,11 @@ $te = esc($conn, $token);
 $ee = esc($conn, $expira);
 $conn->query("INSERT INTO usuario_sesion (usuario_id, token, expira) VALUES ($uid, '$te', '$ee')");
 
+$isSuperadmin = (int)($row['tipo'] ?? 0) === SUPERADMIN_TIPO;
+if ($isSuperadmin) {
+    establish_superadmin_session();
+}
+
 // Housekeeping: borrar sesiones expiradas
 $conn->query("DELETE FROM usuario_sesion WHERE expira < NOW()");
 
@@ -81,5 +86,7 @@ json_response([
     'usuario' => $row['usuario'],
     'nombre'  => $row['nombre'],
     'torneoid'=> (int)$row['torneoid'],
+    'tipo'    => (int)($row['tipo'] ?? 0),
+    'is_superadmin' => $isSuperadmin,
     'areas'   => $areas,
 ]);
