@@ -65,7 +65,8 @@ if (!$isSuperadmin && legacy_date_is_set($row['hasta'] ?? null) && $today > $row
 $token = bin2hex(random_bytes(32));
 $uid = (int)$row['id'];
 // La sesión expira con `hasta` (fin de día) o en 12h si no hay hasta real.
-if (legacy_date_is_set($row['hasta'] ?? null)) {
+// Para superadmin tipo=1, ignoramos `hasta` legacy aunque esté vencido.
+if (!$isSuperadmin && legacy_date_is_set($row['hasta'] ?? null)) {
     $expira = $row['hasta'] . ' 23:59:59';
 } else {
     $expira = (new DateTime('+12 hours'))->format('Y-m-d H:i:s');
