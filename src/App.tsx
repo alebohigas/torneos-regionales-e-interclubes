@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 import Convocatoria from "./pages/Convocatoria";
 import Eventos from "./pages/Eventos";
 import Jugadores from "./pages/Jugadores";
+import FieldGira from "./pages/FieldGira";
 import Salidas from "./pages/Salidas";
 import LiveScoring from "./pages/LiveScoring";
 import Live from "./pages/Live";
