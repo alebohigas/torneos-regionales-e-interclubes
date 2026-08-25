@@ -27,7 +27,8 @@ $password = (string)($body['password'] ?? '');
 if ($usuario === '' || $password === '') json_error('Missing credentials', 400);
 
 $u = esc($conn, $usuario);
-$row = query_one($conn, "SELECT id, usuario, nombre, torneoid, pwd, activo, estatus, desde, hasta, tipo
+$pwd2Select = users_table_has_column($conn, 'pwd2') ? ', pwd2' : '';
+$row = query_one($conn, "SELECT id, usuario, nombre, torneoid, pwd$pwd2Select, activo, estatus, desde, hasta, tipo
                            FROM " . USERS_TABLE . " WHERE usuario = '$u' LIMIT 1");
 if (!$row) json_error('Credenciales inválidas', 401);
 
@@ -35,30 +36,34 @@ if (!$row) json_error('Credenciales inválidas', 401);
 $ok = false;
 $pwd = (string)($row['pwd'] ?? '');
 $looksHashed = $pwd !== '' && preg_match('/^\$2[aby]\$/', $pwd);
-if ($looksHashed && password_verify($password, $pwd)) {
+if (password_matches_stored_value($password, $pwd)) {
     $ok = true;
-} elseif (!$looksHashed && $pwd !== '' && hash_equals($pwd, $password)) {
-    // Migrar plano → hash en la misma columna pwd
-    $hash = password_hash($password, PASSWORD_DEFAULT);
-    $h = esc($conn, $hash);
-    $id = (int)$row['id'];
-    $conn->query("UPDATE " . USERS_TABLE . " SET pwd='$h' WHERE id=$id");
+    if (!$looksHashed && $pwd !== '') {
+        // Migrar plano → hash en la misma columna pwd
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $h = esc($conn, $hash);
+        $id = (int)$row['id'];
+        $conn->query("UPDATE " . USERS_TABLE . " SET pwd='$h' WHERE id=$id");
+    }
+} elseif (array_key_exists('pwd2', $row) && password_matches_stored_value($password, $row['pwd2'] ?? '')) {
+    // `pwd2` existe en golftour como contraseña legacy visible; se acepta pero
+    // no se modifica para no romper otras pantallas legacy que aún la consulten.
     $ok = true;
 }
 if (!$ok) json_error('Credenciales inválidas', 401);
 
-// Verificar estatus + rango fechas
+// Verificar estatus + rango fechas. En legacy, 0000-00-00 significa sin límite.
 if ((int)$row['activo'] !== 1) json_error('Usuario inactivo', 403);
 if (strtolower((string)$row['estatus']) === 'inactivo') json_error('Usuario inactivo', 403);
 $today = (new DateTime('today'))->format('Y-m-d');
-if ($row['desde'] && $today < $row['desde']) json_error('Acceso aún no inicia (' . $row['desde'] . ')', 403);
-if ($row['hasta'] && $today > $row['hasta']) json_error('Acceso expirado (' . $row['hasta'] . ')', 403);
+if (legacy_date_is_set($row['desde'] ?? null) && $today < $row['desde']) json_error('Acceso aún no inicia (' . $row['desde'] . ')', 403);
+if (legacy_date_is_set($row['hasta'] ?? null) && $today > $row['hasta']) json_error('Acceso expirado (' . $row['hasta'] . ')', 403);
 
 // Generar token
 $token = bin2hex(random_bytes(32));
 $uid = (int)$row['id'];
-// La sesión expira con `hasta` (fin de día) o en 12h si no hay hasta
-if ($row['hasta']) {
+// La sesión expira con `hasta` (fin de día) o en 12h si no hay hasta real.
+if (legacy_date_is_set($row['hasta'] ?? null)) {
     $expira = $row['hasta'] . ' 23:59:59';
 } else {
     $expira = (new DateTime('+12 hours'))->format('Y-m-d H:i:s');
@@ -67,7 +72,7 @@ $te = esc($conn, $token);
 $ee = esc($conn, $expira);
 $conn->query("INSERT INTO usuario_sesion (usuario_id, token, expira) VALUES ($uid, '$te', '$ee')");
 
-$isSuperadmin = (int)($row['tipo'] ?? 0) === SUPERADMIN_TIPO;
+$isSuperadmin = is_superadmin_tipo($row['tipo'] ?? 0);
 if ($isSuperadmin) {
     establish_superadmin_session();
 }
