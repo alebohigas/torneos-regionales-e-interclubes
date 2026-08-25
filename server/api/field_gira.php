@@ -8,9 +8,12 @@
  *   - jugadores_seed (id, numjugador, nombre, apellido, id_club, categoriaid, fechanac)
  *   - clubs (id, logo)
  *
+ * Siempre se acota por `giraid` cuando llega desde el frontend, para no mezclar
+ * jugadores_seed de todas las giras/copas históricas.
+ *
  * Modos:
- *   GET /api/field_gira.php                -> lista de categorías con conteo
- *   GET /api/field_gira.php?catid=NN       -> categoría + jugadores de esa categoría
+ *   GET /api/field_gira.php?giraid=NN              -> lista de categorías con conteo
+ *   GET /api/field_gira.php?giraid=NN&catid=NN     -> categoría + jugadores
  */
 require_once 'config.php';
 
@@ -24,20 +27,119 @@ function fg_column_exists($conn, $table, $column) {
     return $exists;
 }
 
+/** Verifica existencia de tabla sin romper instalaciones legacy. */
+function fg_table_exists($conn, $table) {
+    $t = esc($conn, $table);
+    $r = @$conn->query("SHOW TABLES LIKE '$t'");
+    $exists = $r && $r->num_rows > 0;
+    if ($r) $r->free();
+    return $exists;
+}
+
+/** Devuelve la primera columna existente de una lista de nombres legacy. */
+function fg_first_existing_column($conn, $table, $columns) {
+    foreach ($columns as $column) {
+        if (fg_column_exists($conn, $table, $column)) return $column;
+    }
+    return null;
+}
+
+/** Sanitiza una lista de ids enteros para usar en un IN (...). */
+function fg_int_list_sql($values) {
+    $ids = [];
+    foreach ($values as $value) {
+        $id = (int)$value;
+        if ($id > 0) $ids[$id] = true;
+    }
+    return implode(',', array_keys($ids));
+}
+
+/** Copas pertenecientes a una gira, incluyendo los ids listados en grupocopas. */
+function fg_copa_ids_for_gira($conn, $giraid) {
+    if (!fg_table_exists($conn, 'copas') || !fg_column_exists($conn, 'copas', 'giraid')) return [];
+    $idCol = fg_first_existing_column($conn, 'copas', ['copasid', 'copa_id', 'id_copa', 'copaid']);
+    if (!$idCol) return [];
+
+    $gid = (int)$giraid;
+    $selectGroup = fg_column_exists($conn, 'copas', 'grupocopas') ? ', grupocopas' : '';
+    $rows = query_all($conn, "SELECT `$idCol` AS id$selectGroup FROM copas WHERE giraid = $gid");
+    $ids = [];
+    foreach ($rows as $row) {
+        $ids[] = $row['id'];
+        if (isset($row['grupocopas'])) {
+            foreach (explode(',', (string)$row['grupocopas']) as $piece) {
+                $piece = trim($piece);
+                if ($piece !== '') $ids[] = $piece;
+            }
+        }
+    }
+    return $ids;
+}
+
+/** Torneos pertenecientes a una gira. */
+function fg_torneo_ids_for_gira($conn, $giraid) {
+    if (!fg_table_exists($conn, 'torneo') || !fg_column_exists($conn, 'torneo', 'giraid')) return [];
+    $idCol = fg_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id_torneo']);
+    if (!$idCol) return [];
+    $gid = (int)$giraid;
+    $rows = query_all($conn, "SELECT `$idCol` AS id FROM torneo WHERE giraid = $gid");
+    return array_map(function ($row) { return $row['id']; }, $rows);
+}
+
+/**
+ * Condición de alcance para una tabla seed. Prioridad:
+ * 1) columna giraid directa
+ * 2) columna de copa contra copas.giraid / copas.grupocopas
+ * 3) columna de torneo contra torneo.giraid
+ */
+function fg_scope_condition_for_table($conn, $table, $alias, $giraid) {
+    if ($giraid === '' || !ctype_digit((string)$giraid)) return '';
+    $gid = (int)$giraid;
+    $safeAlias = preg_replace('/[^A-Za-z0-9_]/', '', (string)$alias);
+
+    if (fg_column_exists($conn, $table, 'giraid')) {
+        return " AND $safeAlias.`giraid` = $gid ";
+    }
+
+    $copaCol = fg_first_existing_column($conn, $table, ['copasid', 'copa_id', 'id_copa', 'copaid']);
+    if ($copaCol) {
+        $copaIds = fg_int_list_sql(fg_copa_ids_for_gira($conn, $gid));
+        return $copaIds !== '' ? " AND $safeAlias.`$copaCol` IN ($copaIds) " : ' AND 1=0 ';
+    }
+
+    $torneoCol = fg_first_existing_column($conn, $table, ['torneoid', 'torneo_id', 'id_torneo', 'torneo']);
+    if ($torneoCol) {
+        $torneoIds = fg_int_list_sql(fg_torneo_ids_for_gira($conn, $gid));
+        return $torneoIds !== '' ? " AND $safeAlias.`$torneoCol` IN ($torneoIds) " : ' AND 1=0 ';
+    }
+
+    return '';
+}
+
+/** Acota el JOIN categorias_tmp + jugadores_seed a la gira activa. */
+function fg_join_scope_condition($conn, $giraid) {
+    if ($giraid === '' || !ctype_digit((string)$giraid)) return '';
+    $catScope = fg_scope_condition_for_table($conn, 'categorias_tmp', 'a', $giraid);
+    $playerScope = fg_scope_condition_for_table($conn, 'jugadores_seed', 'b', $giraid);
+    if ($catScope === '' && $playerScope === '') {
+        // Si llega giraid pero no existe forma de acotar, es más seguro no mezclar
+        // todas las giras históricas.
+        return ' AND 1=0 ';
+    }
+    return $catScope . $playerScope;
+}
+
 $catid = isset($_GET['catid']) ? trim((string)$_GET['catid']) : '';
 
-/** Filtro opcional por gira: solo si la tabla lo soporta y llega el parámetro. */
-$giraFilter = '';
 $giraid = isset($_GET['giraid']) ? trim((string)$_GET['giraid']) : '';
-if ($giraid !== '' && ctype_digit($giraid) && fg_column_exists($conn, 'categorias_tmp', 'giraid')) {
-    $giraFilter = ' AND a.giraid = ' . (int)$giraid . ' ';
-}
+$joinGiraFilter = fg_join_scope_condition($conn, $giraid);
+$playersGiraFilter = fg_scope_condition_for_table($conn, 'jugadores_seed', 'a', $giraid);
 
 // ============= Modo lista de categorías =============
 if ($catid === '') {
-    $sql  = "SELECT a.categoriasTmp_id, a.categoria, COUNT(*) AS tot ";
+    $sql  = "SELECT a.categoriasTmp_id, a.categoria, COUNT(DISTINCT b.id) AS tot ";
     $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
-    $sql .= "WHERE 1=1 $giraFilter ";
+    $sql .= "WHERE 1=1 $joinGiraFilter ";
     $sql .= "GROUP BY a.categoriasTmp_id, a.categoria ";
     $sql .= "ORDER BY a.categoriasTmp_id ASC";
 
@@ -60,15 +162,15 @@ if (!ctype_digit($catid)) {
 $cid = (int)$catid;
 
 // ============= Modo detalle: categoría + jugadores =============
-$catSql  = "SELECT a.categoriasTmp_id, a.categoria, COUNT(*) AS tot ";
+$catSql  = "SELECT a.categoriasTmp_id, a.categoria, COUNT(DISTINCT b.id) AS tot ";
 $catSql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
-$catSql .= "WHERE a.categoriasTmp_id = $cid ";
+$catSql .= "WHERE a.categoriasTmp_id = $cid $joinGiraFilter ";
 $catSql .= "GROUP BY a.categoriasTmp_id, a.categoria";
 $catRow = query_one($conn, $catSql);
 
 $plSql  = "SELECT a.id, a.numjugador, CONCAT(a.nombre, ' ', a.apellido) AS jugador, b.logo, a.fechanac ";
 $plSql .= "FROM jugadores_seed AS a JOIN clubs AS b ON (a.id_club = b.id) ";
-$plSql .= "WHERE a.categoriaid = $cid ";
+$plSql .= "WHERE a.categoriaid = $cid $playersGiraFilter ";
 $plSql .= "ORDER BY a.nombre, a.apellido";
 $plRows = query_all($conn, $plSql);
 
