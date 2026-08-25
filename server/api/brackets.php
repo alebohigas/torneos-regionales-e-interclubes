@@ -926,7 +926,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = optional_param('action', '');
 
 if ($method === 'GET') {
-    $torneoid = require_param('torneoid');
+    $torneoid = require_torneoid($conn);
     if ($action === 'get_putt_finales')      action_get_putt_finales($conn, $torneoid);
     elseif ($action === 'get_putt_admin')    action_get_putt_admin($conn, $torneoid);
     else json_error("Unknown GET action '$action'. Try get_putt_finales | get_putt_admin.", 400);

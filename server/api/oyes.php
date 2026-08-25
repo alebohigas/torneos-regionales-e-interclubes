@@ -10,7 +10,7 @@
  */
 require_once 'config.php';
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $modo     = optional_param('modo', 'general');
 
 $tid = esc($conn, $torneoid);

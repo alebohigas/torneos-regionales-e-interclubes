@@ -18,7 +18,7 @@
 require_once 'config.php';
 
 $catid    = require_param('catid');
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 
 $cid = esc($conn, $catid);
 $tid = esc($conn, $torneoid);

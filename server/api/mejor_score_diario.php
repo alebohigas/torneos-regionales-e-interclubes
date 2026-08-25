@@ -22,7 +22,7 @@
  */
 require_once 'config.php';
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 
 /** Spanish day/month labels (server-locale-independent) */

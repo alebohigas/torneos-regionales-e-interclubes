@@ -24,7 +24,7 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0'); 
 
 $catid    = require_param('catid');
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $gross    = optional_param('gross', '0');
 
 $cid = esc($conn, $catid);

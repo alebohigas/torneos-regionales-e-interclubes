@@ -20,7 +20,7 @@
  */
 require_once 'config.php';
 
-$torneoid    = require_param('torneoid');
+$torneoid    = require_torneoid($conn);
 $categoriaid = require_param('categoriaid');
 $tid = esc($conn, $torneoid);
 $cid = esc($conn, $categoriaid);

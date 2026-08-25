@@ -11,7 +11,7 @@
 require_once 'config.php';
 
 $catid    = require_param('catid');
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $tipo     = optional_param('tipo', 'stroke');
 $gross    = optional_param('gross', '0');
 

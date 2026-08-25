@@ -49,7 +49,17 @@ const buildQuery = (params: Record<string, string> = {}): string => {
     ? new URLSearchParams(window.location.search).get('debug')
     : null;
   const torneoId = getTorneoId();
-  const baseParams = torneoId ? { torneoid: torneoId } : {};
+  /**
+   * Esta instalación se configura por gira (`site_config.giraid`) y ya no
+   * guarda un torneoid por dominio. Cuando no hay torneoid local, mandamos
+   * `giraid` para que el backend resuelva el torneo activo de la gira
+   * (`require_torneoid()` en config.php) en vez de responder 400.
+   */
+  const giraId = getGiraId().trim();
+  const baseParams = torneoId
+    ? { torneoid: torneoId }
+    : (giraId ? { giraid: giraId } : {});
+
   const allParams = {
     ...baseParams,
     ...params,

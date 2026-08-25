@@ -107,7 +107,7 @@ function safe_query_all($conn, $sql) {
     return $rows;
 }
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $tipo     = optional_param('tipo', '');
 $detalle  = optional_param('detalle', '0');
 

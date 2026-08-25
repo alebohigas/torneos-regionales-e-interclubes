@@ -21,7 +21,7 @@
  */
 require_once 'config.php';
 
-$torneoid = (int) require_param('torneoid');
+$torneoid = (int) require_torneoid($conn);
 
 // ¿Existe la tabla?
 $check = $conn->query("SHOW TABLES LIKE 'valorstable'");

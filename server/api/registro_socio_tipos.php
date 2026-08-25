@@ -41,7 +41,7 @@ function socio_tipos_table_exists($conn) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $torneoid = (int) require_param('torneoid');
+    $torneoid = (int) require_torneoid($conn);
 
     if (!socio_tipos_table_exists($conn)) {
         json_response(['items' => $DEFAULT_ITEMS, 'source' => 'defaults']);

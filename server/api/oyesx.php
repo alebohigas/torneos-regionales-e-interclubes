@@ -8,7 +8,7 @@
  */
 require_once 'config.php';
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $tipo     = optional_param('tipo', '');
 
 $tid = esc($conn, $torneoid);

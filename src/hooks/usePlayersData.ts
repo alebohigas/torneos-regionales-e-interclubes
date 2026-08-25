@@ -7,6 +7,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { getCategoriesUrl, getPlayersApiUrl, POLL_SLOW } from '@/config/api';
+import { useGiraId } from '@/hooks/useGiraId';
+
 import type { Player, CategoryDetail, ParejaGroup } from '@/data/playersData';
 
 // ============= Types =============
@@ -41,14 +43,19 @@ interface PlayersApiResponse {
  *                   Usado por /jugadores.
  */
 export const useCategories = (opts: { skin?: boolean; withPlayers?: boolean } = {}) => {
+  /** La gira activa forma parte de la key: cuando site_config.php la resuelve
+   *  (o el admin la cambia), la consulta se invalida y vuelve a pedir las
+   *  categorías del torneo activo de esa gira. */
+  const { giraId } = useGiraId();
   return useQuery<CategoryDetail[]>({
     // Distinct key so /jugadores and /skinplayers caches don't collide.
-    queryKey: ['categories', opts.skin ? 'skin' : 'all', opts.withPlayers ? 'withplayers' : 'any'],
+    queryKey: ['categories', opts.skin ? 'skin' : 'all', opts.withPlayers ? 'withplayers' : 'any', giraId],
     queryFn: () => apiFetch<CategoryDetail[]>(getCategoriesUrl({ skin: opts.skin, withPlayers: opts.withPlayers })),
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });
 };
+
 
 
 // ============= Players by Category =============

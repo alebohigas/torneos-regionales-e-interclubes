@@ -17,7 +17,7 @@
  */
 require_once 'config.php';
 
-$torneoid = require_param('torneoid');
+$torneoid = require_torneoid($conn);
 $gpoid    = optional_param('gpoid', null);
 $fecha    = optional_param('fecha', null);
 $campoid  = optional_param('campoid', null);
