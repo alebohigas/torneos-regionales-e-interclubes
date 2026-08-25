@@ -261,6 +261,79 @@ function optional_param($name, $default = null) {
     return isset($_GET[$name]) && $_GET[$name] !== '' ? $_GET[$name] : $default;
 }
 
+// ============= Gira -> Torneo resolution =============
+// Esta instalación se configura por `giraid` (site_config.giraid) y ya NO
+// guarda un torneoid por dominio. Los endpoints legacy que siguen razonando
+// por torneo (categories.php, players.php, resultados, etc.) resuelven el
+// torneo activo de la gira con estos helpers, en lugar de fallar con
+// "Missing required parameter: torneoid".
+
+/** ¿Existe la columna en la tabla? (silencioso, sin romper el JSON) */
+function api_column_exists($conn, $table, $column) {
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) return false;
+    $column = $conn->real_escape_string($column);
+    $r = @$conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+    $exists = $r && $r->num_rows > 0;
+    if ($r) $r->free();
+    return $exists;
+}
+
+/** Primera columna existente de una lista de nombres legacy equivalentes. */
+function api_first_existing_column($conn, $table, $columns) {
+    foreach ($columns as $c) {
+        if (api_column_exists($conn, $table, $c)) return $c;
+    }
+    return null;
+}
+
+/**
+ * Torneo activo de una gira.
+ * Prioridad: torneo en curso (hoy entre fecha_ini y fecha_fin) > último ya
+ * iniciado > próximo por comenzar. Devuelve null si no hay torneos.
+ */
+function gira_active_torneoid($conn, $giraid) {
+    if ($giraid === null || !ctype_digit((string)$giraid)) return null;
+    $gid = (int)$giraid;
+    if (!api_column_exists($conn, 'torneo', 'giraid')) return null;
+    $idCol = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id_torneo']);
+    if (!$idCol) return null;
+    $hasIni = api_column_exists($conn, 'torneo', 'fecha_ini');
+    $hasFin = api_column_exists($conn, 'torneo', 'fecha_fin');
+    $order = "`$idCol` DESC";
+    if ($hasIni && $hasFin) {
+        $order = "(CASE WHEN CURDATE() BETWEEN `fecha_ini` AND `fecha_fin` THEN 0
+                        WHEN `fecha_ini` <= CURDATE() THEN 1 ELSE 2 END) ASC,
+                  ABS(DATEDIFF(`fecha_ini`, CURDATE())) ASC, `$idCol` DESC";
+    } elseif ($hasIni) {
+        $order = "`fecha_ini` DESC, `$idCol` DESC";
+    }
+    $r = @$conn->query("SELECT `$idCol` AS id FROM `torneo` WHERE `giraid` = $gid ORDER BY $order LIMIT 1");
+    if (!$r) return null;
+    $row = $r->fetch_assoc();
+    $r->free();
+    return $row && $row['id'] !== null ? (string)$row['id'] : null;
+}
+
+/**
+ * torneoid requerido, tolerante al esquema de giras.
+ * 1) ?torneoid=NN explícito
+ * 2) ?giraid=NN -> torneo activo de la gira
+ * Si no se puede resolver, devuelve un error claro (no un 400 opaco).
+ */
+function require_torneoid($conn) {
+    $tid = optional_param('torneoid');
+    if ($tid !== null && $tid !== '') return $tid;
+    $gid = optional_param('giraid');
+    if ($gid !== null && $gid !== '') {
+        $resolved = gira_active_torneoid($conn, $gid);
+        if ($resolved !== null) return $resolved;
+        json_error("La gira $gid no tiene torneos registrados (torneo.giraid)", 400);
+    }
+    json_error('Missing required parameter: torneoid (ni giraid para resolverlo)', 400);
+}
+
+
+
 /**
  * Execute query and return all rows as associative array
  * @param mysqli $conn - Database connection
