@@ -466,7 +466,7 @@ function site_config_debug_snapshot($conn, $domain, $body = []) {
 
         $su = @$conn->query("SELECT usuario, LENGTH(pwd) pwd_len, tipo, estatus" .
             (array_key_exists('activo', $usersColumns) ? ", activo" : "") .
-            " FROM " . $usersTable . " WHERE tipo=" . SUPERADMIN_TIPO . " ORDER BY usuario LIMIT 10");
+            " FROM " . $usersTable . " WHERE " . superadmin_tipo_where() . " ORDER BY usuario LIMIT 10");
         if ($su) {
             while ($s = $su->fetch_assoc()) {
                 $superadminUsers[] = [
@@ -686,7 +686,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $debug = site_config_debug_snapshot($conn, $domain, $body);
             $message = 'Sesión de administrador no válida. Cierra sesión y vuelve a ingresar.';
             if (!empty($debug['auth']['default_fallback_active']) && empty($debug['auth']['password_matches_superadmin'])) {
-                $message = 'Contraseña superadmin no inicializada en usuarios. Ingresa con la contraseña default o configura SUPERADMIN_PASSWORD en credentials.php y vuelve a intentar.';
+                $message = 'No se encontró un usuario superadmin válido. Ingresa con un usuario activo de tipo 1 en la tabla usuarios.';
             }
             site_config_debug_error(
                 $message,
