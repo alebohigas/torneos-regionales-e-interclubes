@@ -540,7 +540,7 @@ const Header = () => {
           <button
             className={cn(
               "w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-              isGroupActive(item.children!)
+              (isGroupActive(item.children ?? []) || isSectionsActive(item.sections))
                 ? "bg-primary/10 text-primary"
                 : "text-foreground/80 hover:bg-muted",
               item.hidden && "opacity-50 italic",
@@ -558,7 +558,51 @@ const Header = () => {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-border pl-4">
-            {item.children!.map((child) => (
+            {/* Segundo nivel: cada etapa con su propio chevron */}
+            {item.sections?.map((section) => (
+              <Collapsible
+                key={section.id}
+                open={openMobileSection === section.id}
+                onOpenChange={(open) => setOpenMobileSection(open ? section.id : null)}
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-lg transition-colors",
+                      section.links.some((l) => l.path === location.pathname)
+                        ? "text-primary"
+                        : "text-foreground/80 hover:bg-muted",
+                    )}
+                  >
+                    <span>{section.label}</span>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      openMobileSection === section.id && "rotate-180",
+                    )} />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-border pl-3">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.id}
+                        to={link.path}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={cn(
+                          "px-3 py-2 text-sm rounded-lg transition-colors",
+                          location.pathname === link.path
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground/70 hover:bg-muted",
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+            {(item.children ?? []).map((child) => (
               <Link
                 key={child.id}
                 to={child.path}
