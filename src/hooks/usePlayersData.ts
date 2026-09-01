@@ -43,7 +43,7 @@ interface PlayersApiResponse {
  *                   Usado por /jugadores.
  */
 export const useCategories = (
-  opts: { skin?: boolean; withPlayers?: boolean; torneoId?: string } = {},
+  opts: { skin?: boolean; withPlayers?: boolean; torneoId?: string; enabled?: boolean } = {},
 ) => {
   /** La gira activa forma parte de la key: cuando site_config.php la resuelve
    *  (o el admin la cambia), la consulta se invalida y vuelve a pedir las
@@ -61,6 +61,7 @@ export const useCategories = (
       apiFetch<CategoryDetail[]>(
         getCategoriesUrl({ skin: opts.skin, withPlayers: opts.withPlayers, torneoId: opts.torneoId }),
       ),
+    enabled: opts.enabled !== false,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });

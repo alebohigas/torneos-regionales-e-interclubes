@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Trophy, ArrowLeft, Medal, Loader2 } from 'lucide-react';
 import resultadosHero from '@/assets/resultados-hero.jpg';
 import { useState, Fragment } from 'react';
+import { useEtapaActual } from '@/hooks/useEtapaActual';
 import { useAllResults, useCategoryResults, fetchPlayerScorecardFromApi, fetchParejasScorecardFromApi } from '@/hooks/useResultadosData';
 import type { ParejaScorecard } from '@/hooks/useResultadosData';
 import type { 
@@ -144,9 +145,13 @@ const countedRounds = (
 interface ResultadosProps {
   embedded?: boolean;
   torneoIdOverride?: string;
+  /** Título del hero (usado por /resultados/e/:etapa) */
+  title?: string;
+  /** Subtítulo del hero */
+  subtitle?: string;
 }
 
-const Resultados = ({ embedded = false, torneoIdOverride }: ResultadosProps = {}) => {
+const Resultados = ({ embedded = false, torneoIdOverride, title, subtitle }: ResultadosProps = {}) => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedScoringType, setSelectedScoringType] = useState<ScoringType | null>(null);
 
@@ -157,15 +162,21 @@ const Resultados = ({ embedded = false, torneoIdOverride }: ResultadosProps = {}
   const [parejaScorecardData, setParejaScorecardData] = useState<ParejaScorecard | null>(null);
   const [scorecardLoading, setScorecardLoading] = useState(false);
 
+  /** Sin torneo explícito: última etapa con información — MISMA lógica que
+   *  /jugadores (useEtapaActual) para no mostrar torneoid distintos. */
+  const { torneoId: etapaTorneoId, isResolving } = useEtapaActual();
+  const effectiveTorneoId = torneoIdOverride ?? etapaTorneoId;
+
   // Fetch all categories from API
-  const { data: categories = [], isLoading: loadingCats } = useAllResults(torneoIdOverride);
+  const { data: categories = [], isLoading: loadingCatsRaw } = useAllResults(effectiveTorneoId);
+  const loadingCats = loadingCatsRaw || (!torneoIdOverride && isResolving);
 
   // Fetch selected category detail from API (passes gross param based on scoring type)
   const { data: categoryDetail, isLoading: loadingDetail } = useCategoryResults(
     selectedCategoryId,
     !!selectedCategoryId && !!selectedScoringType,
     selectedScoringType || 'NETO',
-    torneoIdOverride,
+    effectiveTorneoId,
   );
 
   /** Find the selected category object from the list (metadata only) */
@@ -280,7 +291,7 @@ const Resultados = ({ embedded = false, torneoIdOverride }: ResultadosProps = {}
           player.id,
           categoryDetail.categoryId,
           fecha,
-          torneoIdOverride,
+          effectiveTorneoId,
         );
         setParejaScorecardData(pareja);
       } else {
@@ -291,7 +302,7 @@ const Resultados = ({ embedded = false, torneoIdOverride }: ResultadosProps = {}
           categoryDetail.system || '',
           selectedScoringType || 'NETO',
           round,
-          torneoIdOverride,
+          effectiveTorneoId,
         );
         setScorecardData(scorecard);
       }
@@ -795,8 +806,8 @@ const Resultados = ({ embedded = false, torneoIdOverride }: ResultadosProps = {}
   return (
     <Layout>
       <PageHero
-        title="Resultados"
-        subtitle="Consulta los resultados de cada ronda y clasificación general"
+        title={title ?? 'Resultados'}
+        subtitle={subtitle ?? 'Consulta los resultados de cada ronda y clasificación general'}
         backgroundImage={resultadosHero}
       />
       {body}

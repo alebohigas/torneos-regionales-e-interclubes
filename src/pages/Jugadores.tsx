@@ -14,6 +14,7 @@ import { ArrowLeft, Users, Loader2, HelpCircle } from 'lucide-react';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
 import { useState } from 'react';
 import { useCategories, usePlayers } from '@/hooks/usePlayersData';
+import { useEtapaActual } from '@/hooks/useEtapaActual';
 import { useTournamentInfo } from '@/hooks/useTournamentData';
 import type { CategoryDetail } from '@/data/playersData';
 
@@ -30,9 +31,18 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
   /** Currently selected category (null = show grid) */
   const [selectedCategory, setSelectedCategory] = useState<CategoryDetail | null>(null);
 
+  /** Sin torneo explícito: última etapa con información (misma lógica que /resultados). */
+  const { torneoId: etapaTorneoId, isResolving } = useEtapaActual();
+  const effectiveTorneoId = torneoId ?? etapaTorneoId;
+
   // Fetch categories from API (solo categorías con jugadores inscritos,
   // replicando el query legacy: categorias JOIN jugadores, estatus>0)
-  const { data: categories = [], isLoading: loadingCats } = useCategories({ withPlayers: true, torneoId });
+  const { data: categories = [], isLoading: loadingCatsRaw } = useCategories({
+    withPlayers: true,
+    torneoId: effectiveTorneoId,
+    enabled: !!torneoId || !isResolving,
+  });
+  const loadingCats = loadingCatsRaw || (!torneoId && isResolving);
 
   const { data: tournamentInfo } = useTournamentInfo();
   /** Atlas CC (torneoid=354) pidió sustituir el contador de jugadores
