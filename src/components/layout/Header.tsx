@@ -733,7 +733,13 @@ const Header = () => {
                                 {item.label}
                                 {item.hidden && <EyeOff className="h-3 w-3" />}
                               </span>
-                              {item.children!.map((child) => (
+                              {/* Segundo nivel (etapas) dentro del menú "..." */}
+                              {item.sections?.map((section) => (
+                                <div key={section.id} className="pl-3">
+                                  <DesktopNavSection section={section} currentPath={location.pathname} />
+                                </div>
+                              ))}
+                              {(item.children ?? []).map((child) => (
                                 <NavigationMenuLink key={child.id} asChild>
                                   <Link
                                     to={child.path}
