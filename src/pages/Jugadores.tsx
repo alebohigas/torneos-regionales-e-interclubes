@@ -42,7 +42,8 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
   // Fetch players only when a category is selected
   const { data: playersData, isLoading: loadingPlayers } = usePlayers(
     selectedCategory?.id ?? null,
-    !!selectedCategory
+    !!selectedCategory,
+    { torneoId }
   );
   const players = playersData?.players ?? [];
   const fechaHandicap = playersData?.fechaHandicap ?? '';
@@ -60,8 +61,8 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
   return (
     <Layout>
       <PageHero
-        title="Jugadores"
-        subtitle="Lista completa de participantes inscritos en el torneo"
+        title={title}
+        subtitle={subtitle ?? 'Lista completa de participantes inscritos en el torneo'}
         backgroundImage={jugadoresHero}
       />
       <section className="py-16 bg-white">
