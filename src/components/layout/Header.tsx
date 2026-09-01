@@ -392,7 +392,7 @@ const Header = () => {
           className={cn(
             "bg-transparent hover:bg-transparent data-[state=open]:bg-transparent",
             "text-foreground/80 hover:text-primary data-[state=open]:text-primary text-sm",
-            isGroupActive(item.children!) && "text-primary",
+            (isGroupActive(item.children ?? []) || isSectionsActive(item.sections)) && "text-primary",
             item.wrapText && "flex-col leading-tight text-center h-auto py-1 min-h-[40px]",
             // Admin preview: dim hidden groups
             item.hidden && "opacity-50 italic",
