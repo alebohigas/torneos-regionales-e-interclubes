@@ -54,10 +54,14 @@ function categories_first_existing_column($conn, $table, $columns) {
  * grid mirrors the legacy `jugadores_skin.php` view.
  */
 $skinOnly = isset($_GET['skin']) && $_GET['skin'] === '1';
-$playerJoinCond = $skinOnly
+/** Las columnas de skin no existen en todas las bases (esquema golftour). */
+$hasSkeenjuga = categories_column_exists($conn, 'jugadores', 'Skeenjuga');
+$hasCatrel    = categories_column_exists($conn, 'categorias', 'catrel');
+$playerJoinCond = ($skinOnly && $hasSkeenjuga)
     ? "(a.categoria_id = b.categoriaid AND b.Skeenjuga = 1)"
     : "(a.categoria_id = b.categoriaid)";
-$skinCatFilter = $skinOnly ? " AND a.catrel = 0 " : '';
+$skinCatFilter = ($skinOnly && $hasCatrel) ? " AND a.catrel = 0 " : '';
+
 
 /**
  * Optional `?withplayers=1` flag (usado por /jugadores).
