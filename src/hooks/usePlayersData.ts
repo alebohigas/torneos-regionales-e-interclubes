@@ -42,15 +42,25 @@ interface PlayersApiResponse {
  *                   player (INNER JOIN categorias+jugadores, estatus>0).
  *                   Usado por /jugadores.
  */
-export const useCategories = (opts: { skin?: boolean; withPlayers?: boolean } = {}) => {
+export const useCategories = (
+  opts: { skin?: boolean; withPlayers?: boolean; torneoId?: string } = {},
+) => {
   /** La gira activa forma parte de la key: cuando site_config.php la resuelve
    *  (o el admin la cambia), la consulta se invalida y vuelve a pedir las
    *  categorías del torneo activo de esa gira. */
   const { giraId } = useGiraId();
   return useQuery<CategoryDetail[]>({
     // Distinct key so /jugadores and /skinplayers caches don't collide.
-    queryKey: ['categories', opts.skin ? 'skin' : 'all', opts.withPlayers ? 'withplayers' : 'any', giraId],
-    queryFn: () => apiFetch<CategoryDetail[]>(getCategoriesUrl({ skin: opts.skin, withPlayers: opts.withPlayers })),
+    queryKey: [
+      'categories',
+      opts.skin ? 'skin' : 'all',
+      opts.withPlayers ? 'withplayers' : 'any',
+      opts.torneoId || giraId,
+    ],
+    queryFn: () =>
+      apiFetch<CategoryDetail[]>(
+        getCategoriesUrl({ skin: opts.skin, withPlayers: opts.withPlayers, torneoId: opts.torneoId }),
+      ),
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });
