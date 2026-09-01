@@ -148,6 +148,8 @@ const App = () => (
               <Route path="/live-scoring" element={<ProtectedRoute pageId="live-scoring"><LiveScoring /></ProtectedRoute>} />
               <Route path="/live" element={<ProtectedRoute pageId="live"><Live /></ProtectedRoute>} />
               <Route path="/resultados" element={<ProtectedRoute pageId="resultados"><Resultados /></ProtectedRoute>} />
+              {/* Resultados por etapa de la gira (un torneo por etapa) */}
+              <Route path="/resultados/e/:etapa" element={<ProtectedRoute pageId="resultados"><ResultadosEtapa /></ProtectedRoute>} />
               {/* Historial de resultados de ediciones anteriores (hasta 5 años) */}
               <Route path="/historial" element={<ProtectedRoute pageId="historial"><Historial /></ProtectedRoute>} />
               <Route path="/competicion" element={<ProtectedRoute pageId="competicion"><Competencias /></ProtectedRoute>} />
