@@ -20,7 +20,7 @@ import AdminPageCard from './AdminPageCard';
 import AdminMenuOrder from './AdminMenuOrder';
 import AdminMenuGroups, { type MenuGroup } from './AdminMenuGroups';
 import AdminHomeButtons from './AdminHomeButtons';
-import type { MenuItem } from '@/data/mockData';
+import { giraMenuOrderItem, type MenuItem } from '@/data/mockData';
 import type {
   PageVisibilitySettings,
   PageNotes,
@@ -83,6 +83,9 @@ const AdminPagina = ({
   onSetMenuGroups,
   onSetPageGroupAssignment,
 }: AdminPaginaProps) => {
+  /** GIRA is a generated dropdown, but it needs a real row in the order editor. */
+  const orderableMenuItems = [...menuItems, giraMenuOrderItem];
+
   return (
     <Tabs defaultValue="visibility" className="space-y-4">
       <TabsList className="grid w-full grid-cols-4">
@@ -155,7 +158,7 @@ const AdminPagina = ({
       {/* ---------------- Orden ---------------- */}
       <TabsContent value="order">
         <AdminMenuOrder
-          menuItems={menuItems}
+          menuItems={orderableMenuItems}
           visibilitySettings={visibilitySettings}
           menuItemOrder={menuItemOrder}
           onOrderChange={onSetMenuOrder}
