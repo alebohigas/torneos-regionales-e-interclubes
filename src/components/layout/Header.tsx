@@ -414,29 +414,40 @@ const Header = () => {
           )}
         </NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className="grid w-[200px] gap-1 p-2">
-            {item.children!.map((child) => (
-              <li key={child.id}>
-                <NavigationMenuLink asChild>
-                  <Link
-                    to={child.path}
-                    className={cn(
-                      "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors",
-                      "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                      location.pathname === child.path && "bg-accent text-accent-foreground",
-                      child.hidden && "opacity-50 italic",
-                    )}
-                    title={child.hidden ? 'Página oculta (visible solo para admin)' : undefined}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {child.label}
-                      {child.hidden && <EyeOff className="h-3 w-3" />}
-                    </span>
-                  </Link>
-                </NavigationMenuLink>
-              </li>
-            ))}
-          </ul>
+          {item.sections ? (
+            /* Grupo de dos niveles (GIRA → Etapa N → páginas de la etapa) */
+            <ul className="grid w-[240px] gap-1 p-2">
+              {item.sections.map((section) => (
+                <li key={section.id}>
+                  <DesktopNavSection section={section} currentPath={location.pathname} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="grid w-[200px] gap-1 p-2">
+              {item.children!.map((child) => (
+                <li key={child.id}>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to={child.path}
+                      className={cn(
+                        "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                        location.pathname === child.path && "bg-accent text-accent-foreground",
+                        child.hidden && "opacity-50 italic",
+                      )}
+                      title={child.hidden ? 'Página oculta (visible solo para admin)' : undefined}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {child.label}
+                        {child.hidden && <EyeOff className="h-3 w-3" />}
+                      </span>
+                    </Link>
+                  </NavigationMenuLink>
+                </li>
+              ))}
+            </ul>
+          )}
         </NavigationMenuContent>
       </>
     );
