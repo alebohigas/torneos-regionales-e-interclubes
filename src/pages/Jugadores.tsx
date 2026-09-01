@@ -14,6 +14,7 @@ import { ArrowLeft, Users, Loader2, HelpCircle } from 'lucide-react';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
 import { useState } from 'react';
 import { useCategories, usePlayers } from '@/hooks/usePlayersData';
+import { useEtapaActual } from '@/hooks/useEtapaActual';
 import { useTournamentInfo } from '@/hooks/useTournamentData';
 import type { CategoryDetail } from '@/data/playersData';
 
