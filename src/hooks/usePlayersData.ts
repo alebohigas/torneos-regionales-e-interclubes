@@ -77,12 +77,19 @@ export const useCategories = (
  * @param opts.skin  When true, only players enrolled in the SKIN GAME
  *                   (jugadores.Skeenjuga=1) are returned.
  */
-export const usePlayers = (catId: string | null, enabled = true, opts: { skin?: boolean } = {}) => {
+export const usePlayers = (
+  catId: string | null,
+  enabled = true,
+  opts: { skin?: boolean; torneoId?: string } = {},
+) => {
   return useQuery<{ players: Player[]; fechaHandicap: string; isParejas: boolean; groups: ParejaGroup[] }>({
-    queryKey: ['players', catId, opts.skin ? 'skin' : 'all'],
+    queryKey: ['players', catId, opts.skin ? 'skin' : 'all', opts.torneoId ?? ''],
     queryFn: async () => {
       if (!catId) return { players: [], fechaHandicap: '', isParejas: false, groups: [] };
-      const data = await apiFetch<PlayersApiResponse>(getPlayersApiUrl(catId, { skin: opts.skin }));
+      const data = await apiFetch<PlayersApiResponse>(
+        getPlayersApiUrl(catId, { skin: opts.skin, torneoId: opts.torneoId }),
+      );
+
 
       // Transform API response to Player format and sort alphabetically by first name
       const players = (data.players || []).map(p => ({
