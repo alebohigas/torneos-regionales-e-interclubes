@@ -214,6 +214,9 @@ const Header = () => {
    */
   const sourceItems = isAdmin ? getAllMenuItems() : getVisibleMenuItems();
 
+  /** Etapas de la gira con jugadores inscritos → subpáginas de /jugadores */
+  const { data: jugadoresEtapas = [] } = useJugadoresEtapas();
+
   /** Per-page hidden flag (admin preview only) */
   const isPageHiddenForAdmin = (pageId: string): boolean => {
     if (!isAdmin) return false;
