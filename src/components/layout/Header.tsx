@@ -23,7 +23,7 @@ import { usePageVisibility } from '@/contexts/PageVisibilityContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { MenuItem } from '@/data/mockData';
+import { giraMenuOrderItem, type MenuItem } from '@/data/mockData';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -278,6 +278,7 @@ const Header = () => {
     pageGroupAssignments,
     isPageVisible,
     visibilitySettings,
+    menuItemOrder,
   } = usePageVisibility();
   /**
    * In admin preview mode we want the header to mirror the configured
@@ -317,10 +318,48 @@ const Header = () => {
      * Trusting the array order keeps groups positioned at the slot of
      * their first ordered child page, exactly like the admin sees it.
      */
-    const sortedItems = sourceItems;
+    // Include GIRA as a virtual ordering anchor. Unlike a normal page it is
+    // rendered below as the generated stages dropdown, but its position comes
+    // from the same menu_order map managed by Admin > Página > Orden.
+    const sortedItems = [...sourceItems, giraMenuOrderItem].sort((a, b) => {
+      const orderA = menuItemOrder[a.id] ?? a.order;
+      const orderB = menuItemOrder[b.id] ?? b.order;
+      return orderA - orderB;
+    });
 
     for (const item of sortedItems) {
       if (processedPages.has(item.id)) continue;
+
+      if (item.id === giraMenuOrderItem.id) {
+        if (jugadoresEtapas.length > 0) {
+          navItems.push({
+            type: 'group',
+            id: giraMenuOrderItem.id,
+            label: giraMenuOrderItem.label,
+            children: [],
+            sections: [...jugadoresEtapas]
+              .sort((a, b) => a.etapa - b.etapa)
+              .map((e) => ({
+                id: `etapa-${e.etapa}`,
+                label: `Etapa ${e.etapa}`,
+                links: [
+                  {
+                    id: `jugadores-e-${e.etapa}`,
+                    label: `Jugadores Etapa-${e.etapa}`,
+                    path: `/jugadores/e/${e.etapa}`,
+                  },
+                  {
+                    id: `resultados-e-${e.etapa}`,
+                    label: `Resultados Etapa-${e.etapa}`,
+                    path: `/resultados/e/${e.etapa}`,
+                  },
+                ],
+              })),
+          });
+        }
+        processedPages.add(item.id);
+        continue;
+      }
 
       const groupId = pageGroupAssignments[item.id];
       
@@ -363,43 +402,6 @@ const Header = () => {
         });
         processedPages.add(item.id);
       }
-    }
-
-    /*
-     * Menú "GIRA": se genera automáticamente con las etapas de la gira activa
-     * (orden ascendente). Cada etapa es un sub-grupo con su propio chevron y
-     * contiene "Jugadores Etapa-N" y "Resultados Etapa-N". Las etapas sin
-     * información no llegan desde el endpoint, así que no se listan.
-     */
-    if (jugadoresEtapas.length > 0) {
-      const giraItem: NavItem = {
-        type: 'group',
-        id: 'gira-etapas',
-        label: 'GIRA',
-        children: [],
-        sections: [...jugadoresEtapas]
-          .sort((a, b) => a.etapa - b.etapa)
-          .map((e) => ({
-            id: `etapa-${e.etapa}`,
-            label: `Etapa ${e.etapa}`,
-            links: [
-              {
-                id: `jugadores-e-${e.etapa}`,
-                label: `Jugadores Etapa-${e.etapa}`,
-                path: `/jugadores/e/${e.etapa}`,
-              },
-              {
-                id: `resultados-e-${e.etapa}`,
-                label: `Resultados Etapa-${e.etapa}`,
-                path: `/resultados/e/${e.etapa}`,
-              },
-            ],
-          })),
-      };
-      // Se coloca justo después de "Jugadores" cuando existe; si no, al final.
-      const jugIdx = navItems.findIndex((n) => n.id === 'jugadores');
-      if (jugIdx >= 0) navItems.splice(jugIdx + 1, 0, giraItem);
-      else navItems.push(giraItem);
     }
 
     return navItems;

@@ -9,6 +9,19 @@ export interface MenuItem {
   order: number;
 }
 
+/**
+ * Virtual navigation anchor for the dynamic GIRA dropdown. It is not a page
+ * route, so it is kept outside `menuConfig`; Admin > Página > Orden includes
+ * it only to persist where the generated stages dropdown belongs.
+ */
+export const giraMenuOrderItem: MenuItem = {
+  id: 'gira-etapas',
+  label: 'GIRA',
+  path: '/jugadores',
+  enabled: true,
+  order: 4.75,
+};
+
 export interface Sponsor {
   id: string;
   name: string;
