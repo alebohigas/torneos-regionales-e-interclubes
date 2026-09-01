@@ -139,6 +139,8 @@ const App = () => (
               <Route path="/convocatoria" element={<ProtectedRoute pageId="convocatoria"><Convocatoria /></ProtectedRoute>} />
               <Route path="/eventos" element={<ProtectedRoute pageId="eventos"><Eventos /></ProtectedRoute>} />
               <Route path="/jugadores" element={<ProtectedRoute pageId="jugadores"><Jugadores /></ProtectedRoute>} />
+              {/* Subpáginas dinámicas por etapa (un torneo de la gira por etapa) */}
+              <Route path="/jugadores/e/:etapa" element={<ProtectedRoute pageId="jugadores"><JugadoresEtapa /></ProtectedRoute>} />
               {/* FIELD-GIRA: mismo layout que /jugadores pero con datos seed de la gira */}
               <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
               <Route path="/salidas" element={<ProtectedRoute pageId="salidas"><Salidas /></ProtectedRoute>} />
