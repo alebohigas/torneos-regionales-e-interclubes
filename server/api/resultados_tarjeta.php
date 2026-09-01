@@ -25,15 +25,28 @@ if (!$catInfo) { json_error('Category not found', 404); }
 $formato = strtoupper($catInfo['formato']);
 $torneoid = $catInfo['torneo_id'];
 
+// ============= Detección de esquema (golftour legacy vs. nuevo) =============
+/**
+ * En la base `golftour` las vistas/tablas usan `id_campo` / `salida`
+ * (ver tarjeta_jugador.php legacy), mientras que el esquema nuevo usa
+ * `campoid` / `salidaid`. Se resuelven aquí para no duplicar el endpoint.
+ */
+$vsjTable   = ($formato === 'PAREJAS') ? 'v_sal_jug_par' : 'v_sal_jug';
+$vsjCampo   = api_column_exists($conn, $vsjTable, 'campoid') ? 'campoid' : 'id_campo';
+$hxsCampo   = api_column_exists($conn, 'hoyosxsalida', 'campoid') ? 'campoid' : 'id_campo';
+$hxsSalida  = api_column_exists($conn, 'hoyosxsalida', 'salidaid') ? 'salidaid' : 'salida';
+/** Columna con las ventajas por hoyo (CSV). Ausente en el esquema legacy. */
+$hasVentajasJug = api_column_exists($conn, $vsjTable, 'ventajasjug');
+
 // ============= Player + card data =============
 if ($formato === 'PAREJAS') {
     $sql = "SELECT a.*, b.campo, c.*,
                    DATE_FORMAT(a.horainicio1a, '%w') as diajgo,
                    a.arso, a.arsa, a.arsap,
                    (c.so - c.sa) as handicapneto,
-                   f_getventajajug((c.so - c.sa), a.campoid, teesalidaid) as arvtj
+                   f_getventajajug((c.so - c.sa), a.`$vsjCampo`, teesalidaid) as arvtj
             FROM v_sal_jug_par a
-            JOIN campos b ON (a.campoid = b.id)
+            JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
             WHERE a.jugadorid = $jid AND a.categoriaid = $cid";
     if ($fecha !== '0') { $sql .= " AND a.fecha_juego = '$fec'"; }
@@ -41,9 +54,9 @@ if ($formato === 'PAREJAS') {
     $sql = "SELECT a.*, b.campo, c.*,
                    DATE_FORMAT(a.horainicio1a, '%w') as diajgo,
                    a.arso, a.arsa, a.arsap,
-                   ventajasjug as arvtj
+                   " . ($hasVentajasJug ? 'ventajasjug' : 'NULL') . " as arvtj
             FROM v_sal_jug a
-            JOIN campos b ON (a.campoid = b.id)
+            JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
             WHERE a.jugadorid = $jid AND a.categoriaid = $cid";
     if ($fecha !== '0') { $sql .= " AND a.fecha_juego = '$fec'"; }
@@ -60,17 +73,17 @@ if ($formato === 'PAREJAS') {
                    h10_a, h11_a, h12_a, h13_a, h14_a, h15_a, h16_a, h17_a, h18_a,
                    c.SO, c.SA, a.arso, a.arsa, a.arsap,
                    (c.so - c.sa) as handicapneto,
-                   f_getventajajug((c.so - c.sa), a.campoid, teesalidaid) as arvtj
+                   f_getventajajug((c.so - c.sa), a.`$vsjCampo`, teesalidaid) as arvtj
             FROM v_sal_jug_par a
-            JOIN campos b ON (a.campoid = b.id)
+            JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
             WHERE a.jugadorid = $jid AND a.categoriaid = $cid AND a.fecha_juego = '$fec'";
 } else {
     $sql = "SELECT h1_a, h2_a, h3_a, h4_a, h5_a, h6_a, h7_a, h8_a, h9_a,
                    h10_a, h11_a, h12_a, h13_a, h14_a, h15_a, h16_a, h17_a, h18_a,
-                   SO, SA, a.arso, a.arsa, a.arsap, ventajasjug as arvtj
+                   SO, SA, a.arso, a.arsa, a.arsap, " . ($hasVentajasJug ? 'ventajasjug' : 'NULL') . " as arvtj
             FROM v_sal_jug a
-            JOIN campos b ON (a.campoid = b.id)
+            JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
             WHERE a.jugadorid = $jid AND a.categoriaid = $cid AND a.fecha_juego = '$fec'";
 }
@@ -80,12 +93,13 @@ $scoreData = query_one($conn, $sql);
 
 // ============= Hole info (par + ventaja per hole) =============
 $campoid  = $playerData['campoid'] ?? $playerData['id_campo'] ?? 0;
-$salidaid = $catInfo['salida'];
+/** El tee real de la tarjeta manda; si la vista no lo trae usamos el de la categoría. */
+$salidaid = $playerData['tee_salida'] ?? $playerData['teesalidaid'] ?? $catInfo['salida'];
 
-$sql = "SELECT ID, numero, par, campoid, salidaid, ventaja, yardaje
+$sql = "SELECT numero, par, `$hxsCampo` AS campoid, `$hxsSalida` AS salidaid, ventaja, yardaje
         FROM hoyosxsalida
-        WHERE campoid = " . esc($conn, $campoid) . "
-          AND salidaid = " . esc($conn, $salidaid) . "
+        WHERE `$hxsCampo` = " . esc($conn, $campoid) . "
+          AND `$hxsSalida` = " . esc($conn, $salidaid) . "
         ORDER BY numero ASC";
 
 debug_log_query('Hole info (par + ventaja)', $sql);
