@@ -286,6 +286,23 @@ const Header = () => {
           hidden: isPageHiddenForAdmin(item.id),
         });
         processedPages.add(item.id);
+
+        /*
+         * Subpáginas dinámicas de JUGADORES: una por cada torneo (etapa) de la
+         * gira activa. El endpoint solo devuelve etapas con jugadores
+         * inscritos, así que las etapas vacías no aparecen en el menú.
+         */
+        if (item.id === 'jugadores') {
+          jugadoresEtapas.forEach((e) => {
+            navItems.push({
+              type: 'link',
+              id: `jugadores-e-${e.etapa}`,
+              label: `JUGADORES E-${e.etapa}`,
+              path: `/jugadores/e/${e.etapa}`,
+              hidden: isPageHiddenForAdmin(item.id),
+            });
+          });
+        }
       }
     }
 
