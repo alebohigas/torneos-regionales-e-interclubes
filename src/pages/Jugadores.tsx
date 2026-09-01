@@ -17,13 +17,22 @@ import { useCategories, usePlayers } from '@/hooks/usePlayersData';
 import { useTournamentInfo } from '@/hooks/useTournamentData';
 import type { CategoryDetail } from '@/data/playersData';
 
-const Jugadores = () => {
+interface JugadoresProps {
+  /** Torneo explícito (etapa de la gira). Sin valor usa el torneo activo. */
+  torneoId?: string;
+  /** Título del hero (por defecto "Jugadores") */
+  title?: string;
+  /** Subtítulo del hero */
+  subtitle?: string;
+}
+
+const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) => {
   /** Currently selected category (null = show grid) */
   const [selectedCategory, setSelectedCategory] = useState<CategoryDetail | null>(null);
 
   // Fetch categories from API (solo categorías con jugadores inscritos,
   // replicando el query legacy: categorias JOIN jugadores, estatus>0)
-  const { data: categories = [], isLoading: loadingCats } = useCategories({ withPlayers: true });
+  const { data: categories = [], isLoading: loadingCats } = useCategories({ withPlayers: true, torneoId });
 
   const { data: tournamentInfo } = useTournamentInfo();
   /** Atlas CC (torneoid=354) pidió sustituir el contador de jugadores
@@ -33,7 +42,8 @@ const Jugadores = () => {
   // Fetch players only when a category is selected
   const { data: playersData, isLoading: loadingPlayers } = usePlayers(
     selectedCategory?.id ?? null,
-    !!selectedCategory
+    !!selectedCategory,
+    { torneoId }
   );
   const players = playersData?.players ?? [];
   const fechaHandicap = playersData?.fechaHandicap ?? '';
@@ -51,8 +61,8 @@ const Jugadores = () => {
   return (
     <Layout>
       <PageHero
-        title="Jugadores"
-        subtitle="Lista completa de participantes inscritos en el torneo"
+        title={title}
+        subtitle={subtitle ?? 'Lista completa de participantes inscritos en el torneo'}
         backgroundImage={jugadoresHero}
       />
       <section className="py-16 bg-white">

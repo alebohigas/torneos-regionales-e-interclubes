@@ -18,6 +18,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Shield, ChevronDown, MoreHorizontal, EyeOff } from 'lucide-react';
 import { useGiraInfo } from '@/hooks/useGiraData';
+import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -213,6 +214,9 @@ const Header = () => {
    */
   const sourceItems = isAdmin ? getAllMenuItems() : getVisibleMenuItems();
 
+  /** Etapas de la gira con jugadores inscritos → subpáginas de /jugadores */
+  const { data: jugadoresEtapas = [] } = useJugadoresEtapas();
+
   /** Per-page hidden flag (admin preview only) */
   const isPageHiddenForAdmin = (pageId: string): boolean => {
     if (!isAdmin) return false;
@@ -286,6 +290,23 @@ const Header = () => {
           hidden: isPageHiddenForAdmin(item.id),
         });
         processedPages.add(item.id);
+
+        /*
+         * Subpáginas dinámicas de JUGADORES: una por cada torneo (etapa) de la
+         * gira activa. El endpoint solo devuelve etapas con jugadores
+         * inscritos, así que las etapas vacías no aparecen en el menú.
+         */
+        if (item.id === 'jugadores') {
+          jugadoresEtapas.forEach((e) => {
+            navItems.push({
+              type: 'link',
+              id: `jugadores-e-${e.etapa}`,
+              label: `JUGADORES E-${e.etapa}`,
+              path: `/jugadores/e/${e.etapa}`,
+              hidden: isPageHiddenForAdmin(item.id),
+            });
+          });
+        }
       }
     }
 
