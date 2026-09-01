@@ -306,24 +306,44 @@ const Header = () => {
           hidden: isPageHiddenForAdmin(item.id),
         });
         processedPages.add(item.id);
-
-        /*
-         * Subpáginas dinámicas de JUGADORES: una por cada torneo (etapa) de la
-         * gira activa. El endpoint solo devuelve etapas con jugadores
-         * inscritos, así que las etapas vacías no aparecen en el menú.
-         */
-        if (item.id === 'jugadores') {
-          jugadoresEtapas.forEach((e) => {
-            navItems.push({
-              type: 'link',
-              id: `jugadores-e-${e.etapa}`,
-              label: `JUGADORES E-${e.etapa}`,
-              path: `/jugadores/e/${e.etapa}`,
-              hidden: isPageHiddenForAdmin(item.id),
-            });
-          });
-        }
       }
+    }
+
+    /*
+     * Menú "GIRA": se genera automáticamente con las etapas de la gira activa
+     * (orden ascendente). Cada etapa es un sub-grupo con su propio chevron y
+     * contiene "Jugadores Etapa-N" y "Resultados Etapa-N". Las etapas sin
+     * información no llegan desde el endpoint, así que no se listan.
+     */
+    if (jugadoresEtapas.length > 0) {
+      const giraItem: NavItem = {
+        type: 'group',
+        id: 'gira-etapas',
+        label: 'GIRA',
+        children: [],
+        sections: [...jugadoresEtapas]
+          .sort((a, b) => a.etapa - b.etapa)
+          .map((e) => ({
+            id: `etapa-${e.etapa}`,
+            label: `Etapa ${e.etapa}`,
+            links: [
+              {
+                id: `jugadores-e-${e.etapa}`,
+                label: `Jugadores Etapa-${e.etapa}`,
+                path: `/jugadores/e/${e.etapa}`,
+              },
+              {
+                id: `resultados-e-${e.etapa}`,
+                label: `Resultados Etapa-${e.etapa}`,
+                path: `/resultados/e/${e.etapa}`,
+              },
+            ],
+          })),
+      };
+      // Se coloca justo después de "Jugadores" cuando existe; si no, al final.
+      const jugIdx = navItems.findIndex((n) => n.id === 'jugadores');
+      if (jugIdx >= 0) navItems.splice(jugIdx + 1, 0, giraItem);
+      else navItems.push(giraItem);
     }
 
     return navItems;
