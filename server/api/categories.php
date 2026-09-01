@@ -54,10 +54,14 @@ function categories_first_existing_column($conn, $table, $columns) {
  * grid mirrors the legacy `jugadores_skin.php` view.
  */
 $skinOnly = isset($_GET['skin']) && $_GET['skin'] === '1';
-$playerJoinCond = $skinOnly
+/** Las columnas de skin no existen en todas las bases (esquema golftour). */
+$hasSkeenjuga = categories_column_exists($conn, 'jugadores', 'Skeenjuga');
+$hasCatrel    = categories_column_exists($conn, 'categorias', 'catrel');
+$playerJoinCond = ($skinOnly && $hasSkeenjuga)
     ? "(a.categoria_id = b.categoriaid AND b.Skeenjuga = 1)"
     : "(a.categoria_id = b.categoriaid)";
-$skinCatFilter = $skinOnly ? " AND a.catrel = 0 " : '';
+$skinCatFilter = ($skinOnly && $hasCatrel) ? " AND a.catrel = 0 " : '';
+
 
 /**
  * Optional `?withplayers=1` flag (usado por /jugadores).
@@ -107,35 +111,66 @@ if (categories_table_exists($conn, 'registro')) {
     }
 }
 
-/** Query: fetch categories with player count, joined to jugadores */
-/** Query: fetch categories with player count, tee info, rating & slope */
-$sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
-               a.sistema, a.formato, a.estilo, a.hcpIdxMin, a.hcpIdxMax,
-               a.porcentaje, a.hoyosajugar, a.hoyosacorte, a.salida,
-               a.gross, a.catrel, a.sexo, a.corte,
-               a.maxjugadores, a.hoyosxronda,
-               a.Skin_grupo_id, a.Skeenporcent$ageMinSel$ageMaxSel,
-                COUNT(b.id) as playerCount,
-                $registeredCountSelect,
-               s.tee AS teeName, s.color AS teeColorName,
-               ct.rating, ct.slope, ct.parcampo
+/**
+ * Query: categorías con conteo de jugadores, tee, rating y slope.
+ *
+ * IMPORTANTE (esquema golftour): varias columnas opcionales y los nombres de
+ * `campo_tee` cambian entre bases. Se construye la lista de columnas de forma
+ * dinámica para no romper el endpoint con "Unknown column" (HTTP 500).
+ */
+$optionalCats = [
+    'abreviatura', 'sistema', 'formato', 'estilo', 'hcpIdxMin', 'hcpIdxMax',
+    'porcentaje', 'hoyosajugar', 'hoyosacorte', 'salida', 'gross', 'catrel',
+    'sexo', 'corte', 'maxjugadores', 'hoyosxronda', 'Skin_grupo_id', 'Skeenporcent',
+];
+if ($ageMinExists) $optionalCats[] = 'age_range_min';
+if ($ageMaxExists) $optionalCats[] = 'age_range_max';
+
+$catCols = ['a.categoria_id', 'a.torneo_id', 'a.categoria'];
+foreach ($optionalCats as $c) {
+    if (categories_column_exists($conn, 'categorias', $c)) $catCols[] = "a.`$c`";
+}
+$catColsSql = implode(', ', $catCols);
+
+/** Tee (salidas) — opcional: requiere categorias.salida. */
+$hasSalidaCol = categories_column_exists($conn, 'categorias', 'salida');
+$teeSel  = '';
+$teeJoin = '';
+$teeGrp  = '';
+if ($hasSalidaCol && categories_table_exists($conn, 'salidas')) {
+    $teeSel  = ", s.tee AS teeName" . (categories_column_exists($conn, 'salidas', 'color') ? ", s.color AS teeColorName" : ", '' AS teeColorName");
+    $teeJoin = " LEFT JOIN salidas s ON (a.salida = s.id) ";
+    $teeGrp  = ", s.tee" . (categories_column_exists($conn, 'salidas', 'color') ? ", s.color" : '');
+}
+
+/** campo_tee: esquema nuevo (campoid/salidaid) o golftour (id_campo/id_tee). */
+$ctSel = ", NULL AS rating, NULL AS slope, NULL AS parcampo";
+$ctJoin = '';
+$ctGrp = '';
+if ($hasSalidaCol && categories_table_exists($conn, 'campo_tee')) {
+    $ctCampoCol = categories_first_existing_column($conn, 'campo_tee', ['campoid', 'id_campo']);
+    $ctTeeCol   = categories_first_existing_column($conn, 'campo_tee', ['salidaid', 'id_tee']);
+    if ($ctCampoCol && $ctTeeCol) {
+        $ctSel  = ", ct.rating, ct.slope, ct.parcampo";
+        $ctJoin = " LEFT JOIN campo_tee ct ON (ct.`$ctTeeCol` = a.salida AND ct.`$ctCampoCol` = (
+                        SELECT campo FROM caljuego WHERE categoriaid = a.categoria_id LIMIT 1
+                    )) ";
+        $ctGrp  = ", ct.rating, ct.slope, ct.parcampo";
+    }
+}
+
+$sql = "SELECT $catColsSql,
+               COUNT(b.id) as playerCount,
+               $registeredCountSelect$teeSel$ctSel
         FROM categorias a
         LEFT JOIN jugadores b ON $playerJoinCond
-        LEFT JOIN salidas s ON (a.salida = s.id)
-        LEFT JOIN campo_tee ct ON (ct.salidaid = a.salida AND ct.campoid = (
-            SELECT campo FROM caljuego WHERE categoriaid = a.categoria_id LIMIT 1
-        ))
+        $teeJoin
+        $ctJoin
         WHERE a.estatus > 0 AND a.torneo_id = $tid $skinCatFilter
-        GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
-                 a.sistema, a.formato, a.estilo, a.hcpIdxMin, a.hcpIdxMax,
-                 a.porcentaje, a.hoyosajugar, a.hoyosacorte, a.salida,
-                 a.gross, a.catrel, a.sexo, a.corte,
-                 a.maxjugadores, a.hoyosxronda,
-                 a.Skin_grupo_id, a.Skeenporcent$ageMinSel$ageMaxSel,
-                 s.tee, s.color, ct.rating, ct.slope, ct.parcampo
+        GROUP BY $catColsSql$teeGrp$ctGrp
         " . (($skinOnly || $onlyWithPlayers) ? " HAVING playerCount > 0 " : "") . "
-
         ORDER BY a.categoria_id ASC";
+
 
 $rows = query_all($conn, $sql);
 
@@ -144,27 +179,28 @@ $categories = array_map(function($row) {
     return [
         'id'          => $row['categoria_id'],
         'name'        => $row['categoria'],
-        'shortName'   => $row['abreviatura'],
-        'system'      => $row['sistema'],
-        'format'      => $row['formato'],
-        'style'       => $row['estilo'],
-        'hcpMin'      => (float)$row['hcpIdxMin'],
-        'hcpMax'      => (float)$row['hcpIdxMax'],
-        'percentage'  => (float)$row['porcentaje'],
+        'shortName'   => $row['abreviatura'] ?? ($row['categoria'] ?? ''),
+        'system'      => $row['sistema'] ?? '',
+        'format'      => $row['formato'] ?? '',
+        'style'       => $row['estilo'] ?? '',
+        'hcpMin'      => (float)($row['hcpIdxMin'] ?? 0),
+        'hcpMax'      => (float)($row['hcpIdxMax'] ?? 0),
+        'percentage'  => (float)($row['porcentaje'] ?? 0),
         /** Valor textual EXACTO de categorias.porcentaje tal como está en la BD
          *  (p.ej. "80.00", "87.5"). El frontend lo usa en la columna VENTAJAS
          *  de /convocatoria para respetar el redondeo/decimales originales. */
         'percentageRaw' => isset($row['porcentaje']) && $row['porcentaje'] !== null
                             ? (string)$row['porcentaje']
                             : null,
-        'holes'       => (int)$row['hoyosajugar'],
-        'cutHoles'    => (int)$row['hoyosacorte'],
+        'holes'       => (int)($row['hoyosajugar'] ?? 0),
+        'cutHoles'    => (int)($row['hoyosacorte'] ?? 0),
         // Final cut count (categorias.corte) — number of players advancing to the final round.
         'finalCut'    => isset($row['corte']) ? (int)$row['corte'] : 0,
-        'teeId'       => $row['salida'],
-        'gross'       => (int)$row['gross'],
-        'relatedCat'  => $row['catrel'],
-        'gender'      => $row['sexo'],
+        'teeId'       => $row['salida'] ?? '',
+        'gross'       => (int)($row['gross'] ?? 0),
+        'relatedCat'  => $row['catrel'] ?? 0,
+        'gender'      => $row['sexo'] ?? '',
+
         'playerCount' => (int)$row['playerCount'],
         /** True cuando la categoría es de parejas (formato='PAREJAS'). El frontend
          *  usa esto en /jugadores y /resultados para activar agrupación por grupoid
