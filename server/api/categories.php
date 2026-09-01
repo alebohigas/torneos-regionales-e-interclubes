@@ -179,27 +179,28 @@ $categories = array_map(function($row) {
     return [
         'id'          => $row['categoria_id'],
         'name'        => $row['categoria'],
-        'shortName'   => $row['abreviatura'],
-        'system'      => $row['sistema'],
-        'format'      => $row['formato'],
-        'style'       => $row['estilo'],
-        'hcpMin'      => (float)$row['hcpIdxMin'],
-        'hcpMax'      => (float)$row['hcpIdxMax'],
-        'percentage'  => (float)$row['porcentaje'],
+        'shortName'   => $row['abreviatura'] ?? ($row['categoria'] ?? ''),
+        'system'      => $row['sistema'] ?? '',
+        'format'      => $row['formato'] ?? '',
+        'style'       => $row['estilo'] ?? '',
+        'hcpMin'      => (float)($row['hcpIdxMin'] ?? 0),
+        'hcpMax'      => (float)($row['hcpIdxMax'] ?? 0),
+        'percentage'  => (float)($row['porcentaje'] ?? 0),
         /** Valor textual EXACTO de categorias.porcentaje tal como está en la BD
          *  (p.ej. "80.00", "87.5"). El frontend lo usa en la columna VENTAJAS
          *  de /convocatoria para respetar el redondeo/decimales originales. */
         'percentageRaw' => isset($row['porcentaje']) && $row['porcentaje'] !== null
                             ? (string)$row['porcentaje']
                             : null,
-        'holes'       => (int)$row['hoyosajugar'],
-        'cutHoles'    => (int)$row['hoyosacorte'],
+        'holes'       => (int)($row['hoyosajugar'] ?? 0),
+        'cutHoles'    => (int)($row['hoyosacorte'] ?? 0),
         // Final cut count (categorias.corte) — number of players advancing to the final round.
         'finalCut'    => isset($row['corte']) ? (int)$row['corte'] : 0,
-        'teeId'       => $row['salida'],
-        'gross'       => (int)$row['gross'],
-        'relatedCat'  => $row['catrel'],
-        'gender'      => $row['sexo'],
+        'teeId'       => $row['salida'] ?? '',
+        'gross'       => (int)($row['gross'] ?? 0),
+        'relatedCat'  => $row['catrel'] ?? 0,
+        'gender'      => $row['sexo'] ?? '',
+
         'playerCount' => (int)$row['playerCount'],
         /** True cuando la categoría es de parejas (formato='PAREJAS'). El frontend
          *  usa esto en /jugadores y /resultados para activar agrupación por grupoid
