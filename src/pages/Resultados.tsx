@@ -291,7 +291,7 @@ const Resultados = ({ embedded = false, torneoIdOverride, title, subtitle }: Res
           player.id,
           categoryDetail.categoryId,
           fecha,
-          torneoIdOverride,
+          effectiveTorneoId,
         );
         setParejaScorecardData(pareja);
       } else {
@@ -302,7 +302,7 @@ const Resultados = ({ embedded = false, torneoIdOverride, title, subtitle }: Res
           categoryDetail.system || '',
           selectedScoringType || 'NETO',
           round,
-          torneoIdOverride,
+          effectiveTorneoId,
         );
         setScorecardData(scorecard);
       }
