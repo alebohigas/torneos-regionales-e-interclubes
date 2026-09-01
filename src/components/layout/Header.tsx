@@ -40,6 +40,17 @@ import {
 
 // ============= Types =============
 
+/**
+ * Sub-grupo de segundo nivel (usado por el menú "GIRA").
+ * Cada sección es una ETAPA de la gira con su propio chevron y sus enlaces
+ * ("Jugadores Etapa-N", "Resultados Etapa-N").
+ */
+interface NavSection {
+  id: string;
+  label: string;
+  links: { id: string; label: string; path: string }[];
+}
+
 /** Navigation item that can be a single link or a group with children */
 interface NavItem {
   type: 'link' | 'group';
@@ -48,6 +59,11 @@ interface NavItem {
   path?: string;
   /** Children of a group; each child carries a per-page hidden flag for admin preview */
   children?: (MenuItem & { hidden?: boolean })[];
+  /**
+   * Secciones de segundo nivel. Cuando está presente, el dropdown del grupo
+   * muestra sub-grupos colapsables en vez de una lista plana de enlaces.
+   */
+  sections?: NavSection[];
   /** Whether to wrap text (display words stacked) */
   wrapText?: boolean;
   /**
@@ -164,12 +180,68 @@ const useOverflowMenu = (
   return visibleCount;
 };
 
+// ============= Sub-grupo de escritorio (Etapa N) =============
+
+/**
+ * Sub-grupo colapsable dentro del dropdown de un grupo de dos niveles.
+ * Se abre por defecto cuando la ruta actual pertenece a la etapa.
+ */
+const DesktopNavSection = ({
+  section,
+  currentPath,
+}: {
+  section: NavSection;
+  currentPath: string;
+}) => {
+  const containsActive = section.links.some((l) => l.path === currentPath);
+  const [open, setOpen] = useState(containsActive);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold transition-colors',
+            containsActive ? 'text-primary' : 'text-foreground/80',
+            'hover:bg-accent hover:text-accent-foreground',
+          )}
+        >
+          <span>{section.label}</span>
+          <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="ml-2 mt-1 flex flex-col gap-1 border-l-2 border-border pl-3">
+          {section.links.map((link) => (
+            <NavigationMenuLink key={link.id} asChild>
+              <Link
+                to={link.path}
+                className={cn(
+                  'block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                  currentPath === link.path && 'bg-accent text-accent-foreground',
+                )}
+              >
+                {link.label}
+              </Link>
+            </NavigationMenuLink>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
 // ============= Component =============
+
 
 const Header = () => {
   const { data: gira } = useGiraInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
+  /** Sub-grupo (etapa) abierto dentro del menú móvil de GIRA */
+  const [openMobileSection, setOpenMobileSection] = useState<string | null>(null);
   const location = useLocation();
   const headerRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -290,24 +362,44 @@ const Header = () => {
           hidden: isPageHiddenForAdmin(item.id),
         });
         processedPages.add(item.id);
-
-        /*
-         * Subpáginas dinámicas de JUGADORES: una por cada torneo (etapa) de la
-         * gira activa. El endpoint solo devuelve etapas con jugadores
-         * inscritos, así que las etapas vacías no aparecen en el menú.
-         */
-        if (item.id === 'jugadores') {
-          jugadoresEtapas.forEach((e) => {
-            navItems.push({
-              type: 'link',
-              id: `jugadores-e-${e.etapa}`,
-              label: `JUGADORES E-${e.etapa}`,
-              path: `/jugadores/e/${e.etapa}`,
-              hidden: isPageHiddenForAdmin(item.id),
-            });
-          });
-        }
       }
+    }
+
+    /*
+     * Menú "GIRA": se genera automáticamente con las etapas de la gira activa
+     * (orden ascendente). Cada etapa es un sub-grupo con su propio chevron y
+     * contiene "Jugadores Etapa-N" y "Resultados Etapa-N". Las etapas sin
+     * información no llegan desde el endpoint, así que no se listan.
+     */
+    if (jugadoresEtapas.length > 0) {
+      const giraItem: NavItem = {
+        type: 'group',
+        id: 'gira-etapas',
+        label: 'GIRA',
+        children: [],
+        sections: [...jugadoresEtapas]
+          .sort((a, b) => a.etapa - b.etapa)
+          .map((e) => ({
+            id: `etapa-${e.etapa}`,
+            label: `Etapa ${e.etapa}`,
+            links: [
+              {
+                id: `jugadores-e-${e.etapa}`,
+                label: `Jugadores Etapa-${e.etapa}`,
+                path: `/jugadores/e/${e.etapa}`,
+              },
+              {
+                id: `resultados-e-${e.etapa}`,
+                label: `Resultados Etapa-${e.etapa}`,
+                path: `/resultados/e/${e.etapa}`,
+              },
+            ],
+          })),
+      };
+      // Se coloca justo después de "Jugadores" cuando existe; si no, al final.
+      const jugIdx = navItems.findIndex((n) => n.id === 'jugadores');
+      if (jugIdx >= 0) navItems.splice(jugIdx + 1, 0, giraItem);
+      else navItems.push(giraItem);
     }
 
     return navItems;
@@ -324,6 +416,10 @@ const Header = () => {
   const isGroupActive = (children: MenuItem[]): boolean => {
     return children.some(child => location.pathname === child.path);
   };
+
+  /** Activo cuando la ruta actual pertenece a cualquier sección del grupo */
+  const isSectionsActive = (sections?: NavSection[]): boolean =>
+    (sections ?? []).some((s) => s.links.some((l) => location.pathname === l.path));
 
   /** Render a single desktop nav item (link or group trigger) */
   const renderDesktopNavItem = (item: NavItem) => {
@@ -352,7 +448,7 @@ const Header = () => {
           className={cn(
             "bg-transparent hover:bg-transparent data-[state=open]:bg-transparent",
             "text-foreground/80 hover:text-primary data-[state=open]:text-primary text-sm",
-            isGroupActive(item.children!) && "text-primary",
+            (isGroupActive(item.children ?? []) || isSectionsActive(item.sections)) && "text-primary",
             item.wrapText && "flex-col leading-tight text-center h-auto py-1 min-h-[40px]",
             // Admin preview: dim hidden groups
             item.hidden && "opacity-50 italic",
@@ -374,29 +470,40 @@ const Header = () => {
           )}
         </NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className="grid w-[200px] gap-1 p-2">
-            {item.children!.map((child) => (
-              <li key={child.id}>
-                <NavigationMenuLink asChild>
-                  <Link
-                    to={child.path}
-                    className={cn(
-                      "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors",
-                      "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                      location.pathname === child.path && "bg-accent text-accent-foreground",
-                      child.hidden && "opacity-50 italic",
-                    )}
-                    title={child.hidden ? 'Página oculta (visible solo para admin)' : undefined}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {child.label}
-                      {child.hidden && <EyeOff className="h-3 w-3" />}
-                    </span>
-                  </Link>
-                </NavigationMenuLink>
-              </li>
-            ))}
-          </ul>
+          {item.sections ? (
+            /* Grupo de dos niveles (GIRA → Etapa N → páginas de la etapa) */
+            <ul className="grid w-[240px] gap-1 p-2">
+              {item.sections.map((section) => (
+                <li key={section.id}>
+                  <DesktopNavSection section={section} currentPath={location.pathname} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="grid w-[200px] gap-1 p-2">
+              {item.children!.map((child) => (
+                <li key={child.id}>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to={child.path}
+                      className={cn(
+                        "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                        location.pathname === child.path && "bg-accent text-accent-foreground",
+                        child.hidden && "opacity-50 italic",
+                      )}
+                      title={child.hidden ? 'Página oculta (visible solo para admin)' : undefined}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {child.label}
+                        {child.hidden && <EyeOff className="h-3 w-3" />}
+                      </span>
+                    </Link>
+                  </NavigationMenuLink>
+                </li>
+              ))}
+            </ul>
+          )}
         </NavigationMenuContent>
       </>
     );
@@ -435,7 +542,7 @@ const Header = () => {
           <button
             className={cn(
               "w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-              isGroupActive(item.children!)
+              (isGroupActive(item.children ?? []) || isSectionsActive(item.sections))
                 ? "bg-primary/10 text-primary"
                 : "text-foreground/80 hover:bg-muted",
               item.hidden && "opacity-50 italic",
@@ -453,7 +560,51 @@ const Header = () => {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-border pl-4">
-            {item.children!.map((child) => (
+            {/* Segundo nivel: cada etapa con su propio chevron */}
+            {item.sections?.map((section) => (
+              <Collapsible
+                key={section.id}
+                open={openMobileSection === section.id}
+                onOpenChange={(open) => setOpenMobileSection(open ? section.id : null)}
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-lg transition-colors",
+                      section.links.some((l) => l.path === location.pathname)
+                        ? "text-primary"
+                        : "text-foreground/80 hover:bg-muted",
+                    )}
+                  >
+                    <span>{section.label}</span>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      openMobileSection === section.id && "rotate-180",
+                    )} />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-border pl-3">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.id}
+                        to={link.path}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={cn(
+                          "px-3 py-2 text-sm rounded-lg transition-colors",
+                          location.pathname === link.path
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground/70 hover:bg-muted",
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+            {(item.children ?? []).map((child) => (
               <Link
                 key={child.id}
                 to={child.path}
@@ -582,7 +733,13 @@ const Header = () => {
                                 {item.label}
                                 {item.hidden && <EyeOff className="h-3 w-3" />}
                               </span>
-                              {item.children!.map((child) => (
+                              {/* Segundo nivel (etapas) dentro del menú "..." */}
+                              {item.sections?.map((section) => (
+                                <div key={section.id} className="pl-3">
+                                  <DesktopNavSection section={section} currentPath={location.pathname} />
+                                </div>
+                              ))}
+                              {(item.children ?? []).map((child) => (
                                 <NavigationMenuLink key={child.id} asChild>
                                   <Link
                                     to={child.path}
