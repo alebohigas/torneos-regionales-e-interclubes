@@ -361,6 +361,10 @@ const Header = () => {
     return children.some(child => location.pathname === child.path);
   };
 
+  /** Activo cuando la ruta actual pertenece a cualquier sección del grupo */
+  const isSectionsActive = (sections?: NavSection[]): boolean =>
+    (sections ?? []).some((s) => s.links.some((l) => location.pathname === l.path));
+
   /** Render a single desktop nav item (link or group trigger) */
   const renderDesktopNavItem = (item: NavItem) => {
     if (item.type === 'link') {
