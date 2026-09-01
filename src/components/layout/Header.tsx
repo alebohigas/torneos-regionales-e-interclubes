@@ -40,6 +40,17 @@ import {
 
 // ============= Types =============
 
+/**
+ * Sub-grupo de segundo nivel (usado por el menú "GIRA").
+ * Cada sección es una ETAPA de la gira con su propio chevron y sus enlaces
+ * ("Jugadores Etapa-N", "Resultados Etapa-N").
+ */
+interface NavSection {
+  id: string;
+  label: string;
+  links: { id: string; label: string; path: string }[];
+}
+
 /** Navigation item that can be a single link or a group with children */
 interface NavItem {
   type: 'link' | 'group';
@@ -48,6 +59,11 @@ interface NavItem {
   path?: string;
   /** Children of a group; each child carries a per-page hidden flag for admin preview */
   children?: (MenuItem & { hidden?: boolean })[];
+  /**
+   * Secciones de segundo nivel. Cuando está presente, el dropdown del grupo
+   * muestra sub-grupos colapsables en vez de una lista plana de enlaces.
+   */
+  sections?: NavSection[];
   /** Whether to wrap text (display words stacked) */
   wrapText?: boolean;
   /**
