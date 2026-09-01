@@ -180,7 +180,61 @@ const useOverflowMenu = (
   return visibleCount;
 };
 
+// ============= Sub-grupo de escritorio (Etapa N) =============
+
+/**
+ * Sub-grupo colapsable dentro del dropdown de un grupo de dos niveles.
+ * Se abre por defecto cuando la ruta actual pertenece a la etapa.
+ */
+const DesktopNavSection = ({
+  section,
+  currentPath,
+}: {
+  section: NavSection;
+  currentPath: string;
+}) => {
+  const containsActive = section.links.some((l) => l.path === currentPath);
+  const [open, setOpen] = useState(containsActive);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold transition-colors',
+            containsActive ? 'text-primary' : 'text-foreground/80',
+            'hover:bg-accent hover:text-accent-foreground',
+          )}
+        >
+          <span>{section.label}</span>
+          <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="ml-2 mt-1 flex flex-col gap-1 border-l-2 border-border pl-3">
+          {section.links.map((link) => (
+            <NavigationMenuLink key={link.id} asChild>
+              <Link
+                to={link.path}
+                className={cn(
+                  'block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                  currentPath === link.path && 'bg-accent text-accent-foreground',
+                )}
+              >
+                {link.label}
+              </Link>
+            </NavigationMenuLink>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
 // ============= Component =============
+
 
 const Header = () => {
   const { data: gira } = useGiraInfo();
