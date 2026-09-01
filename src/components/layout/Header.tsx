@@ -240,6 +240,8 @@ const Header = () => {
   const { data: gira } = useGiraInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
+  /** Sub-grupo (etapa) abierto dentro del menú móvil de GIRA */
+  const [openMobileSection, setOpenMobileSection] = useState<string | null>(null);
   const location = useLocation();
   const headerRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
