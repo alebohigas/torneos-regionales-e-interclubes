@@ -114,10 +114,13 @@ export const getTournamentStatsUrl = (): string => `${API_BASE_URL}/tournament.p
  *                   el query legacy de /jugadores (INNER JOIN categorias +
  *                   jugadores, estatus>0): solo categorías con jugadores.
  */
-export const getCategoriesUrl = (opts: { skin?: boolean; withPlayers?: boolean } = {}): string =>
+export const getCategoriesUrl = (
+  opts: { skin?: boolean; withPlayers?: boolean; torneoId?: string } = {},
+): string =>
   `${API_BASE_URL}/categories.php${buildQuery({
     ...(opts.skin ? { skin: '1' } : {}),
     ...(opts.withPlayers ? { withplayers: '1' } : {}),
+    ...(opts.torneoId ? { torneoid: opts.torneoId } : {}),
   })}`;
 
 
@@ -126,12 +129,22 @@ export const getCategoriesUrl = (opts: { skin?: boolean; withPlayers?: boolean }
  * @param catId  Category ID from the database
  * @param opts.skin  When true, appends `?skin=1` so the endpoint returns
  *                   only players enrolled in the SKIN GAME (Skeenjuga=1).
+ * @param opts.torneoId  Torneo (etapa de la gira) explícito; usado por las
+ *                   subpáginas /jugadores/e/:etapa.
  */
-export const getPlayersApiUrl = (catId: string, opts: { skin?: boolean } = {}): string =>
+export const getPlayersApiUrl = (
+  catId: string,
+  opts: { skin?: boolean; torneoId?: string } = {},
+): string =>
   `${API_BASE_URL}/players.php${buildQuery({
     catid: catId,
     ...(opts.skin ? { skin: '1' } : {}),
+    ...(opts.torneoId ? { torneoid: opts.torneoId } : {}),
   })}`;
+
+/** Etapas de la gira con jugadores inscritos (subpáginas de /jugadores). */
+export const getJugadoresEtapasUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/jugadores_etapas.php${buildGiraQuery({}, giraId)}`;
 
 /**
  * FIELD-GIRA: categorías seed (categorias_tmp + jugadores_seed).
