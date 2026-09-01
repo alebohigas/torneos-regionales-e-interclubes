@@ -624,3 +624,22 @@ function set_superadmin_password_hash($conn, $hash) {
     if (!$conn->query($sql)) json_error('No se pudo guardar la contraseña: ' . $conn->error, 500);
 }
 
+
+/**
+ * ¿Existe la columna en la tabla/vista de la base activa?
+ * Usada para soportar el esquema legacy `golftour` (id_campo/salida) junto al
+ * esquema nuevo (campoid/salidaid) sin duplicar endpoints.
+ */
+if (!function_exists('api_column_exists')) {
+    function api_column_exists($conn, $table, $column) {
+        $t = esc($conn, $table);
+        $c = esc($conn, $column);
+        $res = @$conn->query("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$t'
+                                AND COLUMN_NAME = '$c' LIMIT 1");
+        if (!$res) return false;
+        $ok = $res->num_rows > 0;
+        $res->free();
+        return $ok;
+    }
+}
