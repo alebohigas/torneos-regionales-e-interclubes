@@ -844,7 +844,7 @@ usort($cutPlayers, function ($a, $b) use ($sistema) {
 json_response([
     'categoryId'   => $catInfo['categoria_id'],
     'categoryName' => $catInfo['categoria'],
-    'shortName'    => $catInfo['abreviatura'],
+    'shortName'    => ($catInfo['abreviatura'] ?: $catInfo['categoria']),
     'system'       => $catInfo['sistema'],
     'format'       => $catInfo['formato'],
     'gross'        => (int)$gross,
