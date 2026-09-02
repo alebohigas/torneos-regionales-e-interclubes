@@ -15,7 +15,11 @@ import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
 
 export const useEtapaActual = () => {
   const { data: etapas = [], isLoading, isError } = useJugadoresEtapas();
-  const last = etapas.length ? etapas[etapas.length - 1] : undefined;
+  /** Regla principal: la etapa cuyo torneo tiene `status = 'A'` (activo).
+   *  Fallback: la última etapa con información registrada. */
+  const activa = etapas.find((e) => (e.status || '').trim().toUpperCase() === 'A');
+  const last = activa ?? (etapas.length ? etapas[etapas.length - 1] : undefined);
+
 
   return {
     /** torneoid de la última etapa con información (undefined si no hay) */
