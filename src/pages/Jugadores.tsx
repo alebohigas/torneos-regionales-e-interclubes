@@ -129,37 +129,17 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
               </Button>
 
               {/* Category Info Header */}
-              {/* Category Info Header with tee, rating, slope, par details */}
-              {/* Category Info Header - centered */}
               <div className="mb-8 text-left md:text-center">
                 <h2 className="text-2xl font-light text-foreground mb-2">
                   Categoría: <span className="font-bold">{selectedCategory.name}</span>
                 </h2>
-                <div className="text-muted-foreground space-y-1">
-                  <p><span className="font-bold text-foreground">Tee Salida:</span> {selectedCategory.teeName || selectedCategory.teeColor}</p>
-                  <p>
-                    {selectedCategory.rating != null && <><span className="font-bold text-foreground">Rating:</span> {selectedCategory.rating} </>}
-                    {selectedCategory.slope != null && <><span className="font-bold text-foreground">Slope:</span> {selectedCategory.slope} </>}
-                    {selectedCategory.par != null && <><span className="font-bold text-foreground">Par:</span> {selectedCategory.par}</>}
-                  </p>
-                  <p><span className="font-bold text-foreground">Sistema:</span> {selectedCategory.system}</p>
-                  <p><span className="font-bold text-foreground">Rango Handicaps:</span> {selectedCategory.hcpMin} - {selectedCategory.hcpMax}</p>
-                  {/* Día Handicap: shown between Rango and Porcentaje. Displays formatted date or em-dash when no fechahandicap is set */}
-                  <p>
-                    <span className="font-bold text-foreground">Día Handicap:</span>{' '}
-                    {fechaHandicap
-                      ? (() => {
-                          const [y, m, d] = fechaHandicap.split('-').map(Number);
-                          const date = new Date(y, m - 1, d);
-                          return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-                        })()
-                      : '—'}
-                  </p>
-                  <p><span className="font-bold text-foreground">Porcentaje Handicap:</span> {selectedCategory.percentage}%</p>
-                  <p><span className="font-bold text-foreground">Total jugadores:</span>{' '}
-                    <span className="text-primary font-bold">{selectedCategory.playerCount}</span>
-                  </p>
-                </div>
+                <p className="text-muted-foreground mb-1">
+                  <span className="font-bold text-foreground">Total jugadores:</span>{' '}
+                  <span className="text-primary font-bold">{selectedCategory.playerCount}</span>
+                </p>
+                <p className="text-muted-foreground">
+                  <span className="font-bold text-foreground">Tee Salida:</span> {selectedCategory.teeName || selectedCategory.teeColor}
+                </p>
               </div>
 
               {/* Players Table - full width, centered */}
