@@ -109,6 +109,39 @@ $sql = "SELECT numero, par, `$hxsCampo` AS campoid, `$hxsSalida` AS salidaid, ve
 debug_log_query('Hole info (par + ventaja)', $sql);
 $holeRows = query_all($conn, $sql);
 
+/**
+ * Fallback golftour: si `hoyosxsalida` no tiene el par para (campo, tee),
+ * se reconstruye desde `tarjetas.parcampohoyo` (CSV de 18 pares) y las
+ * ventajas por hoyo de `campo_tee`.
+ */
+if (!$holeRows) {
+    $parCsv = $playerData['parcampohoyo'] ?? '';
+    $pars   = $parCsv ? array_map('intval', explode(',', $parCsv)) : [];
+    $ranks  = array_fill(0, 18, 0);
+    $ctCampo  = api_first_existing_column($conn, 'campo_tee', ['campoid', 'id_campo']);
+    $ctSalida = api_first_existing_column($conn, 'campo_tee', ['salidaid', 'id_tee']);
+    if ($ctCampo && $ctSalida) {
+        $ctRow = query_one($conn, "SELECT ventajas FROM campo_tee
+                                   WHERE `$ctCampo` = " . esc($conn, $campoid) . "
+                                     AND `$ctSalida` = " . esc($conn, $salidaid) . " LIMIT 1");
+        if ($ctRow && !empty($ctRow['ventajas'])) {
+            $parts = array_map('intval', explode(',', $ctRow['ventajas']));
+            for ($i = 0; $i < 18; $i++) { $ranks[$i] = $parts[$i] ?? 0; }
+        }
+    }
+    if ($pars) {
+        for ($h = 1; $h <= 18; $h++) {
+            $holeRows[] = [
+                'numero'  => $h,
+                'par'     => $pars[$h - 1] ?? null,
+                'ventaja' => $ranks[$h - 1],
+                'yardaje' => 0,
+            ];
+        }
+    }
+}
+
+
 // ============= Stableford values table =============
 $stablefordValues = [];
 if (strtoupper($catInfo['sistema']) === 'STABLEFORD') {
