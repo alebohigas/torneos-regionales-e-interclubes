@@ -24,6 +24,7 @@ interface PlayersApiResponse {
     hj: string;
     hn: string;
     grupoid?: string;
+    fechanac?: string;
   }[];
   fechaHandicap: string;  // Handicap date for the category (empty or YYYY-MM-DD)
   /** Bandera de la categoría (formato='PAREJAS'). Si true, el frontend
@@ -102,6 +103,7 @@ export const usePlayers = (
         handicapNeto: parseFloat(p.hn) || 0,
         categoryId: catId,
         grupoid: (p.grupoid || '').trim(),
+        fechanac: p.fechanac || '',
       })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
       const isParejas = !!data.isParejas;
