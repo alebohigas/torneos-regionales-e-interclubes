@@ -113,34 +113,15 @@ const SkinPlayers = () => {
                     <> / <span className="font-bold">GRUPO {selectedCategory.skinGroupId}</span></>
                   ) : null}
                 </h2>
-                {/* Tee / Rating / Slope / Par — mirrors legacy jugadores_skin header */}
-                {(selectedCategory.teeName || selectedCategory.rating || selectedCategory.par) && (
-                  <p className="text-sm text-muted-foreground">
-                    Tee Salida <span className="font-semibold text-foreground">{selectedCategory.teeName}</span>
-                    {selectedCategory.rating != null && <> · Rating <span className="font-semibold text-foreground">{selectedCategory.rating}</span></>}
-                    {selectedCategory.slope != null && <> · Slope <span className="font-semibold text-foreground">{selectedCategory.slope}</span></>}
-                    {selectedCategory.par != null && <> · Par <span className="font-semibold text-foreground">{selectedCategory.par}</span></>}
-                  </p>
-                )}
-                {/* Sistema + rango de handicaps */}
-                <p className="text-sm text-muted-foreground">
-                  Sistema <span className="font-semibold text-foreground">{selectedCategory.system}</span>
-                  {' · '}Rango Handicaps{' '}
-                  <span className="font-semibold text-foreground">
-                    {selectedCategory.hcpMin} – {selectedCategory.hcpMax}
-                  </span>
-                </p>
-                {/* Porcentaje HCP Skin + total jugadores */}
-                <p className="text-sm text-muted-foreground">
-                  Porcentaje Handicap Skin{' '}
-                  <span className="font-semibold text-foreground">
-                    {selectedCategory.skinPercent ?? 0}%
-                  </span>
-                </p>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-1">
                   <span className="font-bold text-foreground">Jugadores en Skin Game:</span>{' '}
                   <span className="text-primary font-bold">{selectedCategory.playerCount}</span>
                 </p>
+                {selectedCategory.teeName && (
+                  <p className="text-muted-foreground">
+                    <span className="font-bold text-foreground">Tee Salida:</span> {selectedCategory.teeName}
+                  </p>
+                )}
               </div>
 
               <Card className="border-border/50 bg-white w-full max-w-3xl mx-auto">
