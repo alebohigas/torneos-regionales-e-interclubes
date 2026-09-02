@@ -288,8 +288,8 @@ function api_first_existing_column($conn, $table, $columns) {
 
 /**
  * Torneo activo de una gira.
- * Prioridad: torneo en curso (hoy entre fecha_ini y fecha_fin) > último ya
- * iniciado > próximo por comenzar. Devuelve null si no hay torneos.
+ * Prioridad: `torneo.status = 'A'` (marcado activo por el staff) > torneo en
+ * curso por fechas > último ya iniciado > próximo por comenzar.
  */
 function gira_active_torneoid($conn, $giraid) {
     if ($giraid === null || !ctype_digit((string)$giraid)) return null;
@@ -297,6 +297,19 @@ function gira_active_torneoid($conn, $giraid) {
     if (!api_column_exists($conn, 'torneo', 'giraid')) return null;
     $idCol = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id_torneo']);
     if (!$idCol) return null;
+
+    /** 1) status = 'A' manda sobre cualquier heurística de fechas. */
+    if (api_column_exists($conn, 'torneo', 'status')) {
+        $r = @$conn->query("SELECT `$idCol` AS id FROM `torneo`
+                            WHERE `giraid` = $gid AND UPPER(TRIM(`status`)) = 'A'
+                            ORDER BY `$idCol` DESC LIMIT 1");
+        if ($r) {
+            $row = $r->fetch_assoc();
+            $r->free();
+            if ($row && $row['id'] !== null) return (string)$row['id'];
+        }
+    }
+
     $hasIni = api_column_exists($conn, 'torneo', 'fecha_ini');
     $hasFin = api_column_exists($conn, 'torneo', 'fecha_fin');
     $order = "`$idCol` DESC";
@@ -313,6 +326,7 @@ function gira_active_torneoid($conn, $giraid) {
     $r->free();
     return $row && $row['id'] !== null ? (string)$row['id'] : null;
 }
+
 
 /**
  * torneoid requerido, tolerante al esquema de giras.
