@@ -52,6 +52,20 @@ if (gira_column_exists($conn, 'torneo', 'tiposalida')) {
 }
 
 // ============= 3. Campo / Tee (rating, slope, par) =============
+/**
+ * `categorias.salida` es varchar: en golftour puede traer el id del tee ("4")
+ * o el nombre del color ("AZULES"). Se resuelve a id numérico contra `salidas`
+ * cuando no es numérico, para que el JOIN con campo_tee encuentre el tee.
+ */
+$salidaRaw = trim((string)($catInfo['salida'] ?? ''));
+if ($salidaRaw !== '' && !ctype_digit($salidaRaw)) {
+    $sRow = query_one($conn, "SELECT id FROM salidas
+                              WHERE UPPER(tee) = UPPER('" . esc($conn, $salidaRaw) . "')
+                                 OR UPPER(color) = UPPER('" . esc($conn, $salidaRaw) . "')
+                              LIMIT 1");
+    $salidaId = esc($conn, $sRow['id'] ?? '0');
+}
+
 $sql = "SELECT b.`$ctCampoCol` AS campoid, b.`$ctTeeCol` AS salidaid,
                b.rating, b.slope, s.tee, b.parcampo
         FROM caljuego a
@@ -62,6 +76,7 @@ $sql = "SELECT b.`$ctCampoCol` AS campoid, b.`$ctTeeCol` AS salidaid,
         LIMIT 1";
 $courseInfo = query_one($conn, $sql);
 debug_log_query('GIRA course info', $sql);
+
 $parcampo = (int)($courseInfo['parcampo'] ?? 72);
 
 // ============= 4. Días de juego =============
@@ -136,7 +151,7 @@ $sql = "SELECT j.id AS jugadorid, j.numjugador,
                $dayCols,
                c.abr, c.logo
         FROM jugadores j
-        JOIN clubs c ON (j.clubid = c.id)
+        LEFT JOIN clubs c ON (j.clubid = c.id)
         JOIN v_cd_ulttar u ON (j.id = u.jugadorid)
         WHERE j.categoriaid = $cid
           AND $totalExpr > 0
@@ -181,7 +196,7 @@ $cutSql = "SELECT j.id AS jugadorid, j.numjugador,
                   $dayCols,
                   c.abr, c.logo
            FROM jugadores j
-           JOIN clubs c ON (j.clubid = c.id)
+           LEFT JOIN clubs c ON (j.clubid = c.id)
            LEFT JOIN v_cd_ulttar u ON (j.id = u.jugadorid)
            WHERE j.categoriaid = $cid
              AND j.estatus <> 'NORMAL'
