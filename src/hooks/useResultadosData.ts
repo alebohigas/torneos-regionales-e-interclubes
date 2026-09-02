@@ -191,7 +191,7 @@ export const useCategoryResults = (
       return {
         categoryId: raw.categoryId || categoryId!,
         categoryName: raw.categoryName || '',
-        shortName: raw.shortName || '',
+        shortName: raw.shortName || raw.categoryName || '',
         system: raw.system || '',
         isParejas: !!raw.isParejas || (raw.format === 'PAREJAS'),
         format: raw.format,
