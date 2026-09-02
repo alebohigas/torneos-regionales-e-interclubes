@@ -12,7 +12,7 @@ $tid = esc($conn, $torneoid);
 
 /**
  * Columnas opcionales de `categorias`: el esquema `golftour` no tiene
- * abreviatura/estilo/catrel/hcpIdx*/hoyosacorte. Se detectan en runtime para
+ * abreviatura, catrel ni hoyosacorte. Se detectan en runtime para
  * no romper el endpoint con "Unknown column".
  */
 $optional = ['abreviatura', 'estilo', 'gross', 'hcpIdxMin', 'hcpIdxMax',
