@@ -145,43 +145,18 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             {renderSection(back9, 'IN')}
           </div>
 
-          {/* Totals - aligned baseline, consistent sizing */}
+          {/* Totales: solo Par y Neto */}
           <div className="flex justify-end items-baseline gap-6 mt-3 text-sm flex-wrap">
             <span className="text-muted-foreground">
-              OUT: <strong className="text-foreground">{scorecard.out}</strong>
+              Par: <strong className="text-foreground">
+                {scorecard.holes.reduce((s, h) => s + h.par, 0)}
+              </strong>
             </span>
             <span className="text-muted-foreground">
-              IN: <strong className="text-foreground">{scorecard.in}</strong>
+              Neto: <strong className="text-foreground font-bold">
+                {scorecard.holes.reduce((s, h) => s + h.neto, 0)}
+              </strong>
             </span>
-            <span className="text-muted-foreground">
-              Total: <strong className="text-foreground font-bold">{scorecard.totalGolpes}</strong>
-            </span>
-            {(type === 'hcp' || type === 'stableford') && (
-              <span className="text-muted-foreground">
-                Neto: <strong className="text-foreground font-bold">{scorecard.totalNeto}</strong>
-              </span>
-            )}
-            {type === 'stableford' && (
-              <span className="text-muted-foreground">
-                Puntos: <strong className="text-primary font-bold">{scorecard.totalPuntos}</strong>
-              </span>
-            )}
-            {type === 'scratch' && (
-              <span className="text-muted-foreground">
-                {(() => {
-                  // Compute total +/- using ONLY played holes (golpes > 0), so unplayed
-                  // holes don't subtract par and produce a misleading negative score.
-                  const playedHoles = scorecard.holes.filter(h => (Number(h.golpes) || 0) > 0);
-                  if (playedHoles.length === 0) {
-                    return <>+/-: <strong className="font-bold">0</strong></>;
-                  }
-                  const d = playedHoles.reduce((s, h) => s + (Number(h.golpes) || 0) - h.par, 0);
-                  const cls = d < 0 ? 'text-red-600' : d > 0 ? 'text-blue-600' : '';
-                  const txt = d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
-                  return <>+/-: <strong className={`font-bold ${cls}`}>{txt}</strong></>;
-                })()}
-              </span>
-            )}
           </div>
         </div>
       </TableCell>
