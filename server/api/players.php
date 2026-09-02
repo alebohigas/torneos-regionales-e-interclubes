@@ -39,12 +39,24 @@ if (api_column_exists($conn, 'categorias', 'formato')) {
  * query falla con "Unknown column" (HTTP 500) y la tabla de /jugadores queda
  * vacía aunque los conteos por categoría sí se calculen.
  */
-$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid', 'fechanac'];
+$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid'];
 $selCols = ['p.id', "CONCAT(p.nombre, ' ', p.apellido) as jugador"];
 $has = [];
 foreach ($optionalPlayerCols as $c) {
     $has[$c] = api_column_exists($conn, 'jugadores', $c);
     if ($has[$c]) $selCols[] = "p.`$c`" . ($c === 'indexjgo' ? ' as hi' : '');
+}
+
+/**
+ * Fecha de nacimiento: en `jugadores_seed` la columna es `fechanac`, mientras
+ * que en `jugadores` (golftour) el mismo dato vive en `il`. Se toma la primera
+ * que exista y se expone siempre como `fechanac`.
+ */
+foreach (['fechanac', 'il'] as $birthCol) {
+    if (api_column_exists($conn, 'jugadores', $birthCol)) {
+        $selCols[] = "p.`$birthCol` AS fechanac";
+        break;
+    }
 }
 
 /** Logo del club (opcional: requiere jugadores.clubid + tabla clubs). */
@@ -115,7 +127,11 @@ while ($row = $result->fetch_assoc()) {
          *  campo cuando isParejas=true para mostrar "Grupo C24". */
         'grupoid'    => $row['grupoid'] ?? '',
         /** fechanac: fecha de nacimiento mostrada en la tabla de /jugadores. */
-        'fechanac'   => $row['fechanac'] ?? ''
+        'fechanac'   => (function ($v) {
+            $v = trim((string)$v);
+            if ($v === '' || strpos($v, '0000-00-00') === 0 || strpos($v, '1900-01-01') === 0) return '';
+            return $v;
+        })($row['fechanac'] ?? '')
     ];
 }
 $result->free();
