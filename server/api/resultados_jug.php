@@ -77,19 +77,44 @@ if ($hasNeto)   $groupExtras .= ', a.numganadorneto';
 if ($hasGross)  $groupExtras .= ', a.numganadorgross';
 if ($hasLegacy) $groupExtras .= ', a.numjugprem';
 
-$sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura, a.sistema, a.formato,
-               a.estilo, a.gross, a.porcentaje, a.salida, a.hoyosajugar,
-               a.hcpIdxMin, a.hcpIdxMax, a.hoyosacorte,
+/**
+ * Columnas opcionales de `categorias`.
+ * El esquema `golftour` no tiene varias de ellas (abreviatura, estilo,
+ * hcpIdxMin/Max, hoyosacorte, ...). Se construyen SELECT/GROUP BY dinámicos
+ * para no romper con "Unknown column" (HTTP 500 opaco).
+ */
+$catOptional = [
+    'abreviatura' => 'abreviatura',
+    'estilo'      => 'estilo',
+    'gross'       => 'gross',
+    'porcentaje'  => 'porcentaje',
+    'salida'      => 'salida',
+    'hoyosajugar' => 'hoyosajugar',
+    'hcpIdxMin'   => 'hcpIdxMin',
+    'hcpIdxMax'   => 'hcpIdxMax',
+    'hoyosacorte' => 'hoyosacorte',
+];
+$catSel = ['a.categoria_id', 'a.torneo_id', 'a.categoria', 'a.sistema', 'a.formato'];
+$catGrp = ['a.categoria_id', 'a.torneo_id', 'a.categoria', 'a.sistema', 'a.formato'];
+foreach ($catOptional as $col => $alias) {
+    if (api_column_exists($conn, 'categorias', $col)) {
+        $catSel[] = "a.`$col` AS `$alias`";
+        $catGrp[] = "a.`$col`";
+    } else {
+        $catSel[] = "NULL AS `$alias`";
+    }
+}
+
+$sql = "SELECT " . implode(', ', $catSel) . ",
                $netoExpr as numganadorneto,
                $grossExpr as numganadorgross,
                COUNT(b.id) as playerCount
         FROM categorias a
         JOIN jugadores b ON (a.categoria_id = b.categoriaid)
         WHERE a.estatus > 0 AND a.categoria_id = $cid
-        GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura, a.sistema, a.formato,
-                 a.estilo, a.gross, a.porcentaje, a.salida, a.hoyosajugar,
-                 a.hcpIdxMin, a.hcpIdxMax, a.hoyosacorte"
+        GROUP BY " . implode(', ', $catGrp)
         . $groupExtras;
+
 
 $catInfo = query_one($conn, $sql);
 debug_log_query('Category info', $sql);
