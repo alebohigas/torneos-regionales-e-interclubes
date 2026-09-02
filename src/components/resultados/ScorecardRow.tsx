@@ -26,15 +26,6 @@ interface ScorecardRowProps {
   colSpan: number;
 }
 
-/** Color coding for score relative to par */
-const getScoreColor = (golpes: number, par: number): string => {
-  const diff = golpes - par;
-  if (diff <= -2) return 'bg-primary text-primary-foreground';      // Eagle or better
-  if (diff === -1) return 'bg-red-500/20 text-red-700';             // Birdie
-  if (diff === 0) return '';                                          // Par
-  if (diff === 1) return 'bg-blue-500/20 text-blue-700';            // Bogey
-  return 'bg-blue-700/20 text-blue-900';                             // Double+
-};
 
 /** Label mapping for scorecard types */
 const scorecardTypeLabels: Record<ScorecardType, string> = {
