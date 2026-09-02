@@ -10,23 +10,35 @@ require_once 'config.php';
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 
-// Get categories with active results
-$sql = "SELECT a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
-               a.sistema, a.formato, a.estilo, a.gross,
-               a.hcpIdxMin, a.hcpIdxMax, a.porcentaje,
-               a.hoyosajugar, a.hoyosacorte, a.salida, a.catrel,
+/**
+ * Columnas opcionales de `categorias`: el esquema `golftour` no tiene
+ * abreviatura/estilo/catrel/hcpIdx*/hoyosacorte. Se detectan en runtime para
+ * no romper el endpoint con "Unknown column".
+ */
+$optional = ['abreviatura', 'estilo', 'gross', 'hcpIdxMin', 'hcpIdxMax',
+             'porcentaje', 'hoyosajugar', 'hoyosacorte', 'salida', 'catrel'];
+$sel = ['a.categoria_id', 'a.torneo_id', 'a.categoria', 'a.sistema', 'a.formato'];
+$grp = ['a.categoria_id', 'a.torneo_id', 'a.categoria', 'a.sistema', 'a.formato'];
+foreach ($optional as $col) {
+    if (api_column_exists($conn, 'categorias', $col)) {
+        $sel[] = "a.`$col`";
+        $grp[] = "a.`$col`";
+    } else {
+        $sel[] = "NULL AS `$col`";
+    }
+}
+
+$sql = "SELECT " . implode(', ', $sel) . ",
                COUNT(b.id) as playerCount
         FROM categorias a
         JOIN jugadores b ON (a.categoria_id = b.categoriaid)
         WHERE a.estatus > 0 AND a.torneo_id = $tid
-        GROUP BY a.categoria_id, a.torneo_id, a.categoria, a.abreviatura,
-                 a.sistema, a.formato, a.estilo, a.gross,
-                 a.hcpIdxMin, a.hcpIdxMax, a.porcentaje,
-                 a.hoyosajugar, a.hoyosacorte, a.salida, a.catrel
+        GROUP BY " . implode(', ', $grp) . "
         ORDER BY a.categoria_id ASC";
 
 $rows = query_all($conn, $sql);
 debug_log_query('Categories with results', $sql);
+
 
 // Separate by system type
 $strokePlay = [];
