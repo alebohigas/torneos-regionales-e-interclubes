@@ -86,7 +86,7 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
               {holes.reduce((s, h) => s + h.neto, 0)}
             </td>
           </tr>
-
+        </tbody>
       </table>
     </div>
   );
