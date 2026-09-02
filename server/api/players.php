@@ -17,19 +17,19 @@ $tid = esc($conn, $torneoid);
  * SKIN GAME (jugadores.Skeenjuga = 1). Used by the /skinplayers page.
  */
 $skinOnly = isset($_GET['skin']) && $_GET['skin'] === '1';
-$skinPlayerFilter = $skinOnly ? " AND p.Skeenjuga = 1 " : '';
-/**
- * Para /skinplayers el HN se calcula con `categorias.Skeenporcent` (porcentaje
- * específico del Skin Game) en lugar del porcentaje regular de la categoría.
- */
-$pctColumn = $skinOnly ? 'cat.skeenporcent' : 'cat.porcentaje';
+$skinPlayerFilter = ($skinOnly && api_column_exists($conn, 'jugadores', 'Skeenjuga'))
+    ? " AND p.Skeenjuga = 1 " : '';
 
 /**
  * Detectar si la categoría es de parejas (formato='PAREJAS'). El frontend lo
  * usa para agrupar jugadores por grupoid (cada grupo = una pareja).
  */
-$catInfoRow = query_one($conn, "SELECT formato FROM categorias WHERE categoria_id = $cid LIMIT 1");
-$isParejas = $catInfoRow && strtoupper($catInfoRow['formato'] ?? '') === 'PAREJAS';
+$isParejas = false;
+if (api_column_exists($conn, 'categorias', 'formato')) {
+    $catInfoRow = query_one($conn, "SELECT formato FROM categorias WHERE categoria_id = '$cid' LIMIT 1");
+    $isParejas = $catInfoRow && strtoupper($catInfoRow['formato'] ?? '') === 'PAREJAS';
+}
+
 
 /**
  * Construcción dinámica de columnas.
