@@ -9,14 +9,25 @@ import PageHero from '@/components/shared/PageHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, Users, Loader2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
 import { useState } from 'react';
 import { useCategories, usePlayers } from '@/hooks/usePlayersData';
 import { useEtapaActual } from '@/hooks/useEtapaActual';
 import { useTournamentInfo } from '@/hooks/useTournamentData';
 import type { CategoryDetail } from '@/data/playersData';
+
+/** Formatea YYYY-MM-DD sin desfase de zona horaria */
+const formatFecha = (value: string): string => {
+  if (!value) return '—';
+  const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return '—';
+  return new Date(y, m - 1, d).toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
 
 interface JugadoresProps {
   /** Torneo explícito (etapa de la gira). Sin valor usa el torneo activo. */
@@ -171,9 +182,7 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
                                 <TableRow className="bg-primary hover:bg-primary">
                                   <TableHead className="text-primary-foreground font-bold text-center">Club</TableHead>
                                   <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HI</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HJ</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HN</TableHead>
+                                  <TableHead className="text-primary-foreground font-bold text-center">Fecha de nacimiento</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -192,9 +201,7 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
                                     </TableCell>
                                     {/* Nombre recortado a 4 renglones en móvil (.player-name-clamp) */}
                                     <TableCell className="player-name-cell"><span className="player-name-clamp">{player.name}</span></TableCell>
-                                    <TableCell className="text-center">{player.handicapIndex.toFixed(1)}</TableCell>
-                                    <TableCell className="text-center">{player.handicapJuego}</TableCell>
-                                    <TableCell className="text-center font-extrabold text-base text-primary">{player.handicapNeto}</TableCell>
+                                    <TableCell className="text-center">{formatFecha(player.fechanac ?? '')}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -209,49 +216,7 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
                         <TableRow className="bg-primary hover:bg-primary">
                           <TableHead className="text-primary-foreground font-bold text-center">Club</TableHead>
                           <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                          {/* HI, HJ, HN headers with help tooltips */}
-                          <TableHead className="text-primary-foreground font-bold text-center">
-                            {/* HI header: Popover so it works on tap (mobile) and click (desktop) */}
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button type="button" className="inline-flex items-center gap-1 cursor-help font-bold text-primary-foreground">
-                                  HI <HelpCircle className="h-3.5 w-3.5 opacity-70" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent side="bottom" className="max-w-[240px] w-auto text-xs p-3">
-                                <p className="font-bold mb-1">Handicap Índice</p>
-                                <p>Medida portátil de la habilidad del jugador, calculada a partir de sus mejores 8 de las últimas 20 rondas.</p>
-                              </PopoverContent>
-                            </Popover>
-                          </TableHead>
-                          <TableHead className="text-primary-foreground font-bold text-center">
-                            {/* HJ header: Popover for mobile tap support */}
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button type="button" className="inline-flex items-center gap-1 cursor-help font-bold text-primary-foreground">
-                                  HJ <HelpCircle className="h-3.5 w-3.5 opacity-70" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent side="bottom" className="max-w-[240px] w-auto text-xs p-3">
-                                <p className="font-bold mb-1">Handicap de Juego</p>
-                                <p>Golpes que el jugador recibe en un campo específico, ajustado por el rating y slope del tee de salida.</p>
-                              </PopoverContent>
-                            </Popover>
-                          </TableHead>
-                          <TableHead className="text-primary-foreground font-bold text-center">
-                            {/* HN header: Popover for mobile tap support */}
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button type="button" className="inline-flex items-center gap-1 cursor-help font-bold text-primary-foreground">
-                                  HN <HelpCircle className="h-3.5 w-3.5 opacity-70" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent side="bottom" className="max-w-[240px] w-auto text-xs p-3">
-                                <p className="font-bold mb-1">Handicap Neto</p>
-                                <p>Handicap de juego ajustado por el porcentaje de la categoría, usado para calcular el score neto del torneo.</p>
-                              </PopoverContent>
-                            </Popover>
-                          </TableHead>
+                          <TableHead className="text-primary-foreground font-bold text-center">Fecha de nacimiento</TableHead>
                         </TableRow>
                       </TableHeader>
                        <TableBody>
@@ -273,16 +238,13 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
                                </TableCell>
                                {/* Nombre recortado a 4 renglones en móvil (.player-name-clamp) */}
                                <TableCell className="player-name-cell"><span className="player-name-clamp">{player.name}</span></TableCell>
-                              {/* HI/HJ/HN values centered under their respective column headers */}
-                              <TableCell className="text-center">{player.handicapIndex.toFixed(1)}</TableCell>
-                              <TableCell className="text-center">{player.handicapJuego}</TableCell>
-                              {/* HN is the most important stat — emphasize with primary color, bolder weight, and larger size */}
-                              <TableCell className="text-center font-extrabold text-base text-primary">{player.handicapNeto}</TableCell>
+                              {/* Fecha de nacimiento (mismo dato que /field-gira) */}
+                              <TableCell className="text-center">{formatFecha(player.fechanac ?? '')}</TableCell>
                             </TableRow>
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                               <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               No hay jugadores registrados en esta categoría
                             </TableCell>

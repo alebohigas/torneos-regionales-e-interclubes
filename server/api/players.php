@@ -39,7 +39,7 @@ if (api_column_exists($conn, 'categorias', 'formato')) {
  * query falla con "Unknown column" (HTTP 500) y la tabla de /jugadores queda
  * vacía aunque los conteos por categoría sí se calculen.
  */
-$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid'];
+$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid', 'fechanac'];
 $selCols = ['p.id', "CONCAT(p.nombre, ' ', p.apellido) as jugador"];
 $has = [];
 foreach ($optionalPlayerCols as $c) {
@@ -113,7 +113,9 @@ while ($row = $result->fetch_assoc()) {
         'estatus'    => $row['estatus'] ?? 'NORMAL',
         /** grupoid: agrupador de parejas (ej. "C24"). El frontend usa este
          *  campo cuando isParejas=true para mostrar "Grupo C24". */
-        'grupoid'    => $row['grupoid'] ?? ''
+        'grupoid'    => $row['grupoid'] ?? '',
+        /** fechanac: fecha de nacimiento mostrada en la tabla de /jugadores. */
+        'fechanac'   => $row['fechanac'] ?? ''
     ];
 }
 $result->free();
