@@ -125,7 +125,8 @@ $result->free();
  * ('0000-00-00' or the legacy default '1900-01-01').
  */
 $catSql = "SELECT fechaHandicap FROM categorias WHERE categoria_id = '$cid' LIMIT 1";
-$catRes = $conn->query($catSql);
+$catRes = api_column_exists($conn, 'categorias', 'fechaHandicap') ? $conn->query($catSql) : false;
+
 if ($catRes) {
     if ($catRow = $catRes->fetch_assoc()) {
         $val = $catRow['fechaHandicap'] ?? '';
