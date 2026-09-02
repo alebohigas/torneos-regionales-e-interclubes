@@ -171,9 +171,7 @@ const Jugadores = ({ torneoId, title = 'Jugadores', subtitle }: JugadoresProps) 
                                 <TableRow className="bg-primary hover:bg-primary">
                                   <TableHead className="text-primary-foreground font-bold text-center">Club</TableHead>
                                   <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HI</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HJ</TableHead>
-                                  <TableHead className="text-primary-foreground font-bold text-center">HN</TableHead>
+                                  <TableHead className="text-primary-foreground font-bold text-center">Fecha de nacimiento</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
