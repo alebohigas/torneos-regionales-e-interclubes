@@ -48,7 +48,7 @@ foreach ($rows as $row) {
     $cat = [
         'categoryId'  => $row['categoria_id'],
         'name'        => $row['categoria'],
-        'shortName'   => $row['abreviatura'],
+        'shortName'   => ($row['abreviatura'] ?: $row['categoria']),
         'system'      => $row['sistema'],
         'format'      => $row['formato'],
         'style'       => $row['estilo'],

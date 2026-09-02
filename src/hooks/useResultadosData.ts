@@ -101,7 +101,7 @@ export const useAllResults = (torneoIdOverride?: string) => {
         return {
           categoryId: cat.categoryId,
           categoryName: cat.name || '',
-          shortName: cat.shortName || '',
+          shortName: cat.shortName || cat.name || '',
           system: (cat as any).system || '',
           isParejas: !!(cat as any).isParejas || (cat as any).format === 'PAREJAS',
           format: (cat as any).format,
@@ -191,7 +191,7 @@ export const useCategoryResults = (
       return {
         categoryId: raw.categoryId || categoryId!,
         categoryName: raw.categoryName || '',
-        shortName: raw.shortName || '',
+        shortName: raw.shortName || raw.categoryName || '',
         system: raw.system || '',
         isParejas: !!raw.isParejas || (raw.format === 'PAREJAS'),
         format: raw.format,
