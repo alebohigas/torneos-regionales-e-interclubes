@@ -1,9 +1,18 @@
 <?php
 /**
  * Players Endpoint
- * GET /api/players.php?torneoid=XXX&catid=XXX
- * Returns players for a specific category
- * Uses: jugadores table joined with clubs for logo
+ * GET /api/players.php?giraid=XXX&catid=XXX[&torneoid=XXX][&debug=1]
+ *
+ * Devuelve los jugadores de una categoría con el mismo formato que /field-gira
+ * (Club/logo, Jugador, Fecha de nacimiento), filtrado por categoría y por el
+ * torneo activo de la gira.
+ *
+ * Todo el esquema se detecta en runtime: el esquema `golftour` renombra varias
+ * columnas respecto al esquema original (`categoriaid` vs `id_categoria`,
+ * `torneoid` vs `id_torneo`, `fechanac` vs `il`, ...). Si alguna no existe se
+ * omite del query en lugar de provocar un 500 opaco.
+ *
+ * Añade `&debug=1` para obtener el SQL ejecutado y el esquema detectado.
  */
 require_once 'config.php';
 
@@ -12,151 +21,121 @@ $catid = require_param('catid');
 $cid = esc($conn, $catid);
 $tid = esc($conn, $torneoid);
 
-/**
- * Optional `?skin=1` flag — restrict results to players enrolled in the
- * SKIN GAME (jugadores.Skeenjuga = 1). Used by the /skinplayers page.
- */
+/** Tabla de jugadores: `jugadores` (por torneo) o `jugadores_seed` (gira). */
+$playersTable = null;
+foreach (['jugadores', 'jugadores_seed'] as $t) {
+    if (@$conn->query("SHOW TABLES LIKE '$t'")->num_rows > 0) { $playersTable = $t; break; }
+}
+if (!$playersTable) {
+    json_error('No existe la tabla de jugadores (jugadores / jugadores_seed)');
+}
+
+/** Columnas clave, con alias legacy. */
+$colCat   = api_first_existing_column($conn, $playersTable, ['categoriaid', 'id_categoria', 'categoria_id', 'categoriasid', 'catid']);
+$colTor   = api_first_existing_column($conn, $playersTable, ['torneoid', 'id_torneo', 'torneo_id']);
+$colId    = api_first_existing_column($conn, $playersTable, ['id', 'jugador_id', 'jugadorid']);
+$colNom   = api_first_existing_column($conn, $playersTable, ['nombre', 'nombres']);
+$colApe   = api_first_existing_column($conn, $playersTable, ['apellido', 'apellidos']);
+$colBirth = api_first_existing_column($conn, $playersTable, ['fechanac', 'fecha_nac', 'fechanacimiento', 'il']);
+$colClub  = api_first_existing_column($conn, $playersTable, ['clubid', 'id_club', 'club_id']);
+$colNum   = api_first_existing_column($conn, $playersTable, ['numjugador', 'numero']);
+$colSexo  = api_first_existing_column($conn, $playersTable, ['sexo']);
+$colEst   = api_first_existing_column($conn, $playersTable, ['estatus', 'status']);
+$colGrupo = api_first_existing_column($conn, $playersTable, ['grupoid', 'grupo']);
+$colClubT = api_first_existing_column($conn, $playersTable, ['club']);
+
+$debugInfo = [
+    'players_table' => $playersTable,
+    'torneoid'      => $torneoid,
+    'catid'         => $catid,
+    'columns'       => compact('colCat', 'colTor', 'colId', 'colNom', 'colApe', 'colBirth', 'colClub', 'colNum', 'colSexo', 'colEst', 'colGrupo', 'colClubT'),
+];
+
+if (!$colCat) {
+    json_error("La tabla `$playersTable` no tiene columna de categoría", 500, $debugInfo);
+}
+if (!$colNom) {
+    json_error("La tabla `$playersTable` no tiene columna de nombre", 500, $debugInfo);
+}
+
+/** ?skin=1 -> solo jugadores inscritos al SKIN GAME. */
 $skinOnly = isset($_GET['skin']) && $_GET['skin'] === '1';
-$skinPlayerFilter = ($skinOnly && api_column_exists($conn, 'jugadores', 'Skeenjuga'))
-    ? " AND p.Skeenjuga = 1 " : '';
+$skinFilter = ($skinOnly && api_column_exists($conn, $playersTable, 'Skeenjuga')) ? ' AND p.Skeenjuga = 1 ' : '';
 
-/**
- * Detectar si la categoría es de parejas (formato='PAREJAS'). El frontend lo
- * usa para agrupar jugadores por grupoid (cada grupo = una pareja).
- */
+/** ¿Categoría de parejas? El frontend agrupa por grupoid. */
 $isParejas = false;
-if (api_column_exists($conn, 'categorias', 'formato')) {
-    $catInfoRow = query_one($conn, "SELECT formato FROM categorias WHERE categoria_id = '$cid' LIMIT 1");
-    $isParejas = $catInfoRow && strtoupper($catInfoRow['formato'] ?? '') === 'PAREJAS';
+$catPk = api_first_existing_column($conn, 'categorias', ['categoria_id', 'categoriaid', 'categoriasid', 'id']);
+if ($catPk && api_column_exists($conn, 'categorias', 'formato')) {
+    $row = query_one($conn, "SELECT `formato` FROM `categorias` WHERE `$catPk` = '$cid' LIMIT 1");
+    $isParejas = $row && strtoupper($row['formato'] ?? '') === 'PAREJAS';
 }
 
+/** SELECT dinámico. */
+$sel = [];
+$sel[] = ($colId ? "p.`$colId`" : "0") . ' AS id';
+$sel[] = $colApe ? "TRIM(CONCAT(p.`$colNom`, ' ', p.`$colApe`)) AS jugador" : "p.`$colNom` AS jugador";
+if ($colBirth) $sel[] = "p.`$colBirth` AS fechanac";
+if ($colNum)   $sel[] = "p.`$colNum` AS numjugador";
+if ($colSexo)  $sel[] = "p.`$colSexo` AS sexo";
+if ($colEst)   $sel[] = "p.`$colEst` AS estatus";
+if ($colGrupo) $sel[] = "p.`$colGrupo` AS grupoid";
+if ($colClubT) $sel[] = "p.`club` AS club";
 
-/**
- * Construcción dinámica de columnas.
- *
- * El esquema `golftour` no tiene algunas columnas del esquema original
- * (`equipo`, `grupoid`, `Skeenjuga`, ...). Si se referencian directamente el
- * query falla con "Unknown column" (HTTP 500) y la tabla de /jugadores queda
- * vacía aunque los conteos por categoría sí se calculen.
- */
-$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid'];
-$selCols = ['p.id', "CONCAT(p.nombre, ' ', p.apellido) as jugador"];
-$has = [];
-foreach ($optionalPlayerCols as $c) {
-    $has[$c] = api_column_exists($conn, 'jugadores', $c);
-    if ($has[$c]) $selCols[] = "p.`$c`" . ($c === 'indexjgo' ? ' as hi' : '');
-}
-
-/**
- * Fecha de nacimiento: en `jugadores_seed` la columna es `fechanac`, mientras
- * que en `jugadores` (golftour) el mismo dato vive en `il`. Se toma la primera
- * que exista y se expone siempre como `fechanac`.
- */
-foreach (['fechanac', 'il'] as $birthCol) {
-    if (api_column_exists($conn, 'jugadores', $birthCol)) {
-        $selCols[] = "p.`$birthCol` AS fechanac";
-        break;
-    }
-}
-
-/** Logo del club (opcional: requiere jugadores.clubid + tabla clubs). */
-$hasClubId = api_column_exists($conn, 'jugadores', 'clubid');
+/** Logo del club. */
 $logoJoin = '';
-if ($hasClubId) {
-    $selCols[] = 'c.logo';
-    $logoJoin = ' LEFT JOIN clubs c ON (p.clubid = c.id) ';
+$clubsIdCol = api_first_existing_column($conn, 'clubs', ['id', 'club_id', 'clubid']);
+if ($colClub && $clubsIdCol && api_column_exists($conn, 'clubs', 'logo')) {
+    $sel[] = 'c.logo AS logo';
+    if (!$colClubT && api_column_exists($conn, 'clubs', 'club')) $sel[] = 'c.club AS club';
+    $logoJoin = " LEFT JOIN `clubs` c ON (p.`$colClub` = c.`$clubsIdCol`) ";
 }
 
-/** Handicaps calculados por funciones legacy (requieren indexjgo/teesalidaid). */
-$catJoin = '';
-if ($has['indexjgo'] && $has['teesalidaid'] && api_column_exists($conn, 'caljuego', 'campo')) {
-    $pctCol = api_column_exists($conn, 'categorias', $skinOnly ? 'Skeenporcent' : 'porcentaje')
-        ? ($skinOnly ? 'cat.skeenporcent' : 'cat.porcentaje')
-        : 'NULL';
-    $pctSelect = api_column_exists($conn, 'categorias', 'porcentaje') ? 'cat.porcentaje' : 'NULL AS porcentaje';
-    $skeenSelect = api_column_exists($conn, 'categorias', 'Skeenporcent')
-        ? 'cat.Skeenporcent AS skeenporcent' : 'NULL AS skeenporcent';
-    $selCols[] = "f_hdccampo(p.indexjgo, p.teesalidaid, cat.campoid) as hj";
-    $selCols[] = "f_hdccamponeto(p.indexjgo, p.teesalidaid, cat.campoid, $pctCol) as hn";
-    $catJoin = " LEFT JOIN (
-            SELECT cat.categoria_id, cj.campo as campoid, $pctSelect, $skeenSelect
-            FROM categorias cat
-            JOIN caljuego cj ON (cat.categoria_id = cj.categoriaid)
-            WHERE cat.categoria_id = '$cid' and cj.campo > 0
-            LIMIT 1
-        ) cat ON (p.categoriaid = cat.categoria_id) ";
-}
+/** Filtros: categoría (+ torneo de la etapa activa cuando la columna existe). */
+$where = ["p.`$colCat` = '$cid'"];
+if ($colTor && $tid !== '') $where[] = "p.`$colTor` = '$tid'";
 
-$orderBy = api_column_exists($conn, 'jugadores', 'apellido') ? 'p.apellido, p.nombre ASC' : 'p.nombre ASC';
+$orderBy = $colApe ? "p.`$colApe`, p.`$colNom` ASC" : "p.`$colNom` ASC";
 
-$sql = "SELECT " . implode(', ', $selCols) . "
-        FROM jugadores p
+$sql = "SELECT " . implode(', ', $sel) . "
+        FROM `$playersTable` p
         $logoJoin
-        $catJoin
-        WHERE p.categoriaid = '$cid' AND p.torneoid = $tid $skinPlayerFilter
+        WHERE " . implode(' AND ', $where) . " $skinFilter
         ORDER BY $orderBy";
-
+debug_log_query('players', $sql);
 
 $result = $conn->query($sql);
 if (!$result) {
-    json_error('Query failed: ' . $conn->error);
+    json_error('Query failed: ' . $conn->error, 500, array_merge($debugInfo, ['sql' => $sql]));
 }
 
+$cleanDate = function ($v) {
+    $v = trim((string)$v);
+    if ($v === '' || strpos($v, '0000-00-00') === 0 || strpos($v, '1900-01-01') === 0) return '';
+    return $v;
+};
+
 $players = [];
-/**
- * fechaHandicap: Tournament-wide handicap effective date.
- * Source: categorias.fechaHandicap (PK: categoria_id), looked up by the
- * current $catid. Per requirement, the handicap effective date is now stored
- * per category instead of at the tournament level (torneo.fecha_hand) or
- * per player (jugadores.fechahandicap).
- */
-$fechaHandicap = '';
 while ($row = $result->fetch_assoc()) {
     $players[] = [
-        'id'         => $row['id'],
+        'id'         => $row['id'] ?? '',
         'numjugador' => $row['numjugador'] ?? '',
-        'jugador'    => $row['jugador'],
+        'jugador'    => $row['jugador'] ?? '',
         'logo'       => !empty($row['logo']) ? $LOGOS_BASE_URL . $row['logo'] : '',
-        'hi'         => $row['hi'] ?? '0',
-        'hj'         => $row['hj'] ?? '0',
-        'hn'         => $row['hn'] ?? '0',
         'club'       => $row['club'] ?? '',
         'sexo'       => $row['sexo'] ?? '',
         'estatus'    => $row['estatus'] ?? 'NORMAL',
-        /** grupoid: agrupador de parejas (ej. "C24"). El frontend usa este
-         *  campo cuando isParejas=true para mostrar "Grupo C24". */
         'grupoid'    => $row['grupoid'] ?? '',
-        /** fechanac: fecha de nacimiento mostrada en la tabla de /jugadores. */
-        'fechanac'   => (function ($v) {
-            $v = trim((string)$v);
-            if ($v === '' || strpos($v, '0000-00-00') === 0 || strpos($v, '1900-01-01') === 0) return '';
-            return $v;
-        })($row['fechanac'] ?? '')
+        'fechanac'   => $cleanDate($row['fechanac'] ?? ''),
+        'hi'         => '0',
+        'hj'         => '0',
+        'hn'         => '0',
     ];
 }
 $result->free();
 
-/**
- * Fetch fechaHandicap from categorias table (PK: categoria_id).
- * Uses escaped category id; safely returns empty string if not found,
- * if the value is empty, or if it equals known placeholder dates
- * ('0000-00-00' or the legacy default '1900-01-01').
- */
-$catSql = "SELECT fechaHandicap FROM categorias WHERE categoria_id = '$cid' LIMIT 1";
-$catRes = api_column_exists($conn, 'categorias', 'fechaHandicap') ? $conn->query($catSql) : false;
-
-if ($catRes) {
-    if ($catRow = $catRes->fetch_assoc()) {
-        $val = $catRow['fechaHandicap'] ?? '';
-        if (!empty($val) && $val !== '0000-00-00' && $val !== '1900-01-01') {
-            $fechaHandicap = $val;
-        }
-    }
-    $catRes->free();
-}
-
 json_response([
     'players'       => $players,
-    'fechaHandicap' => $fechaHandicap,
+    'fechaHandicap' => '',
     'isParejas'     => $isParejas,
+    '_schema'       => $DEBUG_MODE ? $debugInfo : null,
 ]);
