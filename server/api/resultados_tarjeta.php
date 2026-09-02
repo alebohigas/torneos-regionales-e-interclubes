@@ -37,14 +37,25 @@ $hxsCampo   = api_column_exists($conn, 'hoyosxsalida', 'campoid') ? 'campoid' : 
 $hxsSalida  = api_column_exists($conn, 'hoyosxsalida', 'salidaid') ? 'salidaid' : 'salida';
 /** Columna con las ventajas por hoyo (CSV). Ausente en el esquema legacy. */
 $hasVentajasJug = api_column_exists($conn, $vsjTable, 'ventajasjug');
+/**
+ * `golftour` no expone arso/arsa/arsap en v_sal_jug ni fec_ult_act en tarjetas.
+ * Se detectan en runtime y se sustituyen por NULL / fallbacks para no romper
+ * el endpoint con "Unknown column".
+ */
+$hasAr        = api_column_exists($conn, $vsjTable, 'arso');
+$arSel        = $hasAr ? 'a.arso, a.arsa, a.arsap' : 'NULL as arso, NULL as arsa, NULL as arsap';
+/** Ventajas por hoyo: v_sal_jug.ventajasjug (nuevo) o tarjetas.ventajas (golftour). */
+$vtjExpr = $hasVentajasJug
+    ? 'a.ventajasjug'
+    : (api_column_exists($conn, 'tarjetas', 'ventajas') ? 'c.ventajas' : 'NULL');
 
 // ============= Player + card data =============
 if ($formato === 'PAREJAS') {
     $sql = "SELECT a.*, b.campo, c.*,
                    DATE_FORMAT(a.horainicio1a, '%w') as diajgo,
-                   a.arso, a.arsa, a.arsap,
+                   $arSel,
                    (c.so - c.sa) as handicapneto,
-                   f_getventajajug((c.so - c.sa), a.`$vsjCampo`, teesalidaid) as arvtj
+                   $vtjExpr as arvtj
             FROM v_sal_jug_par a
             JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
@@ -53,8 +64,8 @@ if ($formato === 'PAREJAS') {
 } else {
     $sql = "SELECT a.*, b.campo, c.*,
                    DATE_FORMAT(a.horainicio1a, '%w') as diajgo,
-                   a.arso, a.arsa, a.arsap,
-                   " . ($hasVentajasJug ? 'ventajasjug' : 'NULL') . " as arvtj
+                   $arSel,
+                   $vtjExpr as arvtj
             FROM v_sal_jug a
             JOIN campos b ON (a.`$vsjCampo` = b.id)
             JOIN tarjetas c ON (a.tarjetaid = c.id)
@@ -68,25 +79,18 @@ $playerData = query_one($conn, $sql);
 if (!$playerData) { json_error('Player card not found', 404); }
 
 // ============= Score adjusted (SA) per hole =============
-if ($formato === 'PAREJAS') {
-    $sql = "SELECT h1_a, h2_a, h3_a, h4_a, h5_a, h6_a, h7_a, h8_a, h9_a,
-                   h10_a, h11_a, h12_a, h13_a, h14_a, h15_a, h16_a, h17_a, h18_a,
-                   c.SO, c.SA, a.arso, a.arsa, a.arsap,
-                   (c.so - c.sa) as handicapneto,
-                   f_getventajajug((c.so - c.sa), a.`$vsjCampo`, teesalidaid) as arvtj
-            FROM v_sal_jug_par a
-            JOIN campos b ON (a.`$vsjCampo` = b.id)
-            JOIN tarjetas c ON (a.tarjetaid = c.id)
-            WHERE a.jugadorid = $jid AND a.categoriaid = $cid AND a.fecha_juego = '$fec'";
-} else {
-    $sql = "SELECT h1_a, h2_a, h3_a, h4_a, h5_a, h6_a, h7_a, h8_a, h9_a,
-                   h10_a, h11_a, h12_a, h13_a, h14_a, h15_a, h16_a, h17_a, h18_a,
-                   SO, SA, a.arso, a.arsa, a.arsap, " . ($hasVentajasJug ? 'ventajasjug' : 'NULL') . " as arvtj
-            FROM v_sal_jug a
-            JOIN campos b ON (a.`$vsjCampo` = b.id)
-            JOIN tarjetas c ON (a.tarjetaid = c.id)
-            WHERE a.jugadorid = $jid AND a.categoriaid = $cid AND a.fecha_juego = '$fec'";
-}
+$saTable = ($formato === 'PAREJAS') ? 'v_sal_jug_par' : 'v_sal_jug';
+$sql = "SELECT c.h1_a, c.h2_a, c.h3_a, c.h4_a, c.h5_a, c.h6_a, c.h7_a, c.h8_a, c.h9_a,
+               c.h10_a, c.h11_a, c.h12_a, c.h13_a, c.h14_a, c.h15_a, c.h16_a, c.h17_a, c.h18_a,
+               c.SO, c.SA, $arSel,
+               (c.so - c.sa) as handicapneto,
+               $vtjExpr as arvtj
+        FROM $saTable a
+        JOIN campos b ON (a.`$vsjCampo` = b.id)
+        JOIN tarjetas c ON (a.tarjetaid = c.id)
+        WHERE a.jugadorid = $jid AND a.categoriaid = $cid";
+if ($fecha !== '0') { $sql .= " AND a.fecha_juego = '$fec'"; }
+
 
 debug_log_query('Score adjusted (SA) per hole', $sql);
 $scoreData = query_one($conn, $sql);
