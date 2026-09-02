@@ -31,24 +31,59 @@ $pctColumn = $skinOnly ? 'cat.skeenporcent' : 'cat.porcentaje';
 $catInfoRow = query_one($conn, "SELECT formato FROM categorias WHERE categoria_id = $cid LIMIT 1");
 $isParejas = $catInfoRow && strtoupper($catInfoRow['formato'] ?? '') === 'PAREJAS';
 
-/** Query: fetch players with club logo and calculated handicaps using DB functions */
-$sql = "SELECT p.id, p.numjugador,
-               CONCAT(p.nombre, ' ', p.apellido) as jugador,
-               c.logo, p.indexjgo as hi,
-               f_hdccampo(p.indexjgo, p.teesalidaid, cat.campoid) as hj,
-               f_hdccamponeto(p.indexjgo, p.teesalidaid, cat.campoid, $pctColumn) as hn,
-               p.club, p.sexo, p.estatus, p.equipo, p.grupoid
-        FROM jugadores p
-        LEFT JOIN clubs c ON (p.clubid = c.id)
-        LEFT JOIN (
-            SELECT cat.categoria_id, cj.campo as campoid, cat.porcentaje, cat.Skeenporcent as skeenporcent
+/**
+ * Construcción dinámica de columnas.
+ *
+ * El esquema `golftour` no tiene algunas columnas del esquema original
+ * (`equipo`, `grupoid`, `Skeenjuga`, ...). Si se referencian directamente el
+ * query falla con "Unknown column" (HTTP 500) y la tabla de /jugadores queda
+ * vacía aunque los conteos por categoría sí se calculen.
+ */
+$optionalPlayerCols = ['numjugador', 'indexjgo', 'teesalidaid', 'club', 'sexo', 'estatus', 'equipo', 'grupoid'];
+$selCols = ['p.id', "CONCAT(p.nombre, ' ', p.apellido) as jugador"];
+$has = [];
+foreach ($optionalPlayerCols as $c) {
+    $has[$c] = api_column_exists($conn, 'jugadores', $c);
+    if ($has[$c]) $selCols[] = "p.`$c`" . ($c === 'indexjgo' ? ' as hi' : '');
+}
+
+/** Logo del club (opcional: requiere jugadores.clubid + tabla clubs). */
+$hasClubId = api_column_exists($conn, 'jugadores', 'clubid');
+$logoJoin = '';
+if ($hasClubId) {
+    $selCols[] = 'c.logo';
+    $logoJoin = ' LEFT JOIN clubs c ON (p.clubid = c.id) ';
+}
+
+/** Handicaps calculados por funciones legacy (requieren indexjgo/teesalidaid). */
+$catJoin = '';
+if ($has['indexjgo'] && $has['teesalidaid'] && api_column_exists($conn, 'caljuego', 'campo')) {
+    $pctCol = api_column_exists($conn, 'categorias', $skinOnly ? 'Skeenporcent' : 'porcentaje')
+        ? ($skinOnly ? 'cat.skeenporcent' : 'cat.porcentaje')
+        : 'NULL';
+    $pctSelect = api_column_exists($conn, 'categorias', 'porcentaje') ? 'cat.porcentaje' : 'NULL AS porcentaje';
+    $skeenSelect = api_column_exists($conn, 'categorias', 'Skeenporcent')
+        ? 'cat.Skeenporcent AS skeenporcent' : 'NULL AS skeenporcent';
+    $selCols[] = "f_hdccampo(p.indexjgo, p.teesalidaid, cat.campoid) as hj";
+    $selCols[] = "f_hdccamponeto(p.indexjgo, p.teesalidaid, cat.campoid, $pctCol) as hn";
+    $catJoin = " LEFT JOIN (
+            SELECT cat.categoria_id, cj.campo as campoid, $pctSelect, $skeenSelect
             FROM categorias cat
             JOIN caljuego cj ON (cat.categoria_id = cj.categoriaid)
-            WHERE cat.categoria_id = '$cid' and campo>0
+            WHERE cat.categoria_id = '$cid' and cj.campo > 0
             LIMIT 1
-        ) cat ON (p.categoriaid = cat.categoria_id)
+        ) cat ON (p.categoriaid = cat.categoria_id) ";
+}
+
+$orderBy = api_column_exists($conn, 'jugadores', 'apellido') ? 'p.apellido, p.nombre ASC' : 'p.nombre ASC';
+
+$sql = "SELECT " . implode(', ', $selCols) . "
+        FROM jugadores p
+        $logoJoin
+        $catJoin
         WHERE p.categoriaid = '$cid' AND p.torneoid = $tid $skinPlayerFilter
-        ORDER BY p.apellido, p.nombre ASC";
+        ORDER BY $orderBy";
+
 
 $result = $conn->query($sql);
 if (!$result) {
