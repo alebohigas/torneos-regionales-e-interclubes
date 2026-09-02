@@ -67,6 +67,8 @@ export interface Player {
   categoryId: string;      // Category ID reference
   /** Grupo de parejas (jugadores.grupoid). Vacío para categorías individuales. */
   grupoid?: string;
+  /** Fecha de nacimiento (YYYY-MM-DD) — mostrada en /jugadores y /field-gira. */
+  fechanac?: string;
 }
 
 // ============= Parejas Grouping =============
