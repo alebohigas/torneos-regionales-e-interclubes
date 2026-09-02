@@ -151,7 +151,7 @@ $sql = "SELECT j.id AS jugadorid, j.numjugador,
                $dayCols,
                c.abr, c.logo
         FROM jugadores j
-        JOIN clubs c ON (j.clubid = c.id)
+        LEFT JOIN clubs c ON (j.clubid = c.id)
         JOIN v_cd_ulttar u ON (j.id = u.jugadorid)
         WHERE j.categoriaid = $cid
           AND $totalExpr > 0
@@ -196,7 +196,7 @@ $cutSql = "SELECT j.id AS jugadorid, j.numjugador,
                   $dayCols,
                   c.abr, c.logo
            FROM jugadores j
-           JOIN clubs c ON (j.clubid = c.id)
+           LEFT JOIN clubs c ON (j.clubid = c.id)
            LEFT JOIN v_cd_ulttar u ON (j.id = u.jugadorid)
            WHERE j.categoriaid = $cid
              AND j.estatus <> 'NORMAL'
