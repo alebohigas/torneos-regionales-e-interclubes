@@ -127,6 +127,13 @@ export interface ResultCategory {
    * `total` into a differential vs par for Stroke Play leaderboards.
    */
   coursePar?: number;
+  /** Course/tee metadata returned by the results detail endpoint. */
+  course?: {
+    rating?: number;
+    slope?: number;
+    tee?: string;
+    par?: number;
+  };
   /**
    * Number of medal winners for the active scoring type (back-compat).
    * Prefer `medalCountNeto` / `medalCountGross` when picking dynamically.
