@@ -137,7 +137,7 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             {renderSection(back9, 'IN')}
           </div>
 
-          {/* Totales: solo Par y Neto */}
+          {/* Totales: solo Par y R (golpes) */}
           <div className="flex justify-end items-baseline gap-6 mt-3 text-sm flex-wrap">
             <span className="text-muted-foreground">
               Par: <strong className="text-foreground">
@@ -145,11 +145,12 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
               </strong>
             </span>
             <span className="text-muted-foreground">
-              Neto: <strong className="text-foreground font-bold">
-                {scorecard.holes.reduce((s, h) => s + h.neto, 0)}
+              Total: <strong className="text-foreground font-bold">
+                {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
               </strong>
             </span>
           </div>
+
         </div>
       </TableCell>
     </TableRow>
