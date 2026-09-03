@@ -421,7 +421,7 @@ const Resultados = ({ embedded = false, torneoIdOverride, title, subtitle }: Res
                   : `Volver a ${selectedCategory?.shortName}`}
               </Button>
 
-              <div className="mb-6 text-center">
+              <div className="mb-8 text-center">
                 <h2 className="text-3xl font-bold text-foreground mb-2">
                   {selectedCategory?.categoryName}
                 </h2>
@@ -430,19 +430,6 @@ const Resultados = ({ embedded = false, torneoIdOverride, title, subtitle }: Res
                 }`}>
                   {selectedScoringType}
                 </span>
-              </div>
-
-              <div className="mb-6 text-left md:text-center max-w-5xl mx-auto">
-                <p className="text-muted-foreground mb-1">
-                  <span className="font-bold text-foreground">Total jugadores:</span>{' '}
-                  <span className="text-primary font-bold">
-                    {loadingDetail ? '…' : players.length + (categoryDetail?.cutPlayers?.length || 0)}
-                  </span>
-                </p>
-                <p className="text-muted-foreground">
-                  <span className="font-bold text-foreground">Tee Salida:</span>{' '}
-                  {categoryDetail?.course?.tee || '—'}
-                </p>
               </div>
 
               {loadingDetail ? (
