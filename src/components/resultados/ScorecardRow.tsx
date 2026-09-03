@@ -67,16 +67,17 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </td>
           </tr>
 
-          {/* Neto row - golpes netos del jugador por hoyo (unica fila de score mostrada) */}
+          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy */}
           <tr className="bg-muted/30">
-            <td className="px-2 py-1 font-semibold text-center text-muted-foreground">Neto</td>
+            <td className="px-2 py-1 font-semibold text-center text-muted-foreground">R</td>
             {holes.map(h => (
-              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.neto}</td>
+              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.golpes}</td>
             ))}
             <td className="px-2 py-1 text-center font-semibold text-foreground">
-              {holes.reduce((s, h) => s + h.neto, 0)}
+              {holes.reduce((s, h) => s + h.golpes, 0)}
             </td>
           </tr>
+
         </tbody>
       </table>
     </div>
