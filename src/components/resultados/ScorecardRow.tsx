@@ -67,16 +67,17 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </td>
           </tr>
 
-          {/* Neto row - golpes netos del jugador por hoyo (unica fila de score mostrada) */}
+          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy */}
           <tr className="bg-muted/30">
-            <td className="px-2 py-1 font-semibold text-center text-muted-foreground">Neto</td>
+            <td className="px-2 py-1 font-semibold text-center text-muted-foreground">R</td>
             {holes.map(h => (
-              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.neto}</td>
+              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.golpes}</td>
             ))}
             <td className="px-2 py-1 text-center font-semibold text-foreground">
-              {holes.reduce((s, h) => s + h.neto, 0)}
+              {holes.reduce((s, h) => s + h.golpes, 0)}
             </td>
           </tr>
+
         </tbody>
       </table>
     </div>
@@ -136,7 +137,7 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             {renderSection(back9, 'IN')}
           </div>
 
-          {/* Totales: solo Par y Neto */}
+          {/* Totales: solo Par y R (golpes) */}
           <div className="flex justify-end items-baseline gap-6 mt-3 text-sm flex-wrap">
             <span className="text-muted-foreground">
               Par: <strong className="text-foreground">
@@ -144,11 +145,12 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
               </strong>
             </span>
             <span className="text-muted-foreground">
-              Neto: <strong className="text-foreground font-bold">
-                {scorecard.holes.reduce((s, h) => s + h.neto, 0)}
+              Total: <strong className="text-foreground font-bold">
+                {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
               </strong>
             </span>
           </div>
+
         </div>
       </TableCell>
     </TableRow>
