@@ -39,7 +39,14 @@ export interface RoundScorecard {
   date?: string;
   /** Last capture timestamp from tarjetas.fecha_cap (only set for live cards) */
   fechaCap?: string;
+  /** Tee de salida (color) — legacy ribbon */
+  tee?: string;
+  /** Nombre del campo — legacy ribbon */
+  course?: string;
+  /** Club del jugador — legacy ribbon */
+  club?: string;
 }
+
 
 export interface PlayerResult {
   id: string;
