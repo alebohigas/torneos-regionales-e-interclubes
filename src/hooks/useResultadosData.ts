@@ -315,7 +315,12 @@ export const fetchPlayerScorecardFromApi = async (
     // Last capture timestamp (tarjetas.fecha_cap) — used in /LIVE to show
     // the exact moment the scorecard was last updated.
     fechaCap: raw.fechaCap || undefined,
+    // Cintilla legacy: tee de salida / campo / club
+    tee: raw.player?.tee || raw.player?.teeSal || undefined,
+    course: raw.player?.course || undefined,
+    club: raw.player?.club || undefined,
   };
+
 };
 
 // ============= Live Scorecard =============
