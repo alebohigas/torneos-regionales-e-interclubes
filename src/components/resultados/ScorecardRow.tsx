@@ -27,17 +27,10 @@ interface ScorecardRowProps {
 }
 
 
-/** Label mapping for scorecard types */
-const scorecardTypeLabels: Record<ScorecardType, string> = {
-  hcp: 'Stroke Play (Neto)',
-  stableford: 'Stableford',
-  scratch: 'Scratch (Gross)',
-};
-
 const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: ScorecardRowProps) => {
   const front9 = scorecard.holes.slice(0, 9);
   const back9 = scorecard.holes.slice(9, 18);
-  const type = scorecard.scorecardType;
+
 
   /** Render a 9-hole section adapted to scorecard type */
   const renderSection = (holes: HoleScore[], label: string) => (
