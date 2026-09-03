@@ -498,5 +498,8 @@ export const fetchLiveScorecardFromApi = async (
     date: raw.date || '',
     // Last capture timestamp (tarjetas.fecha_cap) for live cards.
     fechaCap: raw.fechaCap || undefined,
+    // Cintilla legacy: campo (live no expone tee/club)
+    course: raw.course || undefined,
   };
+
 };
