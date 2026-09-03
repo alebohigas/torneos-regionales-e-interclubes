@@ -9,7 +9,7 @@
  */
 
 import { TableRow, TableCell } from '@/components/ui/table';
-import { RoundScorecard, HoleScore, ScorecardType } from '@/data/resultadosData';
+import { RoundScorecard, HoleScore } from '@/data/resultadosData';
 import { X } from 'lucide-react';
 import { formatDbDateTime } from '@/lib/dbDateTime';
 
