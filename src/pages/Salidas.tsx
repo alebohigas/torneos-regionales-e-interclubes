@@ -370,7 +370,9 @@ const Salidas = () => {
                                     )}
                                     <TableHead className="text-primary-foreground font-bold text-center w-16">Club</TableHead>
                                     <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                    <TableHead className="text-primary-foreground font-bold text-center w-20">Score</TableHead>
+                                    <TableHead className="text-primary-foreground font-bold text-center w-24">
+                                      {hasAnyCategory(result.group.players ?? []) ? 'Categoría' : 'Score'}
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -423,7 +425,7 @@ const Salidas = () => {
                                           </TableCell>
                                           {/* Score: en parejas se centra entre los dos renglones (rowSpan=2). */}
                                           <TableCell className="text-center font-bold text-primary align-middle" rowSpan={isPair ? 2 : 1}>
-                                            {player.score || '—'}
+                                            {player.category || player.score || '—'}
                                           </TableCell>
                                         </TableRow>
                                       );
@@ -591,7 +593,9 @@ const Salidas = () => {
                                 )}
                                 <TableHead className="text-primary-foreground font-bold text-center w-16">Club</TableHead>
                                 <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                <TableHead className="text-primary-foreground font-bold text-center w-20">Score</TableHead>
+                                <TableHead className="text-primary-foreground font-bold text-center w-24">
+                                  {groupsHaveAnyCategory(detail.groups) ? 'Categoría' : 'Score'}
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -648,7 +652,7 @@ const Salidas = () => {
                                         <span className="player-name-clamp">{player.name}</span>
                                       </TableCell>
                                       <TableCell className="text-center font-bold text-primary align-middle" rowSpan={isPair ? 2 : 1}>
-                                        {player.score || '—'}
+                                        {player.category || player.score || '—'}
                                       </TableCell>
                                     </TableRow>
                                   );
