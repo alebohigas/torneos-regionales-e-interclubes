@@ -88,7 +88,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getSuperAdminPassword } from '@/lib/superAdminAuth';
 /** Módulos: los tabs de un módulo apagado no se muestran ni se montan. */
 import { useModules } from '@/modules/useModules';
-import { Blocks } from 'lucide-react';
+import { Blocks, Route } from 'lucide-react';
 
 // ============= Login Form Component =============
 
