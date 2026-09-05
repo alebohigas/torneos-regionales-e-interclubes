@@ -143,12 +143,6 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
     </div>
   );
 
-  /** Cintilla legacy: TEE / CAMPO o CLUB / FECHA */
-  const ribbonParts = [
-    scorecard.tee,
-    scorecard.course || scorecard.club,
-    scorecard.date && scorecard.date !== '0' ? scorecard.date : null,
-  ].filter(Boolean) as string[];
 
   return (
     <TableRow className="bg-muted/10 hover:bg-muted/10">
