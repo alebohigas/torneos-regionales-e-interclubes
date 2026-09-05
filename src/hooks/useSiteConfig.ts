@@ -320,6 +320,16 @@ export interface HistorialConfig {
 }
 
 /**
+ * GiraConfig
+ * Configuración de la GIRA (Admin > Gira). `hiddenTorneos` lista los
+ * `torneo_id` (etapas) que NO deben aparecer en el sitio público ni en el
+ * menú GIRA. Todo torneo ausente de la lista se considera visible.
+ */
+export interface GiraConfig {
+  hiddenTorneos?: number[];
+}
+
+/**
  * HeroOverride
  * One hero (page background) override configured from Admin > Heros.
  *  - url:    image URL (uploaded file under /api/uploads/{domain}/heros/,
@@ -460,6 +470,8 @@ export interface SiteConfig {
   home_config: HomeConfig | null;
   /** /historial page config (past editions). Null = not configured. */
   historial_config: HistorialConfig | null;
+  /** Visibilidad de torneos/etapas de la gira (Admin > Gira). */
+  gira_config: GiraConfig | null;
   /** Per-tournament hero image overrides (Admin > Heros). Null = none. */
   hero_config: HeroConfig | null;
   /**
@@ -498,6 +510,7 @@ export interface SaveConfigPayload {
   stats_page_config?: StatsPageConfig | null;
   home_config?: HomeConfig | null;
   historial_config?: HistorialConfig | null;
+  gira_config?: GiraConfig | null;
   hero_config?: HeroConfig | null;
   /** Solo el superadmin puede enviar este campo (ver /setup). */
   modules_config?: ModulesConfig | null;
