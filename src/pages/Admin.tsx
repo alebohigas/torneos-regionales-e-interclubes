@@ -33,6 +33,7 @@ import AdminBrackets from '@/components/admin/AdminBrackets';
 import AdminMatchPlay from '@/components/admin/AdminMatchPlay';
 import AdminThemePalette from '@/components/admin/AdminThemePalette';
 import AdminGira from '@/components/admin/AdminGira';
+import AdminGiraEtapas from '@/components/admin/AdminGiraEtapas';
 import AdminShowcase300 from '@/components/admin/AdminShowcase300';
 import AdminStats from '@/components/admin/AdminStats';
 import AdminStatsPage from '@/components/admin/AdminStatsPage';
@@ -87,7 +88,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getSuperAdminPassword } from '@/lib/superAdminAuth';
 /** Módulos: los tabs de un módulo apagado no se muestran ni se montan. */
 import { useModules } from '@/modules/useModules';
-import { Blocks } from 'lucide-react';
+import { Blocks, Route } from 'lucide-react';
 
 // ============= Login Form Component =============
 
@@ -248,6 +249,7 @@ const AdminDashboard = () => {
     'stats-page': 'stats',
     usuarios: undefined,
     config: undefined,
+    gira: undefined,
     pagina: undefined,
     reglas: 'reglas',
     // Heros (fondos por página/torneo) queda restringido a superadmin.
@@ -491,6 +493,7 @@ const AdminDashboard = () => {
            */
           const adminTabs: { value: string; icon: any; label: string }[] = [
             { value: 'config',       icon: Database,        label: 'Config' },
+            { value: 'gira',         icon: Route,           label: 'Gira' },
             { value: 'archivos',     icon: Upload,          label: 'Archivos' },
             { value: 'pagina',       icon: LayoutPanelTop,  label: 'Página' },
             { value: 'convocatoria', icon: FileText,        label: 'Convocatoria' },
@@ -516,37 +519,31 @@ const AdminDashboard = () => {
           ];
           // Filtrar por área para staff temporal. Admin completo ve todo.
           const allowed = visibleAdminTabs(adminTabs);
-          // Split: first row = ceil(n/2) so odd counts give the bigger
-          // half to the top row, per the design directive.
-          const firstCount = Math.ceil(allowed.length / 2);
-          const row1 = allowed.slice(0, firstCount);
-          const row2 = allowed.slice(firstCount);
-          const renderRow = (rowTabs: typeof adminTabs) => (
-            <TabsList className="flex flex-wrap w-full h-auto gap-1 p-1">
-              {rowTabs.map(({ value, icon: Icon, label }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="gap-2 flex-1 min-w-[120px]"
-                >
+          /**
+           * Un solo strip que se auto-ajusta: los botones toman el ancho de su
+           * contenido y saltan de renglón cuando ya no caben, sin dejar un
+           * botón huérfano ni renglones a medias.
+           */
+          return (
+            <TabsList className="flex flex-wrap w-full h-auto justify-start gap-1 p-1">
+              {allowed.map(({ value, icon: Icon, label }) => (
+                <TabsTrigger key={value} value={value} className="gap-2 shrink-0 whitespace-nowrap">
                   <Icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
           );
-          return (
-            <div className="space-y-2">
-              {renderRow(row1)}
-              {renderRow(row2)}
-            </div>
-          );
         })()}
+
+        {/* Gira Tab — gira activa + visibilidad de sus etapas (torneos) */}
+        <TabsContent value="gira" className="space-y-4">
+          <AdminGira />
+          <AdminGiraEtapas />
+        </TabsContent>
 
         {/* Configuration Tab */}
         <TabsContent value="config" className="space-y-4">
-          {/* Gira activa: eje de la información del sitio (site_config.giraid) */}
-          <AdminGira />
 
           {/* La configuración por torneoid se retiró: el sitio se basa en la gira. */}
 

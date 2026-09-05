@@ -274,6 +274,33 @@ function site_config_has_historial_config($conn) {
 $hasHistorialConfig = site_config_has_historial_config($conn);
 
 /**
+ * Detect whether the gira_config column exists. Guarda la configuración de la
+ * GIRA (Admin > Gira): qué torneos/etapas se muestran u ocultan en el sitio
+ * público:
+ *
+ *   { "hiddenTorneos": [125, 128] }
+ *
+ * Self-healing: crea la columna en el primer uso; si el usuario de hosting no
+ * tiene ALTER, el endpoint sigue devolviendo null.
+ */
+function site_config_has_gira_config($conn) {
+    static $hasColumn = null;
+    if ($hasColumn !== null) return $hasColumn;
+    $result = $conn->query("SHOW COLUMNS FROM site_config LIKE 'gira_config'");
+    $hasColumn = $result && $result->num_rows > 0;
+    if (!$hasColumn) {
+        if (@$conn->query("ALTER TABLE site_config ADD COLUMN gira_config TEXT DEFAULT NULL COMMENT 'JSON object with gira/etapas visibility config'")) {
+            $hasColumn = true;
+        } else {
+            error_log('site_config: could not add gira_config column: ' . $conn->error);
+        }
+    }
+    return $hasColumn;
+}
+
+$hasGiraConfig = site_config_has_gira_config($conn);
+
+/**
  * Detect whether the hero_config column exists. Stores the per-tournament
  * hero (page background) overrides configured in Admin > Heros:
  *
@@ -587,6 +614,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($hasHistorialConfig) {
         $selectFields .= ', historial_config';
     }
+    if ($hasGiraConfig) {
+        $selectFields .= ', gira_config';
+    }
     if ($hasHeroConfig) {
         $selectFields .= ', hero_config';
     }
@@ -619,6 +649,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'stats_page_config'     => $hasStatsPageConfig && !empty($row['stats_page_config']) ? json_decode($row['stats_page_config'], true) : null,
             'home_config'           => $hasHomeConfig && !empty($row['home_config']) ? json_decode($row['home_config'], true) : null,
             'historial_config'      => $hasHistorialConfig && !empty($row['historial_config']) ? json_decode($row['historial_config'], true) : null,
+            'gira_config'           => $hasGiraConfig && !empty($row['gira_config']) ? json_decode($row['gira_config'], true) : null,
             'hero_config'           => $hasHeroConfig && !empty($row['hero_config']) ? json_decode($row['hero_config'], true) : null,
             'modules_config'        => $hasModulesConfig && !empty($row['modules_config']) ? json_decode($row['modules_config'], true) : null,
         ]);
@@ -644,6 +675,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'stats_page_config'     => null,
             'home_config'           => null,
             'historial_config'      => null,
+            'gira_config'           => null,
             'hero_config'           => null,
             'modules_config'        => null,
         ]);
@@ -674,6 +706,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'stats_page_config'      => 'stats',
             'home_config'            => 'pagina',
             'historial_config'       => 'pagina',
+            'gira_config'            => 'pagina',
             'hero_config'            => 'pagina',
         ];
         $staffAllowed = false;
@@ -910,6 +943,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $val = $body['historial_config'] !== null ? "'" . esc($conn, json_encode($body['historial_config'])) . "'" : 'NULL';
         $fields[] = "historial_config = $val";
         $insertFields[] = 'historial_config';
+        $insertValues[] = $val;
+    }
+
+    if (array_key_exists('gira_config', $body)) {
+        if (!$hasGiraConfig) {
+            json_error("Missing DB column gira_config in site_config. Run: ALTER TABLE site_config ADD COLUMN gira_config TEXT DEFAULT NULL COMMENT 'JSON object with gira/etapas visibility config';", 500);
+        }
+        $val = $body['gira_config'] !== null ? "'" . esc($conn, json_encode($body['gira_config'])) . "'" : 'NULL';
+        $fields[] = "gira_config = $val";
+        $insertFields[] = 'gira_config';
         $insertValues[] = $val;
     }
 
