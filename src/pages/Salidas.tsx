@@ -44,6 +44,17 @@ const hasAnyPair = (players: SalidasGroup['players']): boolean =>
 const groupsHaveAnyPair = (groups: SalidasGroup[] | undefined): boolean =>
   (groups ?? []).some((g) => hasAnyPair(g.players ?? []));
 
+/**
+ * La última columna muestra la CATEGORÍA de cada jugador (legacy
+ * salidas_detsu.php → v_sal_jug.catjugador) cuando el backend la provee;
+ * si no viene, se conserva el Score como antes.
+ */
+const hasAnyCategory = (players: SalidasGroup['players']): boolean =>
+  (players ?? []).some((p) => !!p.category);
+
+const groupsHaveAnyCategory = (groups: SalidasGroup[] | undefined): boolean =>
+  (groups ?? []).some((g) => hasAnyCategory(g.players ?? []));
+
 // ============= Search Result Type =============
 
 /** Represents a player search match with full group context */
@@ -359,7 +370,9 @@ const Salidas = () => {
                                     )}
                                     <TableHead className="text-primary-foreground font-bold text-center w-16">Club</TableHead>
                                     <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                    <TableHead className="text-primary-foreground font-bold text-center w-20">Score</TableHead>
+                                    <TableHead className="text-primary-foreground font-bold text-center w-24">
+                                      {hasAnyCategory(result.group.players ?? []) ? 'Categoría' : 'Score'}
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -412,7 +425,7 @@ const Salidas = () => {
                                           </TableCell>
                                           {/* Score: en parejas se centra entre los dos renglones (rowSpan=2). */}
                                           <TableCell className="text-center font-bold text-primary align-middle" rowSpan={isPair ? 2 : 1}>
-                                            {player.score || '—'}
+                                            {player.category || player.score || '—'}
                                           </TableCell>
                                         </TableRow>
                                       );
@@ -580,7 +593,9 @@ const Salidas = () => {
                                 )}
                                 <TableHead className="text-primary-foreground font-bold text-center w-16">Club</TableHead>
                                 <TableHead className="text-primary-foreground font-bold">Jugador</TableHead>
-                                <TableHead className="text-primary-foreground font-bold text-center w-20">Score</TableHead>
+                                <TableHead className="text-primary-foreground font-bold text-center w-24">
+                                  {groupsHaveAnyCategory(detail.groups) ? 'Categoría' : 'Score'}
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -637,7 +652,7 @@ const Salidas = () => {
                                         <span className="player-name-clamp">{player.name}</span>
                                       </TableCell>
                                       <TableCell className="text-center font-bold text-primary align-middle" rowSpan={isPair ? 2 : 1}>
-                                        {player.score || '—'}
+                                        {player.category || player.score || '—'}
                                       </TableCell>
                                     </TableRow>
                                   );
