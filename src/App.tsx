@@ -22,6 +22,7 @@ import JugadoresEtapa from "./pages/JugadoresEtapa";
 import ResultadosEtapa from "./pages/ResultadosEtapa";
 import FieldGira from "./pages/FieldGira";
 import Ranking from "./pages/Ranking";
+import RankingFinal from "./pages/RankingFinal";
 import Salidas from "./pages/Salidas";
 import LiveScoring from "./pages/LiveScoring";
 import Live from "./pages/Live";
@@ -147,6 +148,7 @@ const App = () => (
               {/* FIELD-GIRA: mismo layout que /jugadores pero con datos seed de la gira */}
               <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
               <Route path="/ranking" element={<ProtectedRoute pageId="ranking"><Ranking /></ProtectedRoute>} />
+              <Route path="/rankingfinal" element={<ProtectedRoute pageId="rankingfinal"><RankingFinal /></ProtectedRoute>} />
               <Route path="/salidas" element={<ProtectedRoute pageId="salidas"><Salidas /></ProtectedRoute>} />
               <Route path="/live-scoring" element={<ProtectedRoute pageId="live-scoring"><LiveScoring /></ProtectedRoute>} />
               <Route path="/live" element={<ProtectedRoute pageId="live"><Live /></ProtectedRoute>} />
