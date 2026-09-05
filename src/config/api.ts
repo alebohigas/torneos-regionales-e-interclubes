@@ -158,6 +158,14 @@ export const getFieldGiraCategoriesUrl = (giraId?: string): string =>
 export const getFieldGiraPlayersUrl = (catId: string, giraId?: string): string =>
   `${API_BASE_URL}/field_gira.php${buildGiraQuery({ catid: catId }, giraId)}`;
 
+/** RANKING: categorías (catidoriginal) con jugadores de la gira. */
+export const getRankingCategoriesUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/ranking.php${buildGiraQuery({}, giraId)}`;
+
+/** RANKING: jugadores con puntos acumulados de una categoría. */
+export const getRankingPlayersUrl = (catId: string, giraId?: string): string =>
+  `${API_BASE_URL}/ranking.php${buildGiraQuery({ catid: catId }, giraId)}`;
+
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;
 
