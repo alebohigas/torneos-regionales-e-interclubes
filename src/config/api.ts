@@ -166,6 +166,11 @@ export const getRankingCategoriesUrl = (giraId?: string): string =>
 export const getRankingPlayersUrl = (catId: string, giraId?: string): string =>
   `${API_BASE_URL}/ranking.php${buildGiraQuery({ catid: catId }, giraId)}`;
 
+/** RANKING: desglose por etapa de un jugador (numjugador). */
+export const getRankingPlayerDetailUrl = (numjugador: string, giraId?: string): string =>
+  `${API_BASE_URL}/ranking.php${buildGiraQuery({ numjug: numjugador }, giraId)}`;
+
+
 /** RANKING FINAL: categorías de la gira (categorias_tmp). */
 export const getRankingFinalCategoriesUrl = (giraId?: string): string =>
   `${API_BASE_URL}/ranking_final.php${buildGiraQuery({}, giraId)}`;
