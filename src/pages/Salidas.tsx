@@ -44,6 +44,17 @@ const hasAnyPair = (players: SalidasGroup['players']): boolean =>
 const groupsHaveAnyPair = (groups: SalidasGroup[] | undefined): boolean =>
   (groups ?? []).some((g) => hasAnyPair(g.players ?? []));
 
+/**
+ * La última columna muestra la CATEGORÍA de cada jugador (legacy
+ * salidas_detsu.php → v_sal_jug.catjugador) cuando el backend la provee;
+ * si no viene, se conserva el Score como antes.
+ */
+const hasAnyCategory = (players: SalidasGroup['players']): boolean =>
+  (players ?? []).some((p) => !!p.category);
+
+const groupsHaveAnyCategory = (groups: SalidasGroup[] | undefined): boolean =>
+  (groups ?? []).some((g) => hasAnyCategory(g.players ?? []));
+
 // ============= Search Result Type =============
 
 /** Represents a player search match with full group context */

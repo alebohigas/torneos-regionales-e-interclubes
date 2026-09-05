@@ -49,6 +49,8 @@ export interface SalidasPlayer {
   partner?: string;
   score: number;
   system: string;
+  /** Categoría del jugador (v_sal_jug.catjugador) — mostrada en la tabla. */
+  category?: string;
   groupId?: string;
 }
 
