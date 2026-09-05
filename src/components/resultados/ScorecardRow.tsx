@@ -184,12 +184,32 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </div>
           </div>
 
-          {/* Cintilla estilo legacy: tee de salida / campo / fecha */}
-          {ribbonParts.length > 0 && (
-            <div className="mb-2 px-3 py-1.5 rounded-sm bg-accent text-accent-foreground text-sm font-semibold tracking-wide uppercase">
-              {ribbonParts.join(' / ')}
-            </div>
-          )}
+          {/* Globitos de detalle: tee, fecha y sede */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {scorecard.tee && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs font-semibold uppercase">
+                <span
+                  className={cn(
+                    'inline-block h-3 w-3 rounded-full',
+                    teeMarkerColors[normalizeTeeColor(scorecard.tee)] || 'bg-primary'
+                  )}
+                />
+                {normalizeTeeColor(scorecard.tee) || scorecard.tee}
+              </span>
+            )}
+            {scorecard.date && scorecard.date !== '0' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs">
+                <span className="font-bold">Fecha:</span>
+                <span>{formatDateBadge(scorecard.date)}</span>
+              </span>
+            )}
+            {(scorecard.course || scorecard.club) && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs">
+                <span className="font-bold">Sede:</span>
+                <span>{scorecard.course || scorecard.club}</span>
+              </span>
+            )}
+          </div>
 
 
           {/* Scorecard grid */}
