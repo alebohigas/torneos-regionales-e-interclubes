@@ -12,7 +12,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, Trophy, Loader2 } from 'lucide-react';
 import resultadosHero from '@/assets/jugadores-hero.jpg';
 import { useState } from 'react';
-import { useRankingCategories, useRankingPlayers, type RankingCategory } from '@/hooks/useRankingData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Star } from 'lucide-react';
+import {
+  useRankingCategories,
+  useRankingPlayers,
+  useRankingPlayerDetail,
+  type RankingCategory,
+} from '@/hooks/useRankingData';
 
 /** Formatea puntos con un decimal como el legacy (round(puntos,1)) */
 const formatPuntos = (value: number): string =>
@@ -28,6 +35,12 @@ const Ranking = () => {
     !!selectedCategory
   );
   const players = rankingData?.players ?? [];
+
+  /** Jugador abierto en el desglose por etapas (null = cerrado) */
+  const [detailPlayer, setDetailPlayer] = useState<{ numjugador: string; name: string } | null>(null);
+  const { data: detail, isLoading: loadingDetail } = useRankingPlayerDetail(
+    detailPlayer?.numjugador ?? null
+  );
 
   const handleBack = () => setSelectedCategory(null);
 
@@ -116,7 +129,13 @@ const Ranking = () => {
                       <TableBody>
                         {players.length > 0 ? (
                           players.map((player) => (
-                            <TableRow key={`${player.numjugador}-${player.position}`} className="bg-white hover:bg-white">
+                            <TableRow
+                              key={`${player.numjugador}-${player.position}`}
+                              className="bg-white hover:bg-primary/5 cursor-pointer"
+                              onClick={() =>
+                                setDetailPlayer({ numjugador: player.numjugador, name: player.name })
+                              }
+                            >
                               <TableCell className="text-center font-semibold">{player.position}</TableCell>
                               <TableCell className="p-1 text-center align-middle">
                                 <img
@@ -155,6 +174,78 @@ const Ranking = () => {
           )}
         </div>
       </section>
+
+      {/* ============= Desglose por etapas del jugador ============= */}
+      <Dialog open={!!detailPlayer} onOpenChange={(open) => !open && setDetailPlayer(null)}>
+        <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-left">
+              {detail?.jugador || detailPlayer?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {loadingDetail ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (detail?.etapas ?? []).length === 0 ? (
+            <p className="text-muted-foreground py-6 text-center">
+              Este jugador aún no tiene etapas con puntos registrados
+            </p>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table className="bg-white tournament-table">
+                  <TableHeader>
+                    <TableRow className="bg-primary hover:bg-primary">
+                      <TableHead className="text-primary-foreground font-bold">Torneo</TableHead>
+                      <TableHead className="text-primary-foreground font-bold text-center">Score</TableHead>
+                      <TableHead className="text-primary-foreground font-bold text-center">Lugar</TableHead>
+                      <TableHead className="text-primary-foreground font-bold text-center">Puntos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(detail?.etapas ?? []).map((etapa) => (
+                      <TableRow
+                        key={etapa.torneoid}
+                        className={
+                          etapa.counted
+                            ? 'bg-primary/10 hover:bg-primary/10 font-semibold'
+                            : 'bg-white hover:bg-white'
+                        }
+                      >
+                        <TableCell className="whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1">
+                            {etapa.counted && <Star className="h-3.5 w-3.5 text-primary" />}
+                            {etapa.etapa || etapa.nombre}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">{etapa.score ?? '-'}</TableCell>
+                        <TableCell className="text-center">{etapa.lugar ?? '-'}</TableCell>
+                        <TableCell className="text-center text-primary">
+                          {formatPuntos(etapa.puntos)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/60 hover:bg-muted/60">
+                      <TableCell className="font-bold">TOTAL</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-center font-bold text-primary">
+                        {formatPuntos(detail?.totalPuntos ?? 0)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <Star className="h-3 w-3 text-primary inline mr-1" />
+                Las etapas resaltadas son las que cuentan para el total del ranking.
+              </p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
