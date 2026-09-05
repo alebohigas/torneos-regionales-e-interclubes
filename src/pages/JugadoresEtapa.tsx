@@ -15,6 +15,7 @@ import Layout from '@/components/layout/Layout';
 import PageHero from '@/components/shared/PageHero';
 import Jugadores from '@/pages/Jugadores';
 import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
+import { formatEtapaLabel } from '@/lib/etapaLabel';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
 
 const JugadoresEtapa = () => {
@@ -50,7 +51,7 @@ const JugadoresEtapa = () => {
     <Jugadores
       key={match.torneoid}
       torneoId={String(match.torneoid)}
-      title={`Jugadores Etapa ${match.etapa}`}
+      title={`Jugadores ${formatEtapaLabel(match.etapaLabel, match.etapa)}`}
       subtitle={match.name || 'Lista completa de participantes inscritos en la etapa'}
     />
   );

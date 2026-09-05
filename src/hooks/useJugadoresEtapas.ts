@@ -13,8 +13,10 @@ import { getJugadoresEtapasUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
 
 export interface JugadoresEtapa {
-  /** Número de etapa (1..n) */
+  /** Número de etapa tomado del nombre del torneo ("ETAPA-3" => 3) */
   etapa: number;
+  /** Primera palabra del nombre del torneo, ej. "ETAPA-3" */
+  etapaLabel?: string;
   torneoid: number;
   name: string;
   club: string;

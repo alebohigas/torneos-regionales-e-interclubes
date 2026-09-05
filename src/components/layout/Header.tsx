@@ -19,6 +19,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Shield, ChevronDown, MoreHorizontal, EyeOff } from 'lucide-react';
 import { useGiraInfo } from '@/hooks/useGiraData';
 import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
+import { formatEtapaLabel } from '@/lib/etapaLabel';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -337,20 +338,18 @@ const Header = () => {
             id: giraMenuOrderItem.id,
             label: giraMenuOrderItem.label,
             children: [],
-            sections: [...jugadoresEtapas]
-              .sort((a, b) => a.etapa - b.etapa)
-              .map((e) => ({
+            sections: jugadoresEtapas.map((e) => ({
                 id: `etapa-${e.etapa}`,
-                label: `Etapa ${e.etapa}`,
+                label: formatEtapaLabel(e.etapaLabel, e.etapa),
                 links: [
                   {
                     id: `jugadores-e-${e.etapa}`,
-                    label: `Jugadores Etapa-${e.etapa}`,
+                    label: `Jugadores ${formatEtapaLabel(e.etapaLabel, e.etapa)}`,
                     path: `/jugadores/e/${e.etapa}`,
                   },
                   {
                     id: `resultados-e-${e.etapa}`,
-                    label: `Resultados Etapa-${e.etapa}`,
+                    label: `Resultados ${formatEtapaLabel(e.etapaLabel, e.etapa)}`,
                     path: `/resultados/e/${e.etapa}`,
                   },
                 ],

@@ -13,6 +13,7 @@ import Layout from '@/components/layout/Layout';
 import PageHero from '@/components/shared/PageHero';
 import Resultados from '@/pages/Resultados';
 import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
+import { formatEtapaLabel } from '@/lib/etapaLabel';
 import resultadosHero from '@/assets/resultados-hero.jpg';
 
 const ResultadosEtapa = () => {
@@ -47,7 +48,7 @@ const ResultadosEtapa = () => {
     <Resultados
       key={match.torneoid}
       torneoIdOverride={String(match.torneoid)}
-      title={`Resultados Etapa ${match.etapa}`}
+      title={`Resultados ${formatEtapaLabel(match.etapaLabel, match.etapa)}`}
       subtitle={match.name || 'Resultados de la etapa'}
     />
   );
