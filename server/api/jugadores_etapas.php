@@ -36,10 +36,30 @@ $torneos = query_all(
      ORDER BY t.torneo_id ASC"
 );
 
+/**
+ * Etiqueta de etapa = primera "palabra" del nombre del torneo
+ * ("  ETAPA-3  JUNIOR ..." -> "ETAPA-3"). Tolerante a espacios iniciales,
+ * espacios dobles, tabuladores y NBSP.
+ */
+function je_etapa_label($nombre) {
+    $n = (string)$nombre;
+    $n = str_replace(["\xc2\xa0", "\t", "\r", "\n"], ' ', $n);
+    $n = trim(preg_replace('/\s+/', ' ', $n));
+    if ($n === '') return '';
+    $parts = explode(' ', $n);
+    return $parts[0];
+}
+
+/** Número contenido en la etiqueta ("ETAPA-3" -> 3); 0 si no hay. */
+function je_etapa_num($label) {
+    if (preg_match('/(\d+)/', (string)$label, $m)) return (int)$m[1];
+    return 0;
+}
+
 $etapas = [];
-$etapa = 0;
+$fallback = 0;
 foreach ($torneos as $t) {
-    $etapa++;
+    $fallback++;
     $tid = (int)$t['torneo_id'];
     $row = query_one(
         $conn,
@@ -52,8 +72,14 @@ foreach ($torneos as $t) {
     // Regla: si la etapa no tiene información (jugadores), no se muestra.
     if ($count <= 0) continue;
 
+    $label = je_etapa_label($t['nombre'] ?? '');
+    $num   = je_etapa_num($label);
+    if ($label === '') $label = 'ETAPA-' . $fallback;
+    if ($num <= 0) $num = $fallback;
+
     $etapas[] = [
-        'etapa'       => $etapa,
+        'etapa'       => $num,
+        'etapaLabel'  => $label,
         'torneoid'    => $tid,
         'name'        => $t['nombre'] ?? '',
         'club'        => $t['club'] ?? '',
@@ -63,6 +89,12 @@ foreach ($torneos as $t) {
         'playerCount' => $count,
     ];
 }
+
+/** Orden alfanumérico natural por etiqueta (ETAPA-2 < ETAPA-10). */
+usort($etapas, function ($a, $b) {
+    $c = strnatcasecmp($a['etapaLabel'], $b['etapaLabel']);
+    return $c !== 0 ? $c : ($a['torneoid'] <=> $b['torneoid']);
+});
 
 json_response([
     'giraid' => $gid,
