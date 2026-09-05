@@ -355,8 +355,7 @@ const Salidas = () => {
                             <div className="bg-muted/50 px-4 py-2 border-b border-border/30 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                               <span className="font-semibold text-foreground capitalize">{result.dayLabel}</span>
                               <span className="text-muted-foreground">{result.course}</span>
-                              <span className="text-primary font-medium">{result.categoryName}</span>
-                              <span className="text-muted-foreground">{result.system} · Tee: {result.tee}</span>
+                              <span className="text-primary font-medium">Grupos de Juego</span>
                             </div>
                             {/* Group table */}
                             <div className="overflow-x-auto bg-white">
@@ -458,7 +457,7 @@ const Salidas = () => {
                                       colSpan={hasAnyPair(result.group.players ?? []) ? 6 : 5}
                                       className="text-primary-foreground font-bold text-center py-2 text-sm"
                                     >
-                                      CATEGORÍA: {result.categoryName}
+                                      GRUPOS DE JUEGO
                                     </td>
                                   </tr>
                                 </tfoot>
@@ -533,7 +532,6 @@ const Salidas = () => {
                     <CardContent className="p-5 text-center">
                       <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
                       <h3 className="font-bold text-foreground text-lg mb-1">{cat.shortName || cat.categoryName}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{cat.tee}</p>
                       {/* Group count badge */}
                       {groupCountMap[String(cat.caljgoid)] !== undefined ? (
                         <p className="text-sm text-muted-foreground">
@@ -565,12 +563,12 @@ const Salidas = () => {
                   {/* Header: left-aligned on mobile, centered on desktop */}
                   <div className="mb-8 text-left md:text-center">
                     <h2 className="text-3xl font-bold text-foreground mb-1">
-                      {detail.categoryName}
+                      Grupos de Juego
                     </h2>
                     <p className="text-muted-foreground text-lg">{detail.course}</p>
                     <p className="text-muted-foreground text-lg">{selectedDay?.dateFormatted}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {detail.system} · Tee: {detail.tee} · {(detail.groups ?? []).length} grupos
+                      {(detail.groups ?? []).length} grupos
                     </p>
                   </div>
 
@@ -682,7 +680,7 @@ const Salidas = () => {
                                   colSpan={groupsHaveAnyPair(detail.groups) ? 6 : 5}
                                   className="text-primary-foreground font-bold text-center py-2 text-sm"
                                 >
-                                  CATEGORÍA: {detail.categoryName}
+                                  GRUPOS DE JUEGO
                                 </td>
                               </tr>
                             </tfoot>

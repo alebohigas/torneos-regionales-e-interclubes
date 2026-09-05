@@ -20,6 +20,81 @@ $gid = (int)$giraid;
 
 $catid = isset($_GET['catid']) ? trim((string)$_GET['catid']) : '';
 
+// ============= Modo detalle por jugador (numjug) =============
+// Desglose de las etapas de la gira: score, lugar y puntos por etapa,
+// resaltando las etapas cuyos puntos cuentan (top5 = 1).
+$numjug = isset($_GET['numjug']) ? trim((string)$_GET['numjug']) : '';
+if ($numjug !== '') {
+    $nj = esc($conn, $numjug);
+    $torneoPk = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id']) ?: 'torneo_id';
+    $hasTop5  = api_column_exists($conn, 'jugadores', 'top5');
+    $hasTotso = api_column_exists($conn, 'jugadores', 'totso');
+    $hasPos   = api_column_exists($conn, 'jugadores', 'posptos');
+    $jugIdCol = api_first_existing_column($conn, 'jugadores', ['id', 'jugador_id', 'jugadorid']) ?: 'id';
+
+    $etapaRows = query_all($conn, "SELECT `$torneoPk` AS id, nombre
+                                   FROM torneo WHERE giraid = $gid
+                                   ORDER BY LEFT(TRIM(nombre), 7) ASC, `$torneoPk` ASC");
+
+    $sel = "j.`$jugIdCol` AS jid, j.nombre, j.apellido, j.puntos, j.estatus"
+         . ($hasTop5 ? ", j.top5" : ", 0 AS top5")
+         . ($hasTotso ? ", j.totso" : ", NULL AS totso")
+         . ($hasPos ? ", j.posptos" : ", NULL AS posptos");
+
+    $name = '';
+    $etapasOut = [];
+    $totalCounted = 0.0;
+    $totalAll = 0.0;
+
+    foreach ($etapaRows as $er) {
+        $tid = (int)$er['id'];
+        $label = trim(preg_replace('/\s+/u', ' ', (string)($er['nombre'] ?? '')));
+        $label = $label === '' ? '' : explode(' ', $label)[0];
+
+        $jug = query_one($conn, "SELECT $sel FROM jugadores j
+                                 WHERE j.numjugador = '$nj' AND j.torneoid = $tid LIMIT 1");
+        if (!$jug) continue;
+
+        if ($name === '') {
+            $name = trim(((string)($jug['nombre'] ?? '')) . ' ' . ((string)($jug['apellido'] ?? '')));
+        }
+
+        $puntos = isset($jug['puntos']) ? round((float)$jug['puntos'], 1) : 0;
+        $counted = (int)($jug['top5'] ?? 0) === 1;
+        $totalAll += (float)$puntos;
+        if ($counted) $totalCounted += (float)$puntos;
+
+        // Score de la etapa: totso si existe, si no la suma de las tarjetas.
+        $score = isset($jug['totso']) && $jug['totso'] !== null ? (int)$jug['totso'] : null;
+        if ($score === null || $score === 0) {
+            $card = query_one($conn, "SELECT SUM(t.so) AS tot FROM tarjetas t
+                                      WHERE t.jugadorid = " . (int)($jug['jid'] ?? 0) . "
+                                        AND t.torneoid = $tid");
+            if ($card && $card['tot'] !== null) $score = (int)$card['tot'];
+        }
+
+        $etapasOut[] = [
+            'torneoid' => (string)$tid,
+            'etapa'    => $label,
+            'nombre'   => $er['nombre'] ?? '',
+            'score'    => $score,
+            'lugar'    => isset($jug['posptos']) && $jug['posptos'] !== null ? (int)$jug['posptos'] : null,
+            'puntos'   => $puntos,
+            'counted'  => $counted,
+            'estatus'  => strtoupper((string)($jug['estatus'] ?? '')),
+        ];
+    }
+
+    json_response([
+        'numjugador'   => $numjug,
+        'jugador'      => $name,
+        'etapas'       => $etapasOut,
+        'totalPuntos'  => round($totalAll, 1),
+        'totalContado' => round($totalCounted, 1),
+    ]);
+}
+
+
 // ============= Modo lista de categorías =============
 if ($catid === '') {
     $sql  = "SELECT c.catidoriginal, MIN(c.categoria) AS categoria, ";

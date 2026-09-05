@@ -6,7 +6,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
-import { getRankingCategoriesUrl, getRankingPlayersUrl, POLL_SLOW } from '@/config/api';
+import {
+  getRankingCategoriesUrl,
+  getRankingPlayersUrl,
+  getRankingPlayerDetailUrl,
+  POLL_SLOW,
+} from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
 
 // ============= Types =============
@@ -82,5 +87,51 @@ export const useRankingPlayers = (catId: string | null, enabled = true) => {
     enabled: enabled && !!catId && !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
+  });
+};
+
+// ============= Detalle por jugador (etapas de la gira) =============
+
+/** Etapa de la gira en el desglose de un jugador */
+export interface RankingPlayerEtapa {
+  torneoid: string;
+  etapa: string;
+  nombre: string;
+  score: number | null;
+  lugar: number | null;
+  puntos: number;
+  /** true = los puntos de esta etapa cuentan para el total (top5 = 1) */
+  counted: boolean;
+  estatus: string;
+}
+
+export interface RankingPlayerDetail {
+  numjugador: string;
+  jugador: string;
+  etapas: RankingPlayerEtapa[];
+  totalPuntos: number;
+  totalContado: number;
+}
+
+/** Desglose de etapas/puntos de un jugador dentro de la gira */
+export const useRankingPlayerDetail = (numjugador: string | null) => {
+  const { giraId } = useGiraId();
+
+  return useQuery<RankingPlayerDetail>({
+    queryKey: ['ranking-player-detail', giraId, numjugador],
+    queryFn: async () => {
+      const data = await apiFetch<RankingPlayerDetail>(
+        getRankingPlayerDetailUrl(numjugador!, giraId)
+      );
+      return {
+        numjugador: data?.numjugador ?? numjugador ?? '',
+        jugador: data?.jugador ?? '',
+        etapas: Array.isArray(data?.etapas) ? data.etapas : [],
+        totalPuntos: Number(data?.totalPuntos) || 0,
+        totalContado: Number(data?.totalContado) || 0,
+      };
+    },
+    enabled: !!numjugador && !!giraId,
+    staleTime: POLL_SLOW,
   });
 };
