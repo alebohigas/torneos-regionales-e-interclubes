@@ -12,6 +12,73 @@ import { TableRow, TableCell } from '@/components/ui/table';
 import { RoundScorecard, HoleScore } from '@/data/resultadosData';
 import { X } from 'lucide-react';
 import { formatDbDateTime } from '@/lib/dbDateTime';
+import { cn } from '@/lib/utils';
+
+/** Visual swatch colors per tee marker name (matches DB `salidas.color` / tee name) */
+const teeMarkerColors: Record<string, string> = {
+  AZULES: 'bg-blue-500',
+  AZUL: 'bg-blue-500',
+  BLANCAS: 'bg-gray-100 border border-gray-300',
+  BLANCA: 'bg-gray-100 border border-gray-300',
+  DORADAS: 'bg-amber-400',
+  DORADA: 'bg-amber-400',
+  AMARILLAS: 'bg-yellow-300',
+  AMARILLA: 'bg-yellow-300',
+  ROJAS: 'bg-red-500',
+  ROJA: 'bg-red-500',
+  NEGRAS: 'bg-black',
+  NEGRA: 'bg-black',
+  VERDES: 'bg-green-600',
+  VERDE: 'bg-green-600',
+  PLATEADAS: 'bg-gray-300',
+  PLATEADA: 'bg-gray-300',
+  PLATINO: 'bg-slate-400',
+};
+
+const hexToColorName: Record<string, string> = {
+  '#FFFFFF': 'BLANCAS',
+  '#FFF': 'BLANCAS',
+  '#000000': 'NEGRAS',
+  '#000': 'NEGRAS',
+  '#0000FF': 'AZULES',
+  '#1E40AF': 'AZULES',
+  '#2563EB': 'AZULES',
+  '#3B82F6': 'AZULES',
+  '#FF0000': 'ROJAS',
+  '#DC2626': 'ROJAS',
+  '#EF4444': 'ROJAS',
+  '#FFFF00': 'AMARILLAS',
+  '#FACC15': 'AMARILLAS',
+  '#FDE047': 'AMARILLAS',
+  '#FFD700': 'DORADAS',
+  '#D4AF37': 'DORADAS',
+  '#B8860B': 'DORADAS',
+  '#F59E0B': 'DORADAS',
+  '#008000': 'VERDES',
+  '#16A34A': 'VERDES',
+  '#22C55E': 'VERDES',
+  '#15803D': 'VERDES',
+  '#C0C0C0': 'PLATEADAS',
+  '#A0A0A0': 'PLATEADAS',
+};
+
+const normalizeTeeColor = (raw?: string): string => {
+  if (!raw) return '';
+  const trimmed = raw.trim().toUpperCase();
+  if (trimmed.startsWith('#')) return hexToColorName[trimmed] || '';
+  return trimmed;
+};
+
+/** Parse YYYY-MM-DD (or DD-MM-YYYY) and return DD-MM-YYYY safely, no Date(). */
+const formatDateBadge = (date?: string): string => {
+  if (!date || date === '0') return '';
+  const trimmed = date.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split('-');
+    return `${d}-${m}-${y}`;
+  }
+  return trimmed;
+};
 
 interface ScorecardRowProps {
   /** The scorecard data to display */
@@ -76,12 +143,6 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
     </div>
   );
 
-  /** Cintilla legacy: TEE / CAMPO o CLUB / FECHA */
-  const ribbonParts = [
-    scorecard.tee,
-    scorecard.course || scorecard.club,
-    scorecard.date && scorecard.date !== '0' ? scorecard.date : null,
-  ].filter(Boolean) as string[];
 
   return (
     <TableRow className="bg-muted/10 hover:bg-muted/10">
@@ -117,12 +178,32 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </div>
           </div>
 
-          {/* Cintilla estilo legacy: tee de salida / campo / fecha */}
-          {ribbonParts.length > 0 && (
-            <div className="mb-2 px-3 py-1.5 rounded-sm bg-accent text-accent-foreground text-sm font-semibold tracking-wide uppercase">
-              {ribbonParts.join(' / ')}
-            </div>
-          )}
+          {/* Globitos de detalle: tee, fecha y sede */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {scorecard.tee && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs font-semibold uppercase">
+                <span
+                  className={cn(
+                    'inline-block h-3 w-3 rounded-full',
+                    teeMarkerColors[normalizeTeeColor(scorecard.tee)] || 'bg-primary'
+                  )}
+                />
+                {normalizeTeeColor(scorecard.tee) || scorecard.tee}
+              </span>
+            )}
+            {scorecard.date && scorecard.date !== '0' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs">
+                <span className="font-bold">Fecha:</span>
+                <span>{formatDateBadge(scorecard.date)}</span>
+              </span>
+            )}
+            {(scorecard.course || scorecard.club) && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-foreground text-xs">
+                <span className="font-bold">Sede:</span>
+                <span>{scorecard.course || scorecard.club}</span>
+              </span>
+            )}
+          </div>
 
 
           {/* Scorecard grid */}
