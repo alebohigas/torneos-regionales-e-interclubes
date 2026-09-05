@@ -144,7 +144,7 @@ const App = () => (
               <Route path="/eventos" element={<ProtectedRoute pageId="eventos"><Eventos /></ProtectedRoute>} />
               <Route path="/jugadores" element={<ProtectedRoute pageId="jugadores"><Jugadores /></ProtectedRoute>} />
               {/* Subpáginas dinámicas por etapa (un torneo de la gira por etapa) */}
-              <Route path="/jugadores/e/:etapa" element={<ProtectedRoute pageId="jugadores"><JugadoresEtapa /></ProtectedRoute>} />
+              <Route path="/jugadores/e/:etapa" element={<ProtectedRoute pageId="gira-etapas"><JugadoresEtapa /></ProtectedRoute>} />
               {/* FIELD-GIRA: mismo layout que /jugadores pero con datos seed de la gira */}
               <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
               <Route path="/ranking" element={<ProtectedRoute pageId="ranking"><Ranking /></ProtectedRoute>} />
@@ -154,7 +154,7 @@ const App = () => (
               <Route path="/live" element={<ProtectedRoute pageId="live"><Live /></ProtectedRoute>} />
               <Route path="/resultados" element={<ProtectedRoute pageId="resultados"><Resultados /></ProtectedRoute>} />
               {/* Resultados por etapa de la gira (un torneo por etapa) */}
-              <Route path="/resultados/e/:etapa" element={<ProtectedRoute pageId="resultados"><ResultadosEtapa /></ProtectedRoute>} />
+              <Route path="/resultados/e/:etapa" element={<ProtectedRoute pageId="gira-etapas"><ResultadosEtapa /></ProtectedRoute>} />
               {/* Historial de resultados de ediciones anteriores (hasta 5 años) */}
               <Route path="/historial" element={<ProtectedRoute pageId="historial"><Historial /></ProtectedRoute>} />
               <Route path="/competicion" element={<ProtectedRoute pageId="competicion"><Competencias /></ProtectedRoute>} />
