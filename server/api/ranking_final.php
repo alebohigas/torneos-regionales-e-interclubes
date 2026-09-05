@@ -68,6 +68,7 @@ $numjug = isset($_GET['numjug']) ? trim((string)$_GET['numjug']) : '';
 if ($numjug !== '') {
     $nj = esc($conn, $numjug);
     $hasTop5 = api_column_exists($conn, 'jugadores', 'top5');
+    $jugIdCol = api_first_existing_column($conn, 'jugadores', ['id', 'jugador_id', 'jugadorid']) ?: 'id';
 
     $name = '';
     $rows = [];
@@ -76,7 +77,7 @@ if ($numjug !== '') {
 
     foreach ($etapas as $etapa) {
         $tid = (int)$etapa['torneoid'];
-        $sel = "SELECT j.`$catPkCol` AS jid, j.numjugador, j.nombre, j.apellido, j.puntos,
+        $sel = "SELECT j.`$jugIdCol` AS jid, j.numjugador, j.nombre, j.apellido, j.puntos,
                        LEFT(COALESCE(j.estatus, 'NORMAL'), 1) AS est"
              . ($hasTop5 ? ", j.top5" : ", 0 AS top5") . "
                 FROM jugadores j
@@ -110,7 +111,7 @@ if ($numjug !== '') {
             $jid = (int)($jug['jid'] ?? 0);
             $cards = query_all($conn, "SELECT t.so, t.fecha_juego
                                        FROM tarjetas t
-                                       JOIN jugadores b ON (t.jugadorid = b.`$catPkCol`)
+                                       JOIN jugadores b ON (t.jugadorid = b.`$jugIdCol`)
                                        WHERE b.numjugador = '$nj' AND t.torneoid = $tid
                                          AND COALESCE(b.estatus, '') <> 'PENALTY'
                                        ORDER BY t.fecha_juego ASC");
