@@ -83,6 +83,8 @@ export const menuConfig: MenuItem[] = [
   { id: 'field-gira', label: 'FIELD-GIRA', path: '/field-gira', enabled: true, order: 4.5 },
   /** RANKING: puntos acumulados de la gira por categoría (catidoriginal) */
   { id: 'ranking', label: 'RANKING', path: '/ranking', enabled: true, order: 7.6 },
+  /** RANKING FINAL: mejores 5 resultados de la gira (categorias_tmp + top5) */
+  { id: 'rankingfinal', label: 'RANKING FINAL', path: '/rankingfinal', enabled: true, order: 7.7 },
   { id: 'salidas', label: 'SALIDAS', path: '/salidas', enabled: true, order: 5 },
   { id: 'live', label: 'LIVE', path: '/live', enabled: true, order: 6 },
   { id: 'resultados', label: 'RESULTADOS', path: '/resultados', enabled: true, order: 7 },
