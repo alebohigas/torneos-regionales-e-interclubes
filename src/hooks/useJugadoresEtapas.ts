@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { getJugadoresEtapasUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
+import { useSiteConfig } from '@/hooks/useSiteConfig';
 
 export interface JugadoresEtapa {
   /** Número de etapa tomado del nombre del torneo ("ETAPA-3" => 3) */
@@ -26,8 +27,15 @@ export interface JugadoresEtapa {
   playerCount: number;
 }
 
-export const useJugadoresEtapas = () => {
+/**
+ * @param opts.includeHidden  true = devuelve también las etapas apagadas en
+ *   Admin > Gira (sólo para el panel de administración).
+ */
+export const useJugadoresEtapas = (opts?: { includeHidden?: boolean }) => {
   const { giraId } = useGiraId();
+  const { data: siteConfig } = useSiteConfig();
+  const hidden = (siteConfig?.gira_config?.hiddenTorneos ?? []).map(Number);
+  const includeHidden = !!opts?.includeHidden;
 
   return useQuery<JugadoresEtapa[]>({
     queryKey: ['jugadores-etapas', giraId],
@@ -38,5 +46,8 @@ export const useJugadoresEtapas = () => {
     },
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
+    // Las etapas ocultas desde Admin > Gira no existen para el sitio público.
+    select: (etapas) =>
+      includeHidden ? etapas : etapas.filter((e) => !hidden.includes(Number(e.torneoid))),
   });
 };
