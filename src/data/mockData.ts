@@ -81,6 +81,8 @@ export const menuConfig: MenuItem[] = [
   { id: 'jugadores', label: 'JUGADORES', path: '/jugadores', enabled: true, order: 4 },
   /** FIELD-GIRA: duplicado de JUGADORES con datos seed de la gira (categorias_tmp/jugadores_seed) */
   { id: 'field-gira', label: 'FIELD-GIRA', path: '/field-gira', enabled: true, order: 4.5 },
+  /** RANKING: puntos acumulados de la gira por categoría (catidoriginal) */
+  { id: 'ranking', label: 'RANKING', path: '/ranking', enabled: true, order: 7.6 },
   { id: 'salidas', label: 'SALIDAS', path: '/salidas', enabled: true, order: 5 },
   { id: 'live', label: 'LIVE', path: '/live', enabled: true, order: 6 },
   { id: 'resultados', label: 'RESULTADOS', path: '/resultados', enabled: true, order: 7 },
