@@ -209,17 +209,17 @@ foreach ($torneos as $t) {
     $pretty = cg_pretty_label($label);
 
     $etapas[] = [
-        'etapa'      => $num,
-        'etapaLabel' => $label,
-        'torneoid'   => $tid,
-        'name'       => $t['nombre'] ?? '',
-        'status'     => (string)($t['status'] ?? ''),
-        'venues'     => $venues,
-        // "Misiones / Herradura Etapa-1"
-        'sede'       => trim(implode(' / ', $venues) . ' ' . $pretty),
-        'clubs'      => array_values($logos),
-        'dates'      => $fechas,
-        'dateLabel'  => cg_format_dates($fechas, $MESES),
+        'etapa'        => $num,
+        'etapaLabel'   => $label,
+        'etapaDisplay' => $pretty,
+        'torneoid'     => $tid,
+        'name'         => $t['nombre'] ?? '',
+        'status'       => (string)($t['status'] ?? ''),
+        'venues'       => $venues,
+        'sede'         => implode(' / ', $venues),
+        'clubs'        => array_values($logos),
+        'dates'        => $fechas,
+        'dateLabel'    => cg_format_dates($fechas, $MESES),
     ];
 }
 
