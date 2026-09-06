@@ -46,9 +46,18 @@ function rf_etapas($conn, $gid) {
                               FROM torneo WHERE giraid = $gid
                               ORDER BY LEFT(TRIM(nombre), 7) ASC, `$torneoPk` ASC");
     $etapas = [];
+    $seq = 0;
     foreach ($rows as $row) {
-        $label = trim(preg_replace('/\s+/u', ' ', (string)($row['nombre'] ?? '')));
-        $label = $label === '' ? '' : explode(' ', $label)[0];
+        $seq++;
+        $clean = trim(preg_replace('/\s+/u', ' ', (string)($row['nombre'] ?? '')));
+        // Etiqueta "ETAPA-[n]": toma el número que acompañe a la palabra etapa;
+        // si el nombre no lo trae, usa el orden de la gira.
+        if (preg_match('/etapa[\s\-_.]*(\d+)/iu', $clean, $m)) {
+            $label = 'ETAPA-' . (int)$m[1];
+        } else {
+            $first = $clean === '' ? '' : explode(' ', $clean)[0];
+            $label = preg_match('/\d/', $first) ? strtoupper($first) : 'ETAPA-' . $seq;
+        }
         $etapas[] = [
             'torneoid' => (string)$row['id'],
             'label'    => $label,
@@ -68,6 +77,7 @@ $numjug = isset($_GET['numjug']) ? trim((string)$_GET['numjug']) : '';
 if ($numjug !== '') {
     $nj = esc($conn, $numjug);
     $hasTop5 = api_column_exists($conn, 'jugadores', 'top5');
+    $hasPos  = api_column_exists($conn, 'jugadores', 'posptos');
     $jugIdCol = api_first_existing_column($conn, 'jugadores', ['id', 'jugador_id', 'jugadorid']) ?: 'id';
 
     $name = '';
@@ -79,7 +89,8 @@ if ($numjug !== '') {
         $tid = (int)$etapa['torneoid'];
         $sel = "SELECT j.`$jugIdCol` AS jid, j.numjugador, j.nombre, j.apellido, j.puntos,
                        LEFT(COALESCE(j.estatus, 'NORMAL'), 1) AS est"
-             . ($hasTop5 ? ", j.top5" : ", 0 AS top5") . "
+             . ($hasTop5 ? ", j.top5" : ", 0 AS top5")
+             . ($hasPos ? ", j.posptos" : ", NULL AS posptos") . "
                 FROM jugadores j
                 WHERE j.numjugador = '$nj' AND j.torneoid = $tid LIMIT 1";
         $jug = query_one($conn, $sel);
@@ -94,6 +105,7 @@ if ($numjug !== '') {
             'estatus'   => '',
             'rounds'    => [],
             'total'     => null,
+            'lugar'     => null,
         ];
 
         if ($jug) {
@@ -101,6 +113,8 @@ if ($numjug !== '') {
             $entry['puntos'] = isset($jug['puntos']) ? round((float)$jug['puntos'], 1) : 0;
             $entry['counted'] = (int)($jug['top5'] ?? 0) === 1;
             $entry['estatus'] = strtoupper((string)($jug['est'] ?? ''));
+            $entry['lugar'] = isset($jug['posptos']) && $jug['posptos'] !== null && $jug['posptos'] !== ''
+                ? (int)$jug['posptos'] : null;
             if ($name === '') {
                 $name = trim(((string)($jug['nombre'] ?? '')) . ' ' . ((string)($jug['apellido'] ?? '')));
             }
