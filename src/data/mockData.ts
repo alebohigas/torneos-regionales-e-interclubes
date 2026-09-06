@@ -94,6 +94,8 @@ export const menuConfig: MenuItem[] = [
   { id: 'competicion', label: 'COMPETICIÓN', path: '/competicion', enabled: true, order: 8 },
   { id: 'calendario', label: 'CALENDARIO DE JUEGO', path: '/calendario', enabled: true, order: 10 },
   { id: 'horarios', label: 'HORARIOS DE SALIDAS', path: '/horarios', enabled: true, order: 15 },
+  /** DISTANCIAS: yardas y par por hoyo de cada categoría. */
+  { id: 'distancias', label: 'DISTANCIAS', path: '/distancias', enabled: true, order: 10.5 },
   { id: 'avisos', label: 'AVISOS', path: '/avisos', enabled: true, order: 11 },
   { id: 'premios', label: 'PREMIOS', path: '/premios', enabled: true, order: 12 },
   { id: 'menus', label: 'MENÚS', path: '/menus', enabled: true, order: 12.5 },

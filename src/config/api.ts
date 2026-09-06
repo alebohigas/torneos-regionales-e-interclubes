@@ -195,6 +195,9 @@ export const getCopaClubsUrl = (copasid: string, giraId?: string): string =>
 export const getCopaClubPlayersUrl = (copasid: string, clubid: string, giraId?: string): string =>
   `${API_BASE_URL}/copa.php${buildGiraQuery({ copasid, clubid }, giraId)}`;
 
+/** Distancias - yardas y par por hoyo de cada categoría (tee de salida). */
+export const getDistanciasUrl = (): string => `${API_BASE_URL}/distancias.php${buildQuery()}`;
+
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;
 
