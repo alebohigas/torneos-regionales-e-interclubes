@@ -131,7 +131,8 @@ const RankingFinal = () => {
                           players.map((player) => {
                             const isOpen = selectedPlayer?.numjugador === player.numjugador;
                             return (
-                              <>
+                              <Fragment key={`${player.numjugador}-${player.position}`}>
+
                                 <TableRow
                                   key={`${player.numjugador}-${player.position}`}
                                   className={
