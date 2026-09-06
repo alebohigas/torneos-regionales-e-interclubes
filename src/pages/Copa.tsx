@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, Trophy, Loader2, ChevronDown } from 'lucide-react';
 import copaHero from '@/assets/premios-hero.jpg';
 import { Fragment, useState } from 'react';
-import { useCopas, useCopaClubs, useCopaClubPlayers, type Copa as CopaItem } from '@/hooks/useCopaData';
+import { useCopas, useCopaClubs, useCopaClubEtapas, type Copa as CopaItem } from '@/hooks/useCopaData';
 
 /** Formatea puntos con un decimal como el legacy (round(puntos,1)) */
 const formatPuntos = (value: number): string =>
@@ -39,10 +39,12 @@ const Copa = () => {
 
   const { data: copas = [], isLoading: loadingCopas } = useCopas();
   const { data: copaData, isLoading: loadingClubs } = useCopaClubs(selectedCopa?.copasid ?? null);
-  const { data: clubPlayers = [], isLoading: loadingPlayers } = useCopaClubPlayers(
+  const { data: clubEtapas = [], isLoading: loadingPlayers } = useCopaClubEtapas(
     selectedCopa?.copasid ?? null,
     openClub
   );
+  /** Etapa expandida dentro del club abierto */
+  const [openEtapa, setOpenEtapa] = useState<string | null>(null);
 
   const clubs = copaData?.clubs ?? [];
 
@@ -150,7 +152,10 @@ const Copa = () => {
                                       ? 'bg-primary/5 hover:bg-primary/10 cursor-pointer'
                                       : 'bg-white hover:bg-primary/5 cursor-pointer'
                                   }
-                                  onClick={() => setOpenClub(isOpen ? null : club.clubid)}
+                                  onClick={() => {
+                                    setOpenClub(isOpen ? null : club.clubid);
+                                    setOpenEtapa(null);
+                                  }}
                                 >
                                   <TableCell className="text-center font-semibold">{club.position}</TableCell>
                                   <TableCell className="p-1 text-center align-middle">
@@ -187,44 +192,103 @@ const Copa = () => {
                                           <div className="flex justify-center py-8">
                                             <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                           </div>
-                                        ) : clubPlayers.length === 0 ? (
+                                        ) : clubEtapas.length === 0 ? (
                                           <p className="text-muted-foreground py-4 text-center">
-                                            Este club aún no tiene jugadores con puntos
+                                            Este club aún no tiene puntos por etapa
                                           </p>
                                         ) : (
                                           <div className="overflow-x-auto">
                                             <Table className="bg-white tournament-table table-fixed w-full">
                                               <TableHeader>
                                                 <TableRow className="bg-primary hover:bg-primary">
-                                                  <TableHead className="text-primary-foreground font-bold text-center w-14">
-                                                    Po
-                                                  </TableHead>
-                                                  <TableHead className="text-primary-foreground font-bold">
-                                                    Jugador
-                                                  </TableHead>
-                                                  <TableHead className="text-primary-foreground font-bold text-center w-24">
-                                                    Etapas
-                                                  </TableHead>
-                                                  <TableHead className="text-primary-foreground font-bold text-center w-24">
-                                                    Puntos
-                                                  </TableHead>
+                                                  <TableHead className="text-primary-foreground font-bold">Torneo</TableHead>
+                                                  <TableHead className="text-primary-foreground font-bold text-center">Puntos</TableHead>
+                                                  <TableHead className="text-primary-foreground font-bold text-center">Penalties</TableHead>
+                                                  <TableHead className="text-primary-foreground font-bold text-center">Total</TableHead>
                                                 </TableRow>
                                               </TableHeader>
                                               <TableBody>
-                                                {clubPlayers.map((p) => (
-                                                  <TableRow key={p.numjugador} className="bg-white hover:bg-white">
-                                                    <TableCell className="text-center">{p.position}</TableCell>
-                                                    <TableCell className="player-name-cell">
-                                                      <span className="player-name-clamp">{p.jugador}</span>
-                                                    </TableCell>
-                                                    <TableCell className="text-center text-muted-foreground">
-                                                      {p.etapas}
-                                                    </TableCell>
-                                                    <TableCell className="text-center font-bold text-primary">
-                                                      {formatPuntos(p.puntos)}
-                                                    </TableCell>
-                                                  </TableRow>
-                                                ))}
+                                                {clubEtapas.map((et) => {
+                                                  const etOpen = openEtapa === et.torneoid;
+                                                  return (
+                                                    <Fragment key={et.torneoid}>
+                                                      <TableRow
+                                                        className={
+                                                          etOpen
+                                                            ? 'bg-primary/5 hover:bg-primary/10 cursor-pointer'
+                                                            : 'bg-white hover:bg-primary/5 cursor-pointer'
+                                                        }
+                                                        onClick={() => setOpenEtapa(etOpen ? null : et.torneoid)}
+                                                      >
+                                                        <TableCell className="font-medium">
+                                                          <span className="inline-flex items-center gap-1.5">
+                                                            <ChevronDown
+                                                              className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                                                etOpen ? 'rotate-180' : ''
+                                                              }`}
+                                                            />
+                                                            {et.etapa}
+                                                          </span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold text-primary">
+                                                          {formatPuntos(et.puntos)}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold text-primary">
+                                                          {formatPuntos(et.penalties)}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold text-primary">
+                                                          {formatPuntos(et.total)}
+                                                        </TableCell>
+                                                      </TableRow>
+
+                                                      {etOpen && (
+                                                        <TableRow className="bg-muted/10 hover:bg-muted/10">
+                                                          <TableCell colSpan={4} className="p-0">
+                                                            <div className="p-3 border-t border-b border-primary/20">
+                                                              {et.players.length === 0 ? (
+                                                                <p className="text-muted-foreground py-3 text-center text-sm">
+                                                                  Sin jugadores con puntos en esta etapa
+                                                                </p>
+                                                              ) : (
+                                                                <Table className="bg-white tournament-table table-fixed w-full">
+                                                                  <TableHeader>
+                                                                    <TableRow className="bg-primary/80 hover:bg-primary/80">
+                                                                      <TableHead className="text-primary-foreground font-bold text-center w-14">
+                                                                        Po
+                                                                      </TableHead>
+                                                                      <TableHead className="text-primary-foreground font-bold">
+                                                                        Jugador
+                                                                      </TableHead>
+                                                                      <TableHead className="text-primary-foreground font-bold text-center w-24">
+                                                                        Puntos
+                                                                      </TableHead>
+                                                                    </TableRow>
+                                                                  </TableHeader>
+                                                                  <TableBody>
+                                                                    {et.players.map((p) => (
+                                                                      <TableRow
+                                                                        key={`${et.torneoid}-${p.numjugador}`}
+                                                                        className="bg-white hover:bg-white"
+                                                                      >
+                                                                        <TableCell className="text-center">{p.position}</TableCell>
+                                                                        <TableCell className="player-name-cell">
+                                                                          <span className="player-name-clamp">{p.jugador}</span>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-center font-bold text-primary">
+                                                                          {formatPuntos(p.puntos)}
+                                                                        </TableCell>
+                                                                      </TableRow>
+                                                                    ))}
+                                                                  </TableBody>
+                                                                </Table>
+                                                              )}
+                                                            </div>
+                                                          </TableCell>
+                                                        </TableRow>
+                                                      )}
+                                                    </Fragment>
+                                                  );
+                                                })}
                                                 <TableRow className="bg-muted hover:bg-muted">
                                                   <TableCell colSpan={3} className="font-bold text-right">
                                                     TOTAL CLUB
@@ -259,7 +323,7 @@ const Copa = () => {
               </Card>
 
               <p className="text-center text-sm text-muted-foreground mt-4">
-                Haz click en un club para ver los jugadores que aportan sus puntos.
+                Haz click en un club para ver sus etapas, y en una etapa para ver los jugadores que aportan puntos.
               </p>
             </>
           )}
