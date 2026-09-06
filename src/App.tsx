@@ -32,6 +32,7 @@ import Historial from "./pages/Historial";
 import Competencias from "./pages/Competencias";
 import Calendario from "./pages/Calendario";
 import Horarios from "./pages/Horarios";
+import Distancias from "./pages/Distancias";
 import Menus from '@/pages/Menus';
 import Avisos from "./pages/Avisos";
 import Premios from "./pages/Premios";
@@ -162,6 +163,7 @@ const App = () => (
               <Route path="/historial" element={<ProtectedRoute pageId="historial"><Historial /></ProtectedRoute>} />
               <Route path="/competicion" element={<ProtectedRoute pageId="competicion"><Competencias /></ProtectedRoute>} />
               <Route path="/calendario" element={<ProtectedRoute pageId="calendario"><Calendario /></ProtectedRoute>} />
+              <Route path="/distancias" element={<ProtectedRoute pageId="distancias"><Distancias /></ProtectedRoute>} />
               <Route path="/horarios" element={<ProtectedRoute pageId="horarios"><Horarios /></ProtectedRoute>} />
               <Route path="/menus" element={<ProtectedRoute pageId="menus"><Menus /></ProtectedRoute>} />
               <Route path="/avisos" element={<ProtectedRoute pageId="avisos"><Avisos /></ProtectedRoute>} />

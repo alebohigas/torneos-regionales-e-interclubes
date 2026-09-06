@@ -38,6 +38,7 @@ export const HERO_PAGES: HeroPageDef[] = [
   { path: '/hoteles', label: 'Hoteles', aiPrompt: 'Hotel resort junto al campo de golf iluminado al anochecer' },
   { path: '/reglas', label: 'Reglas y CC', aiPrompt: 'Tarjeta de score, lápiz y pelota sobre mesa de madera' },
   { path: '/calendario', label: 'Calendario', aiPrompt: 'Vista aérea de fairways y bunkers de un campo de golf' },
+  { path: '/distancias', label: 'Distancias', aiPrompt: 'Vista aérea de un fairway largo con marcas de yardaje al amanecer' },
   { path: '/horarios', label: 'Horarios', aiPrompt: 'Rayos de sol y neblina sobre un fairway al alba' },
   { path: '/registro', label: 'Pre-Registro', aiPrompt: 'Entrada de casa club de torneo en hora dorada' },
   { path: '/banderas', label: 'Banderas', aiPrompt: 'Bandera de golf ondeando en un green al amanecer' },
