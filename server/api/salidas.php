@@ -5,8 +5,7 @@
  *
  * Réplica del legacy `salidas.php`:
  *   - Días de juego: caljuego WHERE torneoid=? AND estatus=2 AND cierre=0 AND campo>0
- *   - Categorías por día: JOIN categorias (estatus>0), etiqueta = categorias.categoria
- *   - Si torneo.tiposalida = 1 → una sola entrada "Salida Unica" por día
+ *   - Una sola salida por día; los grupos mezclan jugadores de distintas categorías.
  *
  * Todas las columnas opcionales se detectan en runtime porque el esquema
  * `golftour` no tiene varias columnas legacy (abreviatura, cierre, etc.).
@@ -34,52 +33,22 @@ if ($clubIdCol) {
     $sql = "SELECT $sel, '' AS club FROM torneo a WHERE a.`$torneoIdCol` = $tid";
 }
 $torneo = query_one($conn, $sql);
-$tipoSalida = (int)($torneo['tiposalida'] ?? 0);
-
-// ============= Optional columns on caljuego / categorias =============
+// ============= Optional columns on caljuego =============
 $hasCierre   = api_column_exists($conn, 'caljuego', 'cierre');
-$hasCatEstat = api_column_exists($conn, 'categorias', 'estatus');
-$hasAbrev    = api_column_exists($conn, 'categorias', 'abreviatura');
-$hasSistema  = api_column_exists($conn, 'categorias', 'sistema');
-$hasFormato  = api_column_exists($conn, 'categorias', 'formato');
-$hasSalidaFk = api_column_exists($conn, 'categorias', 'salida');
 
 $where  = "c.torneoid = $tid AND c.estatus = 2 AND c.campo > 0";
 if ($hasCierre)   $where .= " AND c.cierre = 0";
-if ($hasCatEstat) $where .= " AND cat.estatus > 0";
 
-if ($tipoSalida === 1) {
-    // Salida única: un solo bloque por fecha
-    $sql = "SELECT MIN(c.id) AS caljgoid, c.fecha,
-                   DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
-                   MIN(c.categoriaid) AS categoriaid,
-                   'Salida Unica' AS categoria, 'Salida Unica' AS abreviatura,
-                   '' AS sistema, '' AS formato, '' AS tee,
-                   (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
-            FROM caljuego c
-            WHERE c.torneoid = $tid AND c.estatus = 2 AND c.campo > 0"
-            . ($hasCierre ? " AND c.cierre = 0" : "") .
-           " GROUP BY c.fecha
-            ORDER BY c.fecha ASC";
-} else {
-    $cols = "c.id AS caljgoid, c.fecha,
-             DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
-             c.campo, ca.campo AS campo_nombre,
-             c.categoriaid, cat.categoria";
-    $cols .= $hasAbrev   ? ", cat.abreviatura" : ", cat.categoria AS abreviatura";
-    $cols .= $hasSistema ? ", cat.sistema"     : ", '' AS sistema";
-    $cols .= $hasFormato ? ", cat.formato"     : ", '' AS formato";
-    $cols .= $hasSalidaFk ? ", s.tee" : ", '' AS tee";
-
-    $join = $hasSalidaFk ? " LEFT JOIN salidas s ON (cat.salida = s.id)" : "";
-
-    $sql = "SELECT $cols
-            FROM caljuego c
-            JOIN categorias cat ON (c.categoriaid = cat.categoria_id)
-            LEFT JOIN campos ca ON (c.campo = ca.id)$join
-            WHERE $where
-            ORDER BY c.fecha ASC, cat.categoria_id ASC";
-}
+$sql = "SELECT MIN(c.id) AS caljgoid, c.fecha,
+               DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
+               MIN(c.categoriaid) AS categoriaid,
+               'Grupos de Juego' AS categoria, 'Grupos de Juego' AS abreviatura,
+               '' AS sistema, '' AS formato, '' AS tee,
+               (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
+        FROM caljuego c
+        WHERE $where
+        GROUP BY c.fecha
+        ORDER BY c.fecha ASC";
 
 debug_log_query('salidas_master', $sql);
 $rows = query_all($conn, $sql);
@@ -87,25 +56,16 @@ $rows = query_all($conn, $sql);
 // Fallback: algunas giras no usan `estatus = 2` / `cierre = 0` en caljuego.
 // Si el filtro estricto no devuelve días, se repite sin esas condiciones.
 if (empty($rows)) {
-    if ($tipoSalida === 1) {
-        $sqlLoose = "SELECT MIN(c.id) AS caljgoid, c.fecha,
+    $sqlLoose = "SELECT MIN(c.id) AS caljgoid, c.fecha,
                         DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
                         MIN(c.categoriaid) AS categoriaid,
-                        'Salida Unica' AS categoria, 'Salida Unica' AS abreviatura,
+                        'Grupos de Juego' AS categoria, 'Grupos de Juego' AS abreviatura,
                         '' AS sistema, '' AS formato, '' AS tee,
                         (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
-                     FROM caljuego c
-                     WHERE c.torneoid = $tid
-                     GROUP BY c.fecha
-                     ORDER BY c.fecha ASC";
-    } else {
-        $sqlLoose = "SELECT $cols
-                     FROM caljuego c
-                     JOIN categorias cat ON (c.categoriaid = cat.categoria_id)
-                     LEFT JOIN campos ca ON (c.campo = ca.id)$join
-                     WHERE c.torneoid = $tid
-                     ORDER BY c.fecha ASC, cat.categoria_id ASC";
-    }
+                 FROM caljuego c
+                 WHERE c.torneoid = $tid
+                 GROUP BY c.fecha
+                 ORDER BY c.fecha ASC";
     debug_log_query('salidas_master_loose', $sqlLoose);
     $rows = query_all($conn, $sqlLoose);
 }

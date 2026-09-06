@@ -48,7 +48,7 @@ if (!$calInfo) {
     exit;
 }
 
-// ============= 2. Tee time groups =============
+// ============= 2. Mixed tee-time groups for the whole day =============
 $hasTeesal = api_column_exists($conn, 'salidagrupo', 'teesal');
 $horaCol   = api_first_existing_column($conn, 'salidagrupo', ['horainicio1a', 'horainicio', 'hora']);
 $teeSel    = $hasSalidaFk ? "sal.tee" : "'' AS tee";
@@ -58,7 +58,10 @@ $gcols .= $horaCol ? ", LEFT(RIGHT(a.`$horaCol`, 8), 5) AS hora" : ", '' AS hora
 $gcols .= $hasTeesal ? ", a.teesal" : ", '' AS teesal";
 $gcols .= ", $teeSel";
 
-$gjoin = "JOIN categorias b ON (a.categoriaid = b.categoria_id AND a.caljuegoid = $cgid)";
+$calDate = esc($conn, $calInfo['fecha']);
+$calTournament = (int)$calInfo['torneoid'];
+$gjoin = "JOIN caljuego cg ON (a.caljuegoid = cg.id AND cg.torneoid = $calTournament AND cg.fecha = '$calDate')
+          JOIN categorias b ON (a.categoriaid = b.categoria_id)";
 if ($hasSalidaFk) $gjoin .= " LEFT JOIN salidas sal ON (sal.id = b.salida)";
 
 $sql = "SELECT $gcols FROM salidagrupo a $gjoin ORDER BY a.id";
