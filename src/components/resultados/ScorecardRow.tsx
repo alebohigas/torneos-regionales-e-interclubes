@@ -127,16 +127,21 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </td>
           </tr>
 
-          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy */}
+          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy.
+              Marcas oficiales de golf: círculo = birdie, doble círculo = eagle o mejor,
+              cuadro = bogey, doble cuadro = doble bogey o peor. */}
           <tr className="bg-muted/30">
             <td className="px-2 py-1 font-semibold text-center text-muted-foreground">R</td>
             {holes.map(h => (
-              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.golpes}</td>
+              <td key={h.hoyo} className="px-1 py-1 text-center">
+                {renderScoreMark(h.golpes, h.par)}
+              </td>
             ))}
             <td className="px-2 py-1 text-center font-semibold text-foreground">
               {holes.reduce((s, h) => s + h.golpes, 0)}
             </td>
           </tr>
+
 
         </tbody>
       </table>
