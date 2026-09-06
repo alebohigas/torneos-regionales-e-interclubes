@@ -40,7 +40,18 @@ export interface CopaClubPlayer {
   numjugador: string;
   jugador: string;
   puntos: number;
-  etapas: number;
+  penalties: number;
+}
+
+/** Etapa de la gira con los jugadores del club que aportaron puntos. */
+export interface CopaClubEtapa {
+  torneoid: string;
+  etapa: string;
+  nombre: string;
+  puntos: number;
+  penalties: number;
+  total: number;
+  players: CopaClubPlayer[];
 }
 
 // ============= Copas de la gira =============
@@ -81,18 +92,18 @@ export const useCopaClubs = (copasid: string | null) => {
   });
 };
 
-// ============= Jugadores que aportan puntos a un club =============
+// ============= Etapas (y sus jugadores) que aportan puntos a un club =============
 
-export const useCopaClubPlayers = (copasid: string | null, clubid: string | null) => {
+export const useCopaClubEtapas = (copasid: string | null, clubid: string | null) => {
   const { giraId } = useGiraId();
 
-  return useQuery<CopaClubPlayer[]>({
-    queryKey: ['copa-club-players', giraId, copasid, clubid],
+  return useQuery<CopaClubEtapa[]>({
+    queryKey: ['copa-club-etapas', giraId, copasid, clubid],
     queryFn: async () => {
-      const data = await apiFetch<{ players?: CopaClubPlayer[] }>(
+      const data = await apiFetch<{ etapas?: CopaClubEtapa[] }>(
         getCopaClubPlayersUrl(copasid!, clubid!, giraId)
       );
-      return Array.isArray(data?.players) ? data.players : [];
+      return Array.isArray(data?.etapas) ? data.etapas : [];
     },
     enabled: !!copasid && !!clubid && !!giraId,
     staleTime: POLL_SLOW,

@@ -102,41 +102,88 @@ $sexoWhere = ($sexo !== '' && $sexoCol !== '') ? " AND $sexoCol = '" . esc($conn
 
 $clubidParam = isset($_GET['clubid']) ? trim((string)$_GET['clubid']) : '';
 
-// ============= Modo detalle: jugadores de un club =============
+// ============= Modo detalle: etapas de un club (y jugadores por etapa) =============
 if ($clubidParam !== '') {
     if (!ctype_digit($clubidParam)) {
         json_error('clubid inválido');
     }
     $clubid = (int)$clubidParam;
 
-    $sql  = "SELECT b.numjugador, CONCAT(b.nombre, ' ', b.apellido) AS jugador, ";
-    $sql .= "SUM(ROUND(b.puntos, 1)) AS puntos, COUNT(DISTINCT b.torneoid) AS etapas ";
+    $torneoPk = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id']) ?: 'torneo_id';
+    $hasPenalties = api_column_exists($conn, 'jugadores', 'penalties');
+    $penExpr = $hasPenalties ? "SUM(COALESCE(b.penalties,0))" : "0";
+
+    // --- Agrupación por etapa (legacy copas_gira.php) ---
+    $sql  = "SELECT t.`$torneoPk` AS torneoid, t.nombre AS torneo_nombre, t.fecha_ini, ";
+    $sql .= "SUM(ROUND(b.puntos,1)) AS puntos, $penExpr AS penalties ";
     $sql .= "FROM jugadores AS b ";
     $sql .= "JOIN jugadores_seed AS s ON (b.numjugador = s.numjugador AND s.giraid = $gid) ";
+    $sql .= "JOIN torneo AS t ON (b.torneoid = t.`$torneoPk`) ";
     $sql .= "WHERE s.id_club = $clubid $torneoWhere $sexoWhere ";
-    $sql .= "GROUP BY b.numjugador, jugador ";
-    $sql .= "ORDER BY puntos DESC";
+    $sql .= "GROUP BY t.`$torneoPk`, t.nombre, t.fecha_ini ";
+    $sql .= "ORDER BY t.fecha_ini ASC, t.`$torneoPk` ASC";
+    $etapaRows = query_all($conn, $sql);
 
-    $rows = query_all($conn, $sql);
-    $players = [];
-    $pos = 0;
-    foreach ($rows as $row) {
-        $pos++;
-        $players[] = [
-            'position'   => $pos,
+    // --- Jugadores por etapa ---
+    $sql2  = "SELECT b.torneoid, b.numjugador, CONCAT(b.nombre, ' ', b.apellido) AS jugador, ";
+    $sql2 .= "ROUND(SUM(b.puntos),1) AS puntos" . ($hasPenalties ? ", SUM(COALESCE(b.penalties,0)) AS penalties " : ", 0 AS penalties ");
+    $sql2 .= "FROM jugadores AS b ";
+    $sql2 .= "JOIN jugadores_seed AS s ON (b.numjugador = s.numjugador AND s.giraid = $gid) ";
+    $sql2 .= "WHERE s.id_club = $clubid $torneoWhere $sexoWhere ";
+    $sql2 .= "GROUP BY b.torneoid, b.numjugador, jugador ";
+    $sql2 .= "ORDER BY puntos DESC";
+    $playerRows = query_all($conn, $sql2);
+
+    $playersByTorneo = [];
+    foreach ($playerRows as $row) {
+        $tid = (string)(int)($row['torneoid'] ?? 0);
+        if (!isset($playersByTorneo[$tid])) $playersByTorneo[$tid] = [];
+        $playersByTorneo[$tid][] = [
+            'position'   => count($playersByTorneo[$tid]) + 1,
             'numjugador' => (string)($row['numjugador'] ?? ''),
             'jugador'    => $row['jugador'] ?? '',
             'puntos'     => isset($row['puntos']) ? (float)$row['puntos'] : 0,
-            'etapas'     => (int)($row['etapas'] ?? 0),
+            'penalties'  => isset($row['penalties']) ? (float)$row['penalties'] : 0,
+        ];
+    }
+
+    /** Etiqueta "Etapa-N" a partir del nombre real del torneo. */
+    $etapas = [];
+    $seq = 0;
+    foreach ($etapaRows as $row) {
+        $seq++;
+        $tid = (string)(int)($row['torneoid'] ?? 0);
+        $nombre = trim(preg_replace('/\s+/u', ' ', (string)($row['torneo_nombre'] ?? '')));
+        $label = '';
+        if ($nombre !== '') {
+            $first = explode(' ', $nombre)[0];
+            if (preg_match('/etapa/i', $first)) {
+                $label = strtoupper($first);
+            }
+        }
+        if ($label === '') $label = 'ETAPA-' . $seq;
+        $label = str_replace('ETAPA-', 'Etapa-', $label);
+
+        $puntos = isset($row['puntos']) ? (float)$row['puntos'] : 0;
+        $pen    = isset($row['penalties']) ? (float)$row['penalties'] : 0;
+        $etapas[] = [
+            'torneoid'  => $tid,
+            'etapa'     => $label,
+            'nombre'    => $nombre,
+            'puntos'    => $puntos,
+            'penalties' => $pen,
+            'total'     => round($puntos - $pen, 1),
+            'players'   => $playersByTorneo[$tid] ?? [],
         ];
     }
 
     json_response([
         'copasid' => (string)$copasid,
         'clubid'  => (string)$clubid,
-        'players' => $players,
+        'etapas'  => $etapas,
     ]);
 }
+
 
 // ============= Modo ranking de clubes =============
 $sql  = "SELECT SUM(ROUND(b.puntos, 1)) AS puntos, c.nombre AS club, c.logo, s.id_club, ";
