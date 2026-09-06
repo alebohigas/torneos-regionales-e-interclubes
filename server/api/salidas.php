@@ -44,8 +44,9 @@ $sql = "SELECT MIN(c.id) AS caljgoid, c.fecha,
                MIN(c.categoriaid) AS categoriaid,
                'Grupos de Juego' AS categoria, 'Grupos de Juego' AS abreviatura,
                '' AS sistema, '' AS formato, '' AS tee,
-               (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
+               MIN(ca.campo) AS campo_nombre
         FROM caljuego c
+        LEFT JOIN campos ca ON (c.campo = ca.id)
         WHERE $where
         GROUP BY c.fecha
         ORDER BY c.fecha ASC";
@@ -61,8 +62,9 @@ if (empty($rows)) {
                         MIN(c.categoriaid) AS categoriaid,
                         'Grupos de Juego' AS categoria, 'Grupos de Juego' AS abreviatura,
                         '' AS sistema, '' AS formato, '' AS tee,
-                        (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
+                        MIN(ca.campo) AS campo_nombre
                  FROM caljuego c
+                 LEFT JOIN campos ca ON (c.campo = ca.id)
                  WHERE c.torneoid = $tid
                  GROUP BY c.fecha
                  ORDER BY c.fecha ASC";
