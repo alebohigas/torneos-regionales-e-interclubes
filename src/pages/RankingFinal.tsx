@@ -222,8 +222,8 @@ const RankingFinal = () => {
                                                       key={etapa.torneoid}
                                                       className={
                                                         etapa.counted
-                                                          ? 'bg-primary/10 hover:bg-primary/10'
-                                                          : 'bg-white hover:bg-white'
+                                                          ? 'bg-primary/10 hover:bg-primary/10 text-foreground'
+                                                          : 'bg-white hover:bg-white text-muted-foreground'
                                                       }
                                                     >
                                                       <TableCell className={`font-semibold text-right ${colWidth}`}>
@@ -234,18 +234,18 @@ const RankingFinal = () => {
                                                           {etapa.etapa || etapa.nombre}
                                                         </span>
                                                       </TableCell>
-                                                      <TableCell className={`text-center font-semibold ${colWidth}`}>
+                                                      <TableCell className={`text-center ${etapa.counted ? 'font-semibold' : ''} ${colWidth}`}>
                                                         {etapa.lugar ?? '—'}
                                                       </TableCell>
-                                                      <TableCell className={`text-center ${colWidth}`}>
+                                                      <TableCell className={`text-center ${etapa.counted ? 'font-semibold' : ''} ${colWidth}`}>
                                                         {etapa.rounds?.[0] ?? '—'}
                                                       </TableCell>
                                                       {showR2 && (
-                                                        <TableCell className={`text-center ${colWidth}`}>
+                                                        <TableCell className={`text-center ${etapa.counted ? 'font-semibold' : ''} ${colWidth}`}>
                                                           {etapa.rounds?.[1] ?? '—'}
                                                         </TableCell>
                                                       )}
-                                                      <TableCell className={`text-center font-semibold ${colWidth}`}>
+                                                      <TableCell className={`text-center ${etapa.counted ? 'font-bold text-foreground' : 'text-muted-foreground'} ${colWidth}`}>
                                                         {etapa.total ?? '—'}
                                                       </TableCell>
                                                       <TableCell
