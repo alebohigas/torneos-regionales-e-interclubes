@@ -10,10 +10,10 @@ import PageHero from '@/components/shared/PageHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Trophy, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Trophy, Loader2, Star, ChevronDown } from 'lucide-react';
 import rankingHero from '@/assets/jugadores-hero.jpg';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+
 import {
   useRankingFinalCategories,
   useRankingFinalPlayers,
