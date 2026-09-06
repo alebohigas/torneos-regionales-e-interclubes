@@ -30,11 +30,17 @@ require_once 'config.php';
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 
+// `categorias.abreviatura` no existe en el esquema golftour: se detecta en
+// runtime para no romper el endpoint con "Unknown column".
+$abrevSel = api_column_exists($conn, 'categorias', 'abreviatura')
+    ? 'cat.abreviatura'
+    : "'' AS abreviatura";
+
 // Pull every relevant field from caljuego with category and course names.
 $sql = "SELECT c.id, c.fecha, c.horainicio_1, c.horainicio_10,
                c.categoria, c.campo, c.salhoyos, c.numfoursome,
                ca.campo as campo_nombre,
-               cat.categoria_id, cat.categoria as categoria_nombre, cat.abreviatura,
+               cat.categoria_id, cat.categoria as categoria_nombre, $abrevSel,
                DATE_FORMAT(c.fecha, '%W') as dia_semana,
                DATE_FORMAT(c.fecha, '%e') as dia_num,
                DATE_FORMAT(c.fecha, '%M') as mes_nombre
