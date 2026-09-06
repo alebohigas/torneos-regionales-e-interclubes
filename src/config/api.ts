@@ -183,6 +183,18 @@ export const getRankingFinalPlayersUrl = (catId: string, giraId?: string): strin
 export const getRankingFinalPlayerDetailUrl = (numjugador: string, giraId?: string): string =>
   `${API_BASE_URL}/ranking_final.php${buildGiraQuery({ numjug: numjugador }, giraId)}`;
 
+/** COPA: copas de la gira (varonil / femenil / conjunta). */
+export const getCopaListUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/copa.php${buildGiraQuery({}, giraId)}`;
+
+/** COPA: sumatoria de puntos por club de una copa. */
+export const getCopaClubsUrl = (copasid: string, giraId?: string): string =>
+  `${API_BASE_URL}/copa.php${buildGiraQuery({ copasid }, giraId)}`;
+
+/** COPA: jugadores que aportan puntos a un club dentro de la copa. */
+export const getCopaClubPlayersUrl = (copasid: string, clubid: string, giraId?: string): string =>
+  `${API_BASE_URL}/copa.php${buildGiraQuery({ copasid, clubid }, giraId)}`;
+
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;
 
