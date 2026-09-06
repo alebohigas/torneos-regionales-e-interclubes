@@ -71,8 +71,8 @@ const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
         {/* Cintilla del tee de salida */}
         {block.teeName && (
           <div
-            className="px-4 py-1.5 text-sm font-semibold uppercase text-white"
-            style={{ backgroundColor: bg }}
+            className="px-4 py-1.5 text-sm font-semibold uppercase"
+            style={{ backgroundColor: bg, color: fg }}
           >
             {block.teeName}
           </div>
@@ -82,7 +82,8 @@ const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr style={{ backgroundColor: bg }} className="text-white">
+              <tr style={{ backgroundColor: bg, color: fg }}>
+
                 <th className="px-3 py-2 text-left font-semibold whitespace-nowrap">Hoyo</th>
                 {block.holes.map((h) => (
                   <th key={h.numero} className="px-3 py-2 text-center font-semibold">
