@@ -201,6 +201,11 @@ export const getDistanciasUrl = (): string => `${API_BASE_URL}/distancias.php${b
 /** Calendario - tournament calendar from caljuego table */
 export const getCalendarioUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery()}`;
 
+/** Calendario de la gira - una fila por etapa (club, sede, fecha). */
+export const getCalendarioGiraUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/calendario_gira.php${buildGiraQuery({}, giraId)}`;
+
+
 /** @deprecated Use getCalendarioUrl instead */
 export const getCalendarioDaysUrl = (): string => `${API_BASE_URL}/calendario.php${buildQuery({ modo: 'days' })}`;
 
