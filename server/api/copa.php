@@ -153,19 +153,24 @@ if ($clubidParam !== '') {
     foreach ($etapaRows as $row) {
         $seq++;
         $tid = (string)(int)($row['torneoid'] ?? 0);
-        $nombre = trim(preg_replace('/\s+/u', ' ', (string)($row['torneo_nombre'] ?? '')));
+        $nombre = trim(preg_replace('/\s+/u', ' ', str_replace("\xc2\xa0", ' ', (string)($row['torneo_nombre'] ?? ''))));
         $label = '';
-        if ($nombre !== '') {
-            $first = explode(' ', $nombre)[0];
-            if (preg_match('/etapa/i', $first)) {
-                $label = strtoupper($first);
-            }
+        if ($nombre !== '' && preg_match('/etapa\s*[-_\s]?\s*(\d+[A-Za-z]?)/i', $nombre, $m)) {
+            $label = 'Etapa-' . strtoupper($m[1]);
         }
-        if ($label === '') $label = 'ETAPA-' . $seq;
-        $label = str_replace('ETAPA-', 'Etapa-', $label);
+        if ($label === '') $label = 'Etapa-' . $seq;
 
         $puntos = isset($row['puntos']) ? (float)$row['puntos'] : 0;
         $pen    = isset($row['penalties']) ? (float)$row['penalties'] : 0;
+
+        // Solo jugadores que realmente aportan puntos a la etapa.
+        $players = [];
+        foreach (($playersByTorneo[$tid] ?? []) as $p) {
+            if (round((float)$p['puntos'] - (float)$p['penalties'], 1) <= 0) continue;
+            $p['position'] = count($players) + 1;
+            $players[] = $p;
+        }
+
         $etapas[] = [
             'torneoid'  => $tid,
             'etapa'     => $label,
@@ -173,9 +178,10 @@ if ($clubidParam !== '') {
             'puntos'    => $puntos,
             'penalties' => $pen,
             'total'     => round($puntos - $pen, 1),
-            'players'   => $playersByTorneo[$tid] ?? [],
+            'players'   => $players,
         ];
     }
+
 
     json_response([
         'copasid' => (string)$copasid,
