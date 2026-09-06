@@ -46,10 +46,18 @@ if ($numjug !== '') {
     $totalCounted = 0.0;
     $totalAll = 0.0;
 
+    $etapaSeq = 0;
     foreach ($etapaRows as $er) {
+        $etapaSeq++;
         $tid = (int)$er['id'];
-        $label = trim(preg_replace('/\s+/u', ' ', (string)($er['nombre'] ?? '')));
-        $label = $label === '' ? '' : explode(' ', $label)[0];
+        $cleanName = str_replace(["\xc2\xa0", "\t", "\r", "\n"], ' ', (string)($er['nombre'] ?? ''));
+        $cleanName = trim(preg_replace('/\s+/u', ' ', $cleanName));
+        if (preg_match('/etapa\s*[-_.\s]?\s*(\d+[A-Za-z]?)/iu', $cleanName, $match)) {
+            $label = 'ETAPA-' . strtoupper($match[1]);
+        } else {
+            $first = $cleanName === '' ? '' : explode(' ', $cleanName)[0];
+            $label = preg_match('/\d/', $first) ? strtoupper($first) : 'ETAPA-' . $etapaSeq;
+        }
 
         $jug = query_one($conn, "SELECT $sel FROM jugadores j
                                  WHERE j.numjugador = '$nj' AND j.torneoid = $tid LIMIT 1");

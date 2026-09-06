@@ -1,7 +1,7 @@
 /**
  * Salidas Page
- * Displays tee times organized by day → category → groups
- * Includes player search across all days/categories
+ * Displays one mixed tee-time list per day.
+ * Includes player search across all days.
  * Data fetched from salidas.php and salidas_det.php via React Query hooks
  */
 
@@ -230,63 +230,21 @@ const Salidas = () => {
   /** Currently selected day object */
   const selectedDay: SalidasDay | null = selectedDayIdx !== null ? days[selectedDayIdx] : null;
 
-  /** Fetch group counts for all categories of the selected day (for card badges) */
-  const categoryGroupQueries = useQueries({
-    queries: selectedDay && !selectedCaljgoid
-      ? selectedDay.categories.map((cat) => ({
-          queryKey: ['salidas-group-count', String(cat.caljgoid), cat.format?.toLowerCase().includes('pareja') ? 'parejas' : 'individual'],
-          queryFn: async () => {
-            const fmt = cat.format?.toLowerCase().includes('pareja') ? 'parejas' : 'individual';
-            const data = await apiFetch<any>(getSalidasDayUrl(String(cat.caljgoid), fmt));
-            const groups = Array.isArray(data?.groups) ? data.groups : [];
-            return { caljgoid: String(cat.caljgoid), groupCount: groups.length };
-          },
-          staleTime: POLL_ACTIVE,
-        }))
-      : [],
-  });
-
-  /** Map caljgoid → group count for quick lookup */
-  const groupCountMap = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    for (const q of categoryGroupQueries) {
-      if (q.data) map[q.data.caljgoid] = q.data.groupCount;
-    }
-    return map;
-  }, [categoryGroupQueries]);
-
-  /** Handle day card click - if only one category, go directly to detail */
+  /** A day always opens its single mixed group list directly. */
   const handleDayClick = (dayIdx: number) => {
     const day = days[dayIdx];
-    if (day.categories.length === 1) {
-      setSelectedDayIdx(dayIdx);
-      setSelectedCaljgoid(String(day.categories[0].caljgoid));
-      setSelectedCatMeta(day.categories[0]);
-    } else {
-      setSelectedDayIdx(dayIdx);
-      setSelectedCaljgoid(null);
-      setSelectedCatMeta(null);
-    }
-  };
-
-  /** Handle category click */
-  const handleCategoryClick = (cat: SalidasCategory) => {
-    setSelectedCaljgoid(String(cat.caljgoid));
-    setSelectedCatMeta(cat);
+    const departure = day.categories[0];
+    setSelectedDayIdx(dayIdx);
+    setSelectedCaljgoid(departure ? String(departure.caljgoid) : null);
+    setSelectedCatMeta(departure ?? null);
   };
 
   /** Handle back navigation */
   const handleBack = () => {
     if (selectedCaljgoid) {
-      const day = selectedDayIdx !== null ? days[selectedDayIdx] : null;
-      if (day && day.categories.length > 1) {
-        setSelectedCaljgoid(null);
-        setSelectedCatMeta(null);
-      } else {
-        setSelectedDayIdx(null);
-        setSelectedCaljgoid(null);
-        setSelectedCatMeta(null);
-      }
+      setSelectedDayIdx(null);
+      setSelectedCaljgoid(null);
+      setSelectedCatMeta(null);
     } else {
       setSelectedDayIdx(null);
     }
@@ -493,12 +451,7 @@ const Salidas = () => {
                             <Calendar className="h-8 w-8 mx-auto mb-3 text-primary" />
                             <h3 className="font-bold text-foreground text-lg mb-1 capitalize">{day.dateFormatted}</h3>
                             <p className="text-muted-foreground text-sm mb-3">{day.course}</p>
-                            <div className="flex justify-center gap-4 text-sm">
-                              <div>
-                                <span className="text-2xl font-bold text-primary">{day.categories.length}</span>
-                                <p className="text-muted-foreground">Categorías</p>
-                              </div>
-                            </div>
+                             <p className="text-sm font-medium text-primary">Grupos de Juego</p>
                           </CardContent>
                         </Card>
                       ))}
@@ -508,50 +461,12 @@ const Salidas = () => {
               )}
             </>
 
-          /* ============= Level 2: Category Selection (multi-category days) ============= */
-          ) : !selectedCaljgoid && selectedDay ? (
-            <>
-              <Button variant="ghost" onClick={handleBack} className="mb-6 gap-2 bg-primary/10 hover:bg-primary/20">
-                <ArrowLeft className="h-4 w-4" />
-                Volver a días
-              </Button>
-
-              <div className="text-center mb-10">
-                <h2 className="text-3xl font-bold text-foreground mb-2 capitalize">{selectedDay.dateFormatted}</h2>
-                <p className="text-muted-foreground">{selectedDay.course}</p>
-                <p className="text-muted-foreground mt-1">Selecciona una categoría</p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                {selectedDay.categories.map((cat) => (
-                  <Card
-                    key={cat.caljgoid}
-                    className="border-border/50 hover:border-primary/50 transition-all hover:shadow-lg cursor-pointer"
-                    onClick={() => handleCategoryClick(cat)}
-                  >
-                    <CardContent className="p-5 text-center">
-                      <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-                      <h3 className="font-bold text-foreground text-lg mb-1">{cat.shortName || cat.categoryName}</h3>
-                      {/* Group count badge */}
-                      {groupCountMap[String(cat.caljgoid)] !== undefined ? (
-                        <p className="text-sm text-muted-foreground">
-                          <span className="text-lg font-bold text-primary">{groupCountMap[String(cat.caljgoid)]}</span> grupo{groupCountMap[String(cat.caljgoid)] !== 1 ? 's' : ''}
-                        </p>
-                      ) : (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-auto" />
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-
-          /* ============= Level 3: Groups Table ============= */
+          /* ============= Level 2: Mixed Groups Table ============= */
           ) : (
             <>
               <Button variant="ghost" onClick={handleBack} className="mb-6 gap-2 bg-primary/10 hover:bg-primary/20">
                 <ArrowLeft className="h-4 w-4" />
-                {selectedDay && selectedDay.categories.length > 1 ? 'Volver a categorías' : 'Volver a días'}
+                 Volver a días
               </Button>
 
               {loadingDetail ? (
@@ -575,7 +490,7 @@ const Salidas = () => {
                   {(detail.groups ?? []).length === 0 ? (
                     <div className="text-center py-16">
                       <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-muted-foreground text-lg">No hay grupos de salida para esta categoría</p>
+                       <p className="text-muted-foreground text-lg">No hay grupos de salida para este día</p>
                     </div>
                   ) : (
                     <Card className="border-border/50 bg-white max-w-5xl mx-auto">

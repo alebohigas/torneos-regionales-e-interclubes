@@ -26,11 +26,14 @@ $gid = (int)$giraid;
 $MESES = [1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
           'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-/** Etiqueta de etapa = primera palabra del nombre del torneo ("ETAPA-3"). */
+/** Etiqueta normalizada desde "ETAPA-3", "Etapa 3" o "etapa_3". */
 function cg_etapa_label($nombre) {
     $n = str_replace(["\xc2\xa0", "\t", "\r", "\n"], ' ', (string)$nombre);
-    $n = trim(preg_replace('/\s+/', ' ', $n));
+    $n = trim(preg_replace('/\s+/u', ' ', $n));
     if ($n === '') return '';
+    if (preg_match('/etapa\s*[-_.\s]?\s*(\d+[A-Za-z]?)/iu', $n, $m)) {
+        return 'ETAPA-' . strtoupper($m[1]);
+    }
     $parts = explode(' ', $n);
     return $parts[0];
 }
