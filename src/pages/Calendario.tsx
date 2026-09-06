@@ -73,6 +73,7 @@ const Calendario = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-primary text-primary-foreground">
+                      <th className="px-4 py-3 text-left font-semibold w-[100px]">Etapa</th>
                       <th className="px-4 py-3 text-left font-semibold w-[140px]">Club</th>
                       <th className="px-4 py-3 text-left font-semibold">Sede</th>
                       <th className="px-4 py-3 text-left font-semibold w-[240px]">Fecha</th>
@@ -81,11 +82,14 @@ const Calendario = () => {
                   <tbody>
                     {rows.map((etapa) => (
                       <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0">
+                        <td className="px-4 py-4 align-middle font-semibold text-foreground">
+                          {etapa.etapaDisplay || etapa.etapaLabel || '—'}
+                        </td>
                         <td className="px-4 py-4 align-middle">
                           <ClubLogos etapa={etapa} />
                         </td>
-                        <td className="px-4 py-4 align-middle font-semibold text-foreground">
-                          {etapa.sede}
+                        <td className="px-4 py-4 align-middle text-foreground">
+                          {etapa.sede || '—'}
                         </td>
                         <td className="px-4 py-4 align-middle text-muted-foreground">
                           {etapa.dateLabel || '—'}
