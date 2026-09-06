@@ -262,7 +262,8 @@ const RankingFinal = () => {
                                     </TableCell>
                                   </TableRow>
                                 )}
-                              </>
+                              </Fragment>
+
                             );
                           })
                         ) : (
