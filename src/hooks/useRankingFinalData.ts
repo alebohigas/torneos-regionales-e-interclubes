@@ -52,7 +52,10 @@ export interface RankingFinalEtapa {
   estatus: string;
   rounds: (number | null)[];
   total: number | null;
+  /** Lugar del jugador en esa etapa (jugadores.posptos). */
+  lugar: number | null;
 }
+
 
 export interface RankingFinalDetail {
   numjugador: string;
