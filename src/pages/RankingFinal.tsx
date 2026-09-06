@@ -191,27 +191,27 @@ const RankingFinal = () => {
                                         ) : (
                                           <>
                                             <div className="overflow-x-auto">
-                                              <Table className="bg-white tournament-table">
+                                              <Table className="bg-white tournament-table w-full table-fixed">
                                                 <TableHeader>
                                                   <TableRow className="bg-primary hover:bg-primary">
-                                                    <TableHead className="text-primary-foreground font-bold">
+                                                    <TableHead className={`text-primary-foreground font-bold text-right ${colWidth}`}>
                                                       Etapa
                                                     </TableHead>
-                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                    <TableHead className={`text-primary-foreground font-bold text-center ${colWidth}`}>
                                                       Lugar
                                                     </TableHead>
-                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                    <TableHead className={`text-primary-foreground font-bold text-center ${colWidth}`}>
                                                       R1
                                                     </TableHead>
                                                     {showR2 && (
-                                                      <TableHead className="text-primary-foreground font-bold text-center">
+                                                      <TableHead className={`text-primary-foreground font-bold text-center ${colWidth}`}>
                                                         R2
                                                       </TableHead>
                                                     )}
-                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                    <TableHead className={`text-primary-foreground font-bold text-center ${colWidth}`}>
                                                       Total
                                                     </TableHead>
-                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                    <TableHead className={`text-primary-foreground font-bold text-center ${colWidth}`}>
                                                       Puntos
                                                     </TableHead>
                                                   </TableRow>
@@ -226,34 +226,34 @@ const RankingFinal = () => {
                                                           : 'bg-white hover:bg-white'
                                                       }
                                                     >
-                                                      <TableCell className="font-semibold whitespace-nowrap">
-                                                        <span className="inline-flex items-center gap-1.5">
+                                                      <TableCell className={`font-semibold text-right ${colWidth}`}>
+                                                        <span className="inline-flex items-center justify-end gap-1.5 w-full">
                                                           {etapa.counted && (
                                                             <Star className="h-3.5 w-3.5 text-primary fill-primary" />
                                                           )}
                                                           {etapa.etapa || etapa.nombre}
                                                         </span>
                                                       </TableCell>
-                                                      <TableCell className="text-center font-semibold">
+                                                      <TableCell className={`text-center font-semibold ${colWidth}`}>
                                                         {etapa.lugar ?? '—'}
                                                       </TableCell>
-                                                      <TableCell className="text-center">
+                                                      <TableCell className={`text-center ${colWidth}`}>
                                                         {etapa.rounds?.[0] ?? '—'}
                                                       </TableCell>
                                                       {showR2 && (
-                                                        <TableCell className="text-center">
+                                                        <TableCell className={`text-center ${colWidth}`}>
                                                           {etapa.rounds?.[1] ?? '—'}
                                                         </TableCell>
                                                       )}
-                                                      <TableCell className="text-center font-semibold">
+                                                      <TableCell className={`text-center font-semibold ${colWidth}`}>
                                                         {etapa.total ?? '—'}
                                                       </TableCell>
                                                       <TableCell
-                                                        className={
+                                                        className={`${
                                                           etapa.counted
                                                             ? 'text-center font-bold text-primary'
                                                             : 'text-center text-muted-foreground'
-                                                        }
+                                                        } ${colWidth}`}
                                                       >
                                                         {etapa.played ? formatPuntos(etapa.puntos) : '—'}
                                                       </TableCell>
