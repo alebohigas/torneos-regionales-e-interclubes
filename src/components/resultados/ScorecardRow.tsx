@@ -257,19 +257,44 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             {renderSection(back9, 'IN')}
           </div>
 
-          {/* Totales: solo Par y R (golpes) */}
-          <div className="flex justify-end items-baseline gap-6 mt-3 text-sm flex-wrap">
-            <span className="text-muted-foreground">
-              Par: <strong className="text-foreground">
-                {scorecard.holes.reduce((s, h) => s + h.par, 0)}
-              </strong>
-            </span>
-            <span className="text-muted-foreground">
-              Total: <strong className="text-foreground font-bold">
-                {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
-              </strong>
-            </span>
+          {/* Leyenda de marcas + Totales: solo Par y R (golpes) */}
+          <div className="flex flex-wrap justify-between items-center gap-3 mt-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-red-600">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full border border-red-600" />
+                </span>
+                Eagle o mejor
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-4 w-4 rounded-full border-2 border-red-600" />
+                Birdie
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-4 w-4 border-2 border-blue-600" />
+                Bogey
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center h-5 w-5 border border-blue-600">
+                  <span className="inline-block h-2.5 w-2.5 border border-blue-600" />
+                </span>
+                Doble bogey o peor
+              </span>
+            </div>
+            <div className="flex items-baseline gap-6 flex-wrap ml-auto">
+              <span className="text-muted-foreground">
+                Par: <strong className="text-foreground">
+                  {scorecard.holes.reduce((s, h) => s + h.par, 0)}
+                </strong>
+              </span>
+              <span className="text-muted-foreground">
+                Total: <strong className="text-foreground font-bold">
+                  {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
+                </strong>
+              </span>
+            </div>
           </div>
+
 
         </div>
       </TableCell>
