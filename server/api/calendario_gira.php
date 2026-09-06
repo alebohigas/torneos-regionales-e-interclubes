@@ -90,14 +90,17 @@ function cg_format_dates(array $dates, array $MESES) {
 }
 
 // ============= Columnas dinámicas =============
-$torneoPk    = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id']) ?: 'torneo_id';
-$torneoCampo = api_first_existing_column($conn, 'torneo', ['campo', 'campoid', 'id_campo']);
-$torneoClub  = api_first_existing_column($conn, 'torneo', ['club_id', 'clubid']);
-$camposClub  = api_first_existing_column($conn, 'campos', ['clubid', 'club_id', 'id_club']);
+$torneoPk     = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id']) ?: 'torneo_id';
+// `torneo.campos` es un CSV de ids de sedes ("113,174" = dos sedes).
+$torneoCampos = api_first_existing_column($conn, 'torneo', ['campos']);
+$torneoCampo  = api_first_existing_column($conn, 'torneo', ['campo', 'campoid', 'id_campo']);
+$torneoClub   = api_first_existing_column($conn, 'torneo', ['club_id', 'clubid']);
+$camposClub   = api_first_existing_column($conn, 'campos', ['clubid', 'club_id', 'id_club']);
 
 $sel = "t.`$torneoPk` AS torneo_id, t.nombre, t.fecha_ini, t.fecha_fin, t.status";
-if ($torneoCampo) $sel .= ", t.`$torneoCampo` AS torneo_campo";
-if ($torneoClub)  $sel .= ", t.`$torneoClub` AS torneo_club";
+if ($torneoCampos) $sel .= ", t.`$torneoCampos` AS torneo_campos";
+if ($torneoCampo)  $sel .= ", t.`$torneoCampo` AS torneo_campo";
+if ($torneoClub)   $sel .= ", t.`$torneoClub` AS torneo_club";
 
 $torneos = query_all($conn, "SELECT $sel FROM torneo t WHERE t.giraid = $gid ORDER BY t.`$torneoPk` ASC");
 
@@ -107,6 +110,24 @@ foreach (query_all($conn, "SELECT id, nombre, logo FROM clubs") as $c) {
     $clubs[(int)$c['id']] = $c;
 }
 
+// Catálogo completo de campos: los ids del CSV que no existan aquí se ignoran.
+$camposById = [];
+$camposSel = 'id, campo' . ($camposClub ? ", `$camposClub` AS club_id" : '');
+foreach (query_all($conn, "SELECT $camposSel FROM campos") as $c) {
+    $camposById[(int)$c['id']] = $c;
+}
+
+/** Convierte "113,174" en [113, 174] (tolera espacios, ; y |). */
+function cg_csv_ids($csv) {
+    $out = [];
+    foreach (preg_split('/[,;|\s]+/', (string)$csv) as $v) {
+        if ($v === '' || !ctype_digit($v)) continue;
+        $id = (int)$v;
+        if ($id > 0) $out[] = $id;
+    }
+    return array_values(array_unique($out));
+}
+
 $etapas = [];
 $fallback = 0;
 
@@ -114,25 +135,35 @@ foreach ($torneos as $t) {
     $fallback++;
     $tid = (int)$t['torneo_id'];
 
-    // ---- Sedes (campos) del torneo desde caljuego ----
-    $campoSel = "c.campo AS campo_id, ca.campo AS campo_nombre, MIN(c.fecha) AS primera";
-    if ($camposClub) $campoSel .= ", ca.`$camposClub` AS club_id";
-    $rows = query_all($conn, "SELECT $campoSel
-                              FROM caljuego c
-                              LEFT JOIN campos ca ON (c.campo = ca.id)
-                              WHERE c.torneoid = $tid AND c.campo > 0
-                              GROUP BY c.campo, ca.campo"
-                              . ($camposClub ? ", ca.`$camposClub`" : '') . "
-                              ORDER BY primera ASC, ca.campo ASC");
+    // ---- Sedes: ids listados en `torneo.campos` (uno o varios) ----
+    $ids = cg_csv_ids($t['torneo_campos'] ?? '');
+    if (empty($ids) && !empty($t['torneo_campo'])) $ids = cg_csv_ids($t['torneo_campo']);
 
-    // Respaldo: campo del propio torneo.
-    if (empty($rows) && !empty($t['torneo_campo'])) {
-        $cid = (int)$t['torneo_campo'];
-        $extraSel = $camposClub ? ", ca.`$camposClub` AS club_id" : '';
-        $one = query_one($conn, "SELECT ca.id AS campo_id, ca.campo AS campo_nombre$extraSel
-                                 FROM campos ca WHERE ca.id = $cid LIMIT 1");
-        if ($one) $rows = [$one];
+    $rows = [];
+    foreach ($ids as $id) {
+        // Si el id no existe en `campos`, simplemente se ignora.
+        if (!isset($camposById[$id])) continue;
+        $c = $camposById[$id];
+        $rows[] = [
+            'campo_id'     => $id,
+            'campo_nombre' => $c['campo'] ?? '',
+            'club_id'      => $c['club_id'] ?? null,
+        ];
     }
+
+    // Respaldo: sedes usadas en caljuego cuando el torneo no tiene `campos`.
+    if (empty($rows)) {
+        $campoSel = "c.campo AS campo_id, ca.campo AS campo_nombre, MIN(c.fecha) AS primera";
+        if ($camposClub) $campoSel .= ", ca.`$camposClub` AS club_id";
+        $rows = query_all($conn, "SELECT $campoSel
+                                  FROM caljuego c
+                                  JOIN campos ca ON (c.campo = ca.id)
+                                  WHERE c.torneoid = $tid AND c.campo > 0
+                                  GROUP BY c.campo, ca.campo"
+                                  . ($camposClub ? ", ca.`$camposClub`" : '') . "
+                                  ORDER BY primera ASC, ca.campo ASC");
+    }
+
 
     $venues = [];
     $logos  = [];
