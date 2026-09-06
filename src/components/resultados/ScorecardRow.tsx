@@ -94,9 +94,49 @@ interface ScorecardRowProps {
 }
 
 
+/**
+ * Marca oficial de golf para el score de un hoyo:
+ * - doble círculo rojo: eagle o mejor (-2 o menos)
+ * - círculo rojo: birdie (-1)
+ * - sin marca: par
+ * - cuadro azul: bogey (+1)
+ * - doble cuadro azul: doble bogey o peor (+2 o más)
+ */
+const renderScoreMark = (golpes: number, par: number) => {
+  if (!golpes || !par) {
+    return <span className="font-bold text-foreground">{golpes || ''}</span>;
+  }
+  const diff = golpes - par;
+  const base = 'inline-flex items-center justify-center h-6 w-6 text-xs font-bold leading-none';
+
+  if (diff <= -2) {
+    return (
+      <span className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-red-600">
+        <span className={cn(base, 'rounded-full border border-red-600 text-red-600')}>{golpes}</span>
+      </span>
+    );
+  }
+  if (diff === -1) {
+    return <span className={cn(base, 'rounded-full border-2 border-red-600 text-red-600')}>{golpes}</span>;
+  }
+  if (diff === 1) {
+    return <span className={cn(base, 'border-2 border-blue-600 text-blue-600')}>{golpes}</span>;
+  }
+  if (diff >= 2) {
+    return (
+      <span className="inline-flex items-center justify-center h-7 w-7 border border-blue-600">
+        <span className={cn(base, 'border border-blue-600 text-blue-600')}>{golpes}</span>
+      </span>
+    );
+  }
+  return <span className="font-bold text-foreground">{golpes}</span>;
+};
+
 const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: ScorecardRowProps) => {
   const front9 = scorecard.holes.slice(0, 9);
   const back9 = scorecard.holes.slice(9, 18);
+
+
 
 
   /** Render a 9-hole section adapted to scorecard type */
