@@ -43,6 +43,10 @@ const RankingFinal = () => {
     selectedPlayer?.numjugador ?? null
   );
   const players = rankingData?.players ?? [];
+  const detailEtapas = detail?.etapas ?? [];
+  /** R2 solo se muestra si alguna etapa tiene segunda ronda. */
+  const showR2 = detailEtapas.some((e) => e.rounds?.[1] !== null && e.rounds?.[1] !== undefined);
+
 
   return (
     <Layout>
