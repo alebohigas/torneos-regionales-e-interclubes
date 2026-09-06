@@ -19,13 +19,16 @@ export interface CalendarioGiraClub {
 
 export interface CalendarioGiraEtapa {
   etapa: number;
+  /** Etiqueta cruda del torneo, ej. "ETAPA-3". */
   etapaLabel: string;
+  /** Etiqueta formateada para mostrar, ej. "Etapa-3". */
+  etapaDisplay: string;
   torneoid: number;
   name: string;
   status: string;
   /** Nombres de los campos (sedes) donde se juega la etapa. */
   venues: string[];
-  /** Etiqueta lista para mostrar, ej. "Misiones / Herradura Etapa-1". */
+  /** Nombres de sede concatenados, sin la etiqueta de etapa. */
   sede: string;
   clubs: CalendarioGiraClub[];
   dates: string[];
