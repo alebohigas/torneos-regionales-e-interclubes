@@ -191,8 +191,16 @@ const RankingFinal = () => {
                                                       Etapa
                                                     </TableHead>
                                                     <TableHead className="text-primary-foreground font-bold text-center">
-                                                      Score
+                                                      Lugar
                                                     </TableHead>
+                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                      R1
+                                                    </TableHead>
+                                                    {showR2 && (
+                                                      <TableHead className="text-primary-foreground font-bold text-center">
+                                                        R2
+                                                      </TableHead>
+                                                    )}
                                                     <TableHead className="text-primary-foreground font-bold text-center">
                                                       Total
                                                     </TableHead>
@@ -202,7 +210,7 @@ const RankingFinal = () => {
                                                   </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                  {(detail?.etapas ?? []).map((etapa) => (
+                                                  {detailEtapas.map((etapa) => (
                                                     <TableRow
                                                       key={etapa.torneoid}
                                                       className={
@@ -219,9 +227,17 @@ const RankingFinal = () => {
                                                           {etapa.etapa || etapa.nombre}
                                                         </span>
                                                       </TableCell>
+                                                      <TableCell className="text-center font-semibold">
+                                                        {etapa.lugar ?? '—'}
+                                                      </TableCell>
                                                       <TableCell className="text-center">
                                                         {etapa.rounds?.[0] ?? '—'}
                                                       </TableCell>
+                                                      {showR2 && (
+                                                        <TableCell className="text-center">
+                                                          {etapa.rounds?.[1] ?? '—'}
+                                                        </TableCell>
+                                                      )}
                                                       <TableCell className="text-center font-semibold">
                                                         {etapa.total ?? '—'}
                                                       </TableCell>
@@ -237,7 +253,7 @@ const RankingFinal = () => {
                                                     </TableRow>
                                                   ))}
                                                   <TableRow className="bg-muted hover:bg-muted">
-                                                    <TableCell colSpan={3} className="font-bold text-right">
+                                                    <TableCell colSpan={showR2 ? 5 : 4} className="font-bold text-right">
                                                       Total ranking (mejores 5)
                                                     </TableCell>
                                                     <TableCell className="text-center font-bold text-primary">
@@ -245,6 +261,7 @@ const RankingFinal = () => {
                                                     </TableCell>
                                                   </TableRow>
                                                 </TableBody>
+
                                               </Table>
                                             </div>
 
