@@ -230,31 +230,6 @@ const Salidas = () => {
   /** Currently selected day object */
   const selectedDay: SalidasDay | null = selectedDayIdx !== null ? days[selectedDayIdx] : null;
 
-  /** Fetch the group count for the selected day's single mixed departure. */
-  const categoryGroupQueries = useQueries({
-    queries: selectedDay && !selectedCaljgoid
-      ? selectedDay.categories.map((cat) => ({
-          queryKey: ['salidas-group-count', String(cat.caljgoid), cat.format?.toLowerCase().includes('pareja') ? 'parejas' : 'individual'],
-          queryFn: async () => {
-            const fmt = cat.format?.toLowerCase().includes('pareja') ? 'parejas' : 'individual';
-            const data = await apiFetch<any>(getSalidasDayUrl(String(cat.caljgoid), fmt));
-            const groups = Array.isArray(data?.groups) ? data.groups : [];
-            return { caljgoid: String(cat.caljgoid), groupCount: groups.length };
-          },
-          staleTime: POLL_ACTIVE,
-        }))
-      : [],
-  });
-
-  /** Map caljgoid → group count for quick lookup */
-  const groupCountMap = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    for (const q of categoryGroupQueries) {
-      if (q.data) map[q.data.caljgoid] = q.data.groupCount;
-    }
-    return map;
-  }, [categoryGroupQueries]);
-
   /** A day always opens its single mixed group list directly. */
   const handleDayClick = (dayIdx: number) => {
     const day = days[dayIdx];
@@ -262,12 +237,6 @@ const Salidas = () => {
     setSelectedDayIdx(dayIdx);
     setSelectedCaljgoid(departure ? String(departure.caljgoid) : null);
     setSelectedCatMeta(departure ?? null);
-  };
-
-  /** Handle category click */
-  const handleCategoryClick = (cat: SalidasCategory) => {
-    setSelectedCaljgoid(String(cat.caljgoid));
-    setSelectedCatMeta(cat);
   };
 
   /** Handle back navigation */
