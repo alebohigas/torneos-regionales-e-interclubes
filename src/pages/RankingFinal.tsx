@@ -10,10 +10,10 @@ import PageHero from '@/components/shared/PageHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Trophy, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Trophy, Loader2, Star, ChevronDown } from 'lucide-react';
 import rankingHero from '@/assets/jugadores-hero.jpg';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+
 import {
   useRankingFinalCategories,
   useRankingFinalPlayers,
@@ -128,33 +128,144 @@ const RankingFinal = () => {
                       </TableHeader>
                       <TableBody>
                         {players.length > 0 ? (
-                          players.map((player) => (
-                            <TableRow
-                              key={`${player.numjugador}-${player.position}`}
-                              className="bg-white hover:bg-primary/5 cursor-pointer"
-                              onClick={() => setSelectedPlayer(player)}
-                            >
-                              <TableCell className="text-center font-semibold">{player.position}</TableCell>
-                              <TableCell className="p-1 text-center align-middle">
-                                <img
-                                  src={player.clubLogo}
-                                  alt={player.club || 'Club logo'}
-                                  className="w-auto object-contain rounded inline-block"
-                                  style={{ height: '2.1375rem' }}
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = LOGO_FALLBACK;
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell className="player-name-cell">
-                                <span className="player-name-clamp">{player.name}</span>
-                              </TableCell>
-                              <TableCell className="text-center text-muted-foreground">{player.etapas}</TableCell>
-                              <TableCell className="text-center font-bold text-primary">
-                                {formatPuntos(player.puntos)}
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          players.map((player) => {
+                            const isOpen = selectedPlayer?.numjugador === player.numjugador;
+                            return (
+                              <Fragment key={`${player.numjugador}-${player.position}`}>
+
+                                <TableRow
+                                  key={`${player.numjugador}-${player.position}`}
+                                  className={
+                                    isOpen
+                                      ? 'bg-primary/5 hover:bg-primary/10 cursor-pointer'
+                                      : 'bg-white hover:bg-primary/5 cursor-pointer'
+                                  }
+                                  onClick={() => setSelectedPlayer(isOpen ? null : player)}
+                                >
+                                  <TableCell className="text-center font-semibold">{player.position}</TableCell>
+                                  <TableCell className="p-1 text-center align-middle">
+                                    <img
+                                      src={player.clubLogo}
+                                      alt={player.club || 'Club logo'}
+                                      className="w-auto object-contain rounded inline-block"
+                                      style={{ height: '2.1375rem' }}
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = LOGO_FALLBACK;
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="player-name-cell">
+                                    <span className="player-name-clamp">{player.name}</span>
+                                  </TableCell>
+                                  <TableCell className="text-center text-muted-foreground">{player.etapas}</TableCell>
+                                  <TableCell className="text-center font-bold text-primary">
+                                    <span className="inline-flex items-center gap-1.5">
+                                      {formatPuntos(player.puntos)}
+                                      <ChevronDown
+                                        className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                          isOpen ? 'rotate-180' : ''
+                                        }`}
+                                      />
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+
+                                {isOpen && (
+                                  <TableRow
+                                    key={`${player.numjugador}-detail`}
+                                    className="bg-muted/10 hover:bg-muted/10"
+                                  >
+                                    <TableCell colSpan={5} className="p-0">
+                                      <div className="p-4 border-t border-b border-primary/20">
+                                        {loadingDetail ? (
+                                          <div className="flex justify-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <div className="overflow-x-auto">
+                                              <Table className="bg-white tournament-table">
+                                                <TableHeader>
+                                                  <TableRow className="bg-primary hover:bg-primary">
+                                                    <TableHead className="text-primary-foreground font-bold">
+                                                      Etapa
+                                                    </TableHead>
+                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                      Score
+                                                    </TableHead>
+                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                      Total
+                                                    </TableHead>
+                                                    <TableHead className="text-primary-foreground font-bold text-center">
+                                                      Puntos
+                                                    </TableHead>
+                                                  </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                  {(detail?.etapas ?? []).map((etapa) => (
+                                                    <TableRow
+                                                      key={etapa.torneoid}
+                                                      className={
+                                                        etapa.counted
+                                                          ? 'bg-primary/10 hover:bg-primary/10'
+                                                          : 'bg-white hover:bg-white'
+                                                      }
+                                                    >
+                                                      <TableCell className="font-semibold whitespace-nowrap">
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                          {etapa.counted && (
+                                                            <Star className="h-3.5 w-3.5 text-primary fill-primary" />
+                                                          )}
+                                                          {etapa.etapa || etapa.nombre}
+                                                        </span>
+                                                      </TableCell>
+                                                      <TableCell className="text-center">
+                                                        {etapa.rounds?.[0] ?? '—'}
+                                                      </TableCell>
+                                                      <TableCell className="text-center font-semibold">
+                                                        {etapa.total ?? '—'}
+                                                      </TableCell>
+                                                      <TableCell
+                                                        className={
+                                                          etapa.counted
+                                                            ? 'text-center font-bold text-primary'
+                                                            : 'text-center text-muted-foreground'
+                                                        }
+                                                      >
+                                                        {etapa.played ? formatPuntos(etapa.puntos) : '—'}
+                                                      </TableCell>
+                                                    </TableRow>
+                                                  ))}
+                                                  <TableRow className="bg-muted hover:bg-muted">
+                                                    <TableCell colSpan={3} className="font-bold text-right">
+                                                      Total ranking (mejores 5)
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-bold text-primary">
+                                                      {formatPuntos(detail?.totalPuntos ?? 0)}
+                                                    </TableCell>
+                                                  </TableRow>
+                                                </TableBody>
+                                              </Table>
+                                            </div>
+
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                              Las etapas resaltadas son las que suman al total del ranking. Puntos de
+                                              todas las etapas:{' '}
+                                              <span className="font-semibold">
+                                                {formatPuntos(detail?.totalTodos ?? 0)}
+                                              </span>
+                                              .
+                                            </p>
+                                          </>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </Fragment>
+
+                            );
+                          })
                         ) : (
                           <TableRow>
                             <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
@@ -164,6 +275,7 @@ const RankingFinal = () => {
                           </TableRow>
                         )}
                       </TableBody>
+
                     </Table>
                   )}
                 </div>
@@ -177,81 +289,6 @@ const RankingFinal = () => {
         </div>
       </section>
 
-      {/* ===== Desglose por etapa (reemplaza popup_jugador5top.php) ===== */}
-      <Dialog open={!!selectedPlayer} onOpenChange={(open) => !open && setSelectedPlayer(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-left">
-              {selectedPlayer?.name}
-              {selectedPlayer?.club ? (
-                <span className="block text-sm font-normal text-muted-foreground">{selectedPlayer.club}</span>
-              ) : null}
-            </DialogTitle>
-          </DialogHeader>
-
-          {loadingDetail ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-7 w-7 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table className="bg-white tournament-table">
-                  <TableHeader>
-                    <TableRow className="bg-primary hover:bg-primary">
-                      <TableHead className="text-primary-foreground font-bold">Etapa</TableHead>
-                      <TableHead className="text-primary-foreground font-bold text-center">R1</TableHead>
-                      <TableHead className="text-primary-foreground font-bold text-center">R2</TableHead>
-                      <TableHead className="text-primary-foreground font-bold text-center">Total</TableHead>
-                      <TableHead className="text-primary-foreground font-bold text-center">Puntos</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(detail?.etapas ?? []).map((etapa) => (
-                      <TableRow
-                        key={etapa.torneoid}
-                        className={etapa.counted ? 'bg-primary/10 hover:bg-primary/10' : 'bg-white hover:bg-white'}
-                      >
-                        <TableCell className="font-semibold whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5">
-                            {etapa.counted && <Star className="h-3.5 w-3.5 text-primary fill-primary" />}
-                            {etapa.etapa || etapa.nombre}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">{etapa.rounds?.[0] ?? '—'}</TableCell>
-                        <TableCell className="text-center">{etapa.rounds?.[1] ?? '—'}</TableCell>
-                        <TableCell className="text-center font-semibold">{etapa.total ?? '—'}</TableCell>
-                        <TableCell
-                          className={
-                            etapa.counted
-                              ? 'text-center font-bold text-primary'
-                              : 'text-center text-muted-foreground'
-                          }
-                        >
-                          {etapa.played ? formatPuntos(etapa.puntos) : '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="bg-muted hover:bg-muted">
-                      <TableCell colSpan={4} className="font-bold text-right">
-                        Total ranking (mejores 5)
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-primary">
-                        {formatPuntos(detail?.totalPuntos ?? 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Las etapas resaltadas son las que suman al total del ranking. Puntos de todas las etapas:{' '}
-                <span className="font-semibold">{formatPuntos(detail?.totalTodos ?? 0)}</span>.
-              </p>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 };

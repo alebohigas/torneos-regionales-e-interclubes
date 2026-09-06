@@ -94,9 +94,49 @@ interface ScorecardRowProps {
 }
 
 
+/**
+ * Marca oficial de golf para el score de un hoyo:
+ * - doble círculo rojo: eagle o mejor (-2 o menos)
+ * - círculo rojo: birdie (-1)
+ * - sin marca: par
+ * - cuadro azul: bogey (+1)
+ * - doble cuadro azul: doble bogey o peor (+2 o más)
+ */
+const renderScoreMark = (golpes: number, par: number) => {
+  if (!golpes || !par) {
+    return <span className="font-bold text-foreground">{golpes || ''}</span>;
+  }
+  const diff = golpes - par;
+  const base = 'inline-flex items-center justify-center h-6 w-6 text-xs font-bold leading-none';
+
+  if (diff <= -2) {
+    return (
+      <span className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-red-600">
+        <span className={cn(base, 'rounded-full border border-red-600 text-red-600')}>{golpes}</span>
+      </span>
+    );
+  }
+  if (diff === -1) {
+    return <span className={cn(base, 'rounded-full border-2 border-red-600 text-red-600')}>{golpes}</span>;
+  }
+  if (diff === 1) {
+    return <span className={cn(base, 'border-2 border-blue-600 text-blue-600')}>{golpes}</span>;
+  }
+  if (diff >= 2) {
+    return (
+      <span className="inline-flex items-center justify-center h-7 w-7 border border-blue-600">
+        <span className={cn(base, 'border border-blue-600 text-blue-600')}>{golpes}</span>
+      </span>
+    );
+  }
+  return <span className="font-bold text-foreground">{golpes}</span>;
+};
+
 const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: ScorecardRowProps) => {
   const front9 = scorecard.holes.slice(0, 9);
   const back9 = scorecard.holes.slice(9, 18);
+
+
 
 
   /** Render a 9-hole section adapted to scorecard type */
@@ -127,16 +167,21 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             </td>
           </tr>
 
-          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy */}
+          {/* Fila R: golpes reales de la tarjeta (tarjetas.h1..h18), igual que el legacy.
+              Marcas oficiales de golf: círculo = birdie, doble círculo = eagle o mejor,
+              cuadro = bogey, doble cuadro = doble bogey o peor. */}
           <tr className="bg-muted/30">
             <td className="px-2 py-1 font-semibold text-center text-muted-foreground">R</td>
             {holes.map(h => (
-              <td key={h.hoyo} className="px-2 py-1 text-center font-bold text-foreground">{h.golpes}</td>
+              <td key={h.hoyo} className="px-1 py-1 text-center">
+                {renderScoreMark(h.golpes, h.par)}
+              </td>
             ))}
             <td className="px-2 py-1 text-center font-semibold text-foreground">
               {holes.reduce((s, h) => s + h.golpes, 0)}
             </td>
           </tr>
+
 
         </tbody>
       </table>
@@ -212,19 +257,44 @@ const ScorecardRow = ({ scorecard, playerName, roundLabel, onClose, colSpan }: S
             {renderSection(back9, 'IN')}
           </div>
 
-          {/* Totales: solo Par y R (golpes) */}
-          <div className="flex justify-end items-baseline gap-6 mt-3 text-sm flex-wrap">
-            <span className="text-muted-foreground">
-              Par: <strong className="text-foreground">
-                {scorecard.holes.reduce((s, h) => s + h.par, 0)}
-              </strong>
-            </span>
-            <span className="text-muted-foreground">
-              Total: <strong className="text-foreground font-bold">
-                {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
-              </strong>
-            </span>
+          {/* Leyenda de marcas + Totales: solo Par y R (golpes) */}
+          <div className="flex flex-wrap justify-between items-center gap-3 mt-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-red-600">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full border border-red-600" />
+                </span>
+                Eagle o mejor
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-4 w-4 rounded-full border-2 border-red-600" />
+                Birdie
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-4 w-4 border-2 border-blue-600" />
+                Bogey
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center h-5 w-5 border border-blue-600">
+                  <span className="inline-block h-2.5 w-2.5 border border-blue-600" />
+                </span>
+                Doble bogey o peor
+              </span>
+            </div>
+            <div className="flex items-baseline gap-6 flex-wrap ml-auto">
+              <span className="text-muted-foreground">
+                Par: <strong className="text-foreground">
+                  {scorecard.holes.reduce((s, h) => s + h.par, 0)}
+                </strong>
+              </span>
+              <span className="text-muted-foreground">
+                Total: <strong className="text-foreground font-bold">
+                  {scorecard.holes.reduce((s, h) => s + h.golpes, 0)}
+                </strong>
+              </span>
+            </div>
           </div>
+
 
         </div>
       </TableCell>
