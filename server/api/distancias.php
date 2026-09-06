@@ -90,26 +90,45 @@ foreach ($cats as $cat) {
             }
         }
 
-        // Fallback: CSV en campo_tee (parcampohoyo / yardaje).
-        if (empty($holes)) {
+        // Fallback / complemento: CSV en campo_tee (parcampohoyo / yardaje).
+        $needYardas = empty($holes);
+        if (!$needYardas) {
+            $sum = 0;
+            foreach ($holes as $h) $sum += (int)$h['yardaje'];
+            $needYardas = ($sum <= 0);
+        }
+        if ($needYardas) {
             $ct = query_one($conn, "SELECT parcampohoyo, yardaje FROM campo_tee
                                     WHERE id_campo = $campoId"
                                     . ($teeId > 0 ? " AND id_tee = $teeId" : '') . " LIMIT 1");
             if ($ct) {
                 $pars = dist_csv_ints($ct['parcampohoyo'] ?? '');
                 $yds  = dist_csv_ints($ct['yardaje'] ?? '');
-                $n = max(count($pars), count($yds));
-                for ($i = 0; $i < $n; $i++) {
-                    $holes[] = [
-                        'numero'  => $i + 1,
-                        'par'     => $pars[$i] ?? 0,
-                        'yardaje' => $yds[$i] ?? 0,
-                    ];
+                if (empty($holes)) {
+                    $n = max(count($pars), count($yds));
+                    for ($i = 0; $i < $n; $i++) {
+                        $holes[] = [
+                            'numero'  => $i + 1,
+                            'par'     => $pars[$i] ?? 0,
+                            'yardaje' => $yds[$i] ?? 0,
+                        ];
+                    }
+                } else {
+                    // Conserva los pares de hoyosxsalida y completa las yardas.
+                    foreach ($holes as $i => $h) {
+                        if ((int)$h['yardaje'] <= 0 && isset($yds[$i])) {
+                            $holes[$i]['yardaje'] = (int)$yds[$i];
+                        }
+                        if ((int)$h['par'] <= 0 && isset($pars[$i])) {
+                            $holes[$i]['par'] = (int)$pars[$i];
+                        }
+                    }
                 }
             }
         }
 
         if (empty($holes)) continue;
+
 
         // Recorte por hoyos a jugar (9, 18, etc.).
         $toPlay = (int)($cat['hoyosajugar'] ?? 0);

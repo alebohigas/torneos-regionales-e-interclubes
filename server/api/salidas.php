@@ -84,6 +84,33 @@ if ($tipoSalida === 1) {
 debug_log_query('salidas_master', $sql);
 $rows = query_all($conn, $sql);
 
+// Fallback: algunas giras no usan `estatus = 2` / `cierre = 0` en caljuego.
+// Si el filtro estricto no devuelve días, se repite sin esas condiciones.
+if (empty($rows)) {
+    if ($tipoSalida === 1) {
+        $sqlLoose = "SELECT MIN(c.id) AS caljgoid, c.fecha,
+                        DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
+                        MIN(c.categoriaid) AS categoriaid,
+                        'Salida Unica' AS categoria, 'Salida Unica' AS abreviatura,
+                        '' AS sistema, '' AS formato, '' AS tee,
+                        (SELECT ca.campo FROM campos ca WHERE ca.id = MIN(c.campo)) AS campo_nombre
+                     FROM caljuego c
+                     WHERE c.torneoid = $tid
+                     GROUP BY c.fecha
+                     ORDER BY c.fecha ASC";
+    } else {
+        $sqlLoose = "SELECT $cols
+                     FROM caljuego c
+                     JOIN categorias cat ON (c.categoriaid = cat.categoria_id)
+                     LEFT JOIN campos ca ON (c.campo = ca.id)$join
+                     WHERE c.torneoid = $tid
+                     ORDER BY c.fecha ASC, cat.categoria_id ASC";
+    }
+    debug_log_query('salidas_master_loose', $sqlLoose);
+    $rows = query_all($conn, $sqlLoose);
+}
+
+
 // ============= Group by date =============
 $dayMap = [];
 foreach ($rows as $row) {

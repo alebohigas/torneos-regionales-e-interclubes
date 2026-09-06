@@ -37,18 +37,22 @@ $torneos = query_all(
 );
 
 /**
- * Etiqueta de etapa = primera "palabra" del nombre del torneo
- * ("  ETAPA-3  JUNIOR ..." -> "ETAPA-3"). Tolerante a espacios iniciales,
- * espacios dobles, tabuladores y NBSP.
+ * Etiqueta de etapa a partir del nombre del torneo.
+ * Acepta "ETAPA-3 ...", "Etapa 3 ...", "  etapa_3 ..." → "ETAPA-3".
+ * Si no hay número, devuelve la primera palabra.
  */
 function je_etapa_label($nombre) {
     $n = (string)$nombre;
     $n = str_replace(["\xc2\xa0", "\t", "\r", "\n"], ' ', $n);
     $n = trim(preg_replace('/\s+/', ' ', $n));
     if ($n === '') return '';
+    if (preg_match('/etapa\s*[-_\s]?\s*(\d+[A-Za-z]?)/i', $n, $m)) {
+        return 'ETAPA-' . strtoupper($m[1]);
+    }
     $parts = explode(' ', $n);
     return $parts[0];
 }
+
 
 /** Número contenido en la etiqueta ("ETAPA-3" -> 3); 0 si no hay. */
 function je_etapa_num($label) {
