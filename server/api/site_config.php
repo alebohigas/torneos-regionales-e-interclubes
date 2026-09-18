@@ -379,6 +379,28 @@ function site_config_has_giraid($conn) {
 $hasGiraId = site_config_has_giraid($conn);
 
 /**
+ * Detect whether the `torneoid` column exists (torneo específico configurado en
+ * /admin → Config, dentro de la gira activa). Self-healing: crea la columna
+ * como NULLABLE en el primer uso.
+ */
+function site_config_has_torneoid($conn) {
+    static $hasColumn = null;
+    if ($hasColumn !== null) return $hasColumn;
+    $result = $conn->query("SHOW COLUMNS FROM site_config LIKE 'torneoid'");
+    $hasColumn = $result && $result->num_rows > 0;
+    if (!$hasColumn) {
+        if (@$conn->query("ALTER TABLE site_config ADD COLUMN torneoid INT NULL DEFAULT NULL COMMENT 'Torneo activo (torneo.torneoid) dentro de la gira configurada'")) {
+            $hasColumn = true;
+        } else {
+            error_log('site_config: could not add torneoid column: ' . $conn->error);
+        }
+    }
+    return $hasColumn;
+}
+
+$hasTorneoId = site_config_has_torneoid($conn);
+
+/**
  * Diagnóstico seguro para el guardado de /admin/config → Gira activa.
  * No imprime contraseñas ni hashes; sólo longitudes, presencia de valores,
  * columnas/tablas encontradas y si la contraseña enviada sí valida.
@@ -572,6 +594,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($hasGiraId) {
         $selectFields .= ', giraid';
     }
+    if ($hasTorneoId) {
+        $selectFields .= ', torneoid';
+    }
     if ($hasLiveScoringConfig) {
         $selectFields .= ', live_scoring_config';
     }
@@ -631,6 +656,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'giraid'                => $hasGiraId && $row['giraid'] !== null && $row['giraid'] !== '' ? (int)$row['giraid'] : null,
+            'torneoid'              => $hasTorneoId && isset($row['torneoid']) && $row['torneoid'] !== null && $row['torneoid'] !== '' && (int)$row['torneoid'] > 0 ? (int)$row['torneoid'] : null,
             'menu_order'            => $row['menu_order'] ? json_decode($row['menu_order'], true) : null,
             'visibility'            => $row['visibility'] ? json_decode($row['visibility'], true) : null,
             'menu_groups'           => $row['menu_groups'] ? json_decode($row['menu_groups'], true) : null,
@@ -657,6 +683,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         json_response([
             'domain'                => $_SERVER['HTTP_HOST'],
             'giraid'                => null,
+            'torneoid'              => null,
             'menu_order'            => null,
             'visibility'            => null,
             'menu_groups'           => null,
@@ -735,23 +762,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $insertFields = ['domain'];
     $insertValues = ["'$domain'"];
 
-    // Compatibilidad con instalaciones antiguas: `torneoid` ya no se usa como
-    // eje del sitio, pero si la columna legacy sigue NOT NULL sin DEFAULT,
-    // cualquier INSERT nuevo de `site_config` falla. Sólo se manda 0 al crear
-    // el row del dominio; nunca se actualiza ni se expone como configuración.
-    $legacyTorneoColumn = @$conn->query("SHOW COLUMNS FROM site_config LIKE 'torneoid'");
-    if ($legacyTorneoColumn && $legacyTorneoColumn->num_rows > 0) {
-        $legacyTorneoMeta = $legacyTorneoColumn->fetch_assoc();
-        $legacyTorneoNeedsInsertValue = ($legacyTorneoMeta['Null'] ?? '') === 'NO' && !array_key_exists('Default', $legacyTorneoMeta);
-        if (!$legacyTorneoNeedsInsertValue) {
+    // Si la columna `torneoid` es NOT NULL sin DEFAULT y el cliente no manda un
+    // torneo, cualquier INSERT nuevo del dominio fallaría: se envía 0.
+    if (!array_key_exists('torneoid', $body)) {
+        $legacyTorneoColumn = @$conn->query("SHOW COLUMNS FROM site_config LIKE 'torneoid'");
+        if ($legacyTorneoColumn && $legacyTorneoColumn->num_rows > 0) {
+            $legacyTorneoMeta = $legacyTorneoColumn->fetch_assoc();
             $legacyTorneoNeedsInsertValue = ($legacyTorneoMeta['Null'] ?? '') === 'NO' && ($legacyTorneoMeta['Default'] ?? null) === null;
+            if ($legacyTorneoNeedsInsertValue) {
+                $insertFields[] = 'torneoid';
+                $insertValues[] = '0';
+            }
         }
-        if ($legacyTorneoNeedsInsertValue) {
-            $insertFields[] = 'torneoid';
-            $insertValues[] = '0';
-        }
+        if ($legacyTorneoColumn) $legacyTorneoColumn->free();
     }
-    if ($legacyTorneoColumn) $legacyTorneoColumn->free();
     
     // Gira activa (eje del sitio en el modelo por giras).
     // Si la columna no existe y el usuario MySQL no tiene ALTER, se avisa en
@@ -769,6 +793,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $insertFields[] = 'giraid';
         $insertValues[] = $gid;
     }
+
+    // Torneo específico dentro de la gira (convocatoria, reglas, salidas, etc.)
+    if (array_key_exists('torneoid', $body)) {
+        if (!$hasTorneoId) {
+            site_config_debug_error(
+                "Missing DB column torneoid in site_config. Run: ALTER TABLE site_config ADD COLUMN torneoid INT NULL DEFAULT NULL;",
+                500,
+                site_config_debug_snapshot($conn, $domain, $body)
+            );
+        }
+        $tid = $body['torneoid'] === null || $body['torneoid'] === '' ? 'NULL' : (int)$body['torneoid'];
+        $fields[] = "torneoid = $tid";
+        $insertFields[] = 'torneoid';
+        $insertValues[] = $tid;
+    }
+
+
 
 
     if (array_key_exists('menu_order', $body)) {
@@ -1007,17 +1048,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Relee lo guardado para que el cliente confirme el valor real en BD
     // (evita "guardado" aparente cuando el dominio o la columna no coinciden).
     $savedGiraId = null;
-    if ($hasGiraId) {
-        $check = $conn->query("SELECT giraid FROM site_config WHERE domain = '$domain' LIMIT 1");
+    $savedTorneoId = null;
+    if ($hasGiraId || $hasTorneoId) {
+        $checkCols = [];
+        if ($hasGiraId) $checkCols[] = 'giraid';
+        if ($hasTorneoId) $checkCols[] = 'torneoid';
+        $check = $conn->query("SELECT " . implode(', ', $checkCols) . " FROM site_config WHERE domain = '$domain' LIMIT 1");
         if ($check && ($r = $check->fetch_assoc())) {
-            $savedGiraId = $r['giraid'] !== null ? (int)$r['giraid'] : null;
+            if ($hasGiraId) {
+                $savedGiraId = $r['giraid'] !== null ? (int)$r['giraid'] : null;
+            }
+            if ($hasTorneoId) {
+                $savedTorneoId = ($r['torneoid'] !== null && (int)$r['torneoid'] > 0) ? (int)$r['torneoid'] : null;
+            }
         }
     }
 
     $response = [
-        'domain' => $_SERVER['HTTP_HOST'],
-        'saved'  => true,
-        'giraid' => $savedGiraId,
+        'domain'   => $_SERVER['HTTP_HOST'],
+        'saved'    => true,
+        'giraid'   => $savedGiraId,
+        'torneoid' => $savedTorneoId,
     ];
 
     if ($wantsSaveDebug) {
