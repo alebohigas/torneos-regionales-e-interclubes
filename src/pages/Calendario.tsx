@@ -57,7 +57,7 @@ const Calendario = () => {
       />
 
       <section className="container mx-auto px-4 py-8 md:py-12">
-        <Card className="shadow-card border-border/50 overflow-hidden">
+        <Card className="bg-background shadow-card overflow-hidden">
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
@@ -70,26 +70,22 @@ const Calendario = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm bg-background">
                   <thead>
                     <tr className="bg-primary text-primary-foreground">
-                      <th className="px-4 py-3 text-left font-semibold w-[100px]">Etapa</th>
-                      <th className="px-4 py-3 text-left font-semibold w-[140px]">Club</th>
-                      <th className="px-4 py-3 text-left font-semibold">Sede</th>
-                      <th className="px-4 py-3 text-left font-semibold w-[240px]">Fecha</th>
+                      <th className="px-4 py-3 text-left font-semibold w-[120px]">Etapa</th>
+                      <th className="px-4 py-3 text-left font-semibold w-[180px]">Club</th>
+                      <th className="px-4 py-3 text-left font-semibold">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((etapa) => (
-                      <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0">
+                      <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0 bg-background">
                         <td className="px-4 py-4 align-middle font-semibold text-foreground">
                           {etapa.etapaDisplay || etapa.etapaLabel || '—'}
                         </td>
                         <td className="px-4 py-4 align-middle">
                           <ClubLogos etapa={etapa} />
-                        </td>
-                        <td className="px-4 py-4 align-middle text-foreground">
-                          {etapa.sede || '—'}
                         </td>
                         <td className="px-4 py-4 align-middle text-muted-foreground">
                           {etapa.dateLabel || '—'}
