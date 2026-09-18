@@ -682,6 +682,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'veri
         $vals[] = $autoSent ? '1' : '0';
     }
 
+    /**
+     * Relleno defensivo: en algunos servidores la tabla `registro` tiene
+     * columnas NOT NULL sin DEFAULT (p.ej. reg_genero). Si el formulario no
+     * las manda, MySQL falla con "doesn't have a default value". Aquí
+     * agregamos un valor neutro ('' o 0) para toda columna obligatoria que
+     * no se esté escribiendo y que no sea autoincremental ni timestamp.
+     */
+    $meta = @$conn->query("SHOW COLUMNS FROM registro");
+    if ($meta) {
+        while ($m = $meta->fetch_assoc()) {
+            $name = $m['Field'];
+            if (isset($writtenCols[$name]) || in_array($name, $cols, true)) continue;
+            if (($m['Null'] ?? 'YES') !== 'NO') continue;
+            if ($m['Default'] !== null) continue;
+            if (stripos($m['Extra'] ?? '', 'auto_increment') !== false) continue;
+            $type = strtolower($m['Type'] ?? '');
+            if (strpos($type, 'timestamp') !== false || strpos($type, 'datetime') !== false
+                || strpos($type, 'date') !== false || strpos($type, 'time') !== false
+                || strpos($type, 'blob') !== false || strpos($type, 'text') === 0) {
+                // fechas: usar valor neutro seguro; blobs/text aceptan ''
+                if (strpos($type, 'timestamp') !== false || strpos($type, 'datetime') !== false) {
+                    $writtenCols[$name] = true; $cols[] = $name; $vals[] = 'NOW()';
+                    continue;
+                }
+                if (strpos($type, 'date') !== false) {
+                    $writtenCols[$name] = true; $cols[] = $name; $vals[] = "'1000-01-01'";
+                    continue;
+                }
+            }
+            $isNumeric = preg_match('/^(tinyint|smallint|mediumint|int|bigint|decimal|float|double|year|bit)/', $type) === 1;
+            $writtenCols[$name] = true;
+            $cols[] = $name;
+            $vals[] = $isNumeric ? '0' : "''";
+        }
+        $meta->free();
+    }
+
     $sql = "INSERT INTO registro (" . implode(',', $cols) . ") VALUES (" . implode(',', $vals) . ")";
     if (!$conn->query($sql)) {
         json_error('Failed to save registration: ' . $conn->error, 500);
