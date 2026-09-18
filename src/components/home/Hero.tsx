@@ -117,7 +117,7 @@ const Hero = () => {
             </div>
           )}
 
-          {/* Nombre de la gira */}
+          {/* Nombre del torneo */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-foreground mb-4 animate-fade-in-up animation-delay-100">
             {parsed.rest || 'Golf Tour'}
           </h1>
