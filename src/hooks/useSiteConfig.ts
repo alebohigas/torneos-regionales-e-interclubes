@@ -441,6 +441,8 @@ export interface SiteConfig {
    * agrupa varias copas (`copas.giraid`) y varios torneos (`torneo.giraid`).
    */
   giraid: number | null;
+  /** Torneo específico dentro de la gira (convocatoria, reglas, salidas, etc.). */
+  torneoid: number | null;
   menu_order: Record<string, number> | null;
   visibility: Record<string, boolean> | null;
   menu_groups: any[] | null;
@@ -488,6 +490,8 @@ export interface SaveConfigPayload {
   _debug_save?: boolean;
   /** Gira activa (`gira.giraid`) sobre la que se basa todo el sitio. */
   giraid?: number | null;
+  /** Torneo activo dentro de la gira configurada. */
+  torneoid?: number | null;
   menu_order?: Record<string, number> | null;
   visibility?: Record<string, boolean> | null;
   menu_groups?: any[] | null;
@@ -549,6 +553,7 @@ export interface SaveSiteConfigResult {
   domain: string;
   saved: boolean;
   giraid: number | null;
+  torneoid?: number | null;
   debug?: unknown;
 }
 
@@ -592,13 +597,16 @@ export const useSiteConfig = () => {
     queryFn: async () => {
       const config = await fetchSiteConfig();
 
-      // Esta instalación ya no tiene un torneo global. Borra cualquier valor
-      // heredado para impedir que giraid se reutilice como torneoid.
-      localStorage.removeItem('golf-app-torneo-id');
-
       // Sync giraid (eje del sitio en el modelo por giras).
       if (config.giraid) {
         setStoredGiraId(String(config.giraid));
+      }
+
+      // Sync torneoid: torneo específico configurado dentro de la gira.
+      if (config.torneoid) {
+        setStoredTorneoId(String(config.torneoid));
+      } else {
+        localStorage.removeItem('golf-app-torneo-id');
       }
 
       // Sync menu order
