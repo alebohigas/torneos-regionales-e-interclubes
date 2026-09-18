@@ -31,6 +31,44 @@ if ($file === '' || !preg_match('/^[a-zA-Z0-9_\-\. ]+$/', $file) || strpos($file
 }
 
 $debug = isset($_GET['debug']) && $_GET['debug'] == '1';
+$scan  = isset($_GET['scan'])  && $_GET['scan']  == '1';
+
+// ============= Scan mode =============
+// /api/logo.php?scan=1  → lists every "logos*" folder found near the site so we
+// can discover where the images actually live on this hosting account.
+if ($scan) {
+    header('Content-Type: application/json');
+    $roots = array_values(array_unique(array_filter([
+        __DIR__,
+        dirname(__DIR__),
+        dirname(dirname(__DIR__)),
+        !empty($_SERVER['DOCUMENT_ROOT']) ? rtrim($_SERVER['DOCUMENT_ROOT'], '/') : null,
+        !empty($_SERVER['DOCUMENT_ROOT']) ? dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')) : null,
+    ])));
+    $report = [];
+    foreach ($roots as $root) {
+        $entry = ['root' => $root, 'readable' => is_dir($root) && is_readable($root), 'dirs' => []];
+        if ($entry['readable']) {
+            foreach ((array)@scandir($root) as $name) {
+                if ($name === '.' || $name === '..') continue;
+                $p = $root . '/' . $name;
+                if (!is_dir($p)) continue;
+                $item = ['name' => $name];
+                // Look one level deeper for a "logos" folder and sample files.
+                foreach (['logos', 'logos_patrocinadores'] as $sub) {
+                    if (is_dir($p . '/' . $sub)) {
+                        $files = array_slice(array_values(array_diff((array)@scandir($p . '/' . $sub), ['.', '..'])), 0, 5);
+                        $item[$sub] = ['path' => $p . '/' . $sub, 'sample' => $files];
+                    }
+                }
+                $entry['dirs'][] = $item;
+            }
+        }
+        $report[] = $entry;
+    }
+    echo json_encode(['scan' => $report], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
 
 // ============= Build candidate local paths =============
 $apiDir  = __DIR__;                 // .../<docroot>/api

@@ -1,81 +1,145 @@
 <?php
 /**
  * Tournament Info Endpoint
- * GET /api/tournament.php?torneoid=XXX
- * Returns tournament details and statistics
+ * GET /api/tournament.php?torneoid=XXX[&debug=1]
+ *
+ * Schema-tolerant version: works both with the legacy `torneos` database and
+ * the reduced `golftour` database, where some columns/tables (clubs, logo,
+ * imagen_gif, telefono, ...) may not exist.
+ *
+ * Returns tournament details, its logos (served through /api/logo.php) and
+ * best-effort statistics. Any sub-query that fails is skipped instead of
+ * breaking the whole endpoint.
  */
 require_once 'config.php';
 
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
+$debug = isset($_GET['debug']) && $_GET['debug'] == '1';
+$diag = ['torneoid' => $torneoid, 'notes' => []];
 
-// Tournament info
-$sql = "SELECT a.torneo_id, a.nombre, a.fecha_ini, a.fecha_fin, a.status,
-               a.logo, a.formato, a.estilo, a.sistemajuego, a.tipotorneo,
-               a.color_cinta, a.imagen_gif, a.telefono, a.correotorne,
-               a.logo_fondo, a.logo_header,
-               b.nombre as club, b.logo as club_logo, b.ciudad, b.estado
-        FROM torneo a
-        JOIN clubs b ON (a.club_id = b.id)
-        WHERE a.torneo_id = $tid";
+/** True when the given table exists in the current database. */
+function tbl_exists($conn, $table) {
+    $t = str_replace('`', '', $table);
+    $res = @mysqli_query($conn, "SHOW TABLES LIKE '" . mysqli_real_escape_string($conn, $t) . "'");
+    if (!$res) return false;
+    $exists = mysqli_num_rows($res) > 0;
+    mysqli_free_result($res);
+    return $exists;
+}
 
-$torneo = query_one($conn, $sql);
+// ============= Columns available on `torneo` =============
+$wanted = [
+    'torneo_id', 'nombre', 'fecha_ini', 'fecha_fin', 'status', 'logo', 'formato',
+    'estilo', 'sistemajuego', 'tipotorneo', 'color_cinta', 'imagen_gif',
+    'telefono', 'correotorne', 'logo_fondo', 'logo_header', 'club_id', 'giraid',
+];
+$cols = [];
+foreach ($wanted as $c) {
+    if (api_column_exists($conn, 'torneo', $c)) $cols[] = $c;
+}
+if (!in_array('torneo_id', $cols, true)) {
+    json_error('Tabla torneo sin columna torneo_id', 500);
+}
+$diag['torneo_columns'] = $cols;
+
+$select = [];
+foreach ($cols as $c) $select[] = "a.`$c`";
+$torneo = query_one($conn, 'SELECT ' . implode(', ', $select) . " FROM torneo a WHERE a.torneo_id = $tid");
 if (!$torneo) {
-    json_error('Tournament not found', 404);
+    json_error('Tournament not found', 404, $diag);
 }
 
-// Total historical players across all tournaments for this club
-$sql = "SELECT SUM(j.total) as total
-        FROM (SELECT COUNT(*) as total FROM jugadores 
-              WHERE torneoid IN (SELECT torneo_id FROM torneo WHERE club_id = (SELECT club_id FROM torneo WHERE torneo_id = $tid))
-              GROUP BY torneoid) j";
-$allPlayersStats = query_one($conn, $sql);
+// ============= Club / sede info (optional) =============
+$club = ['nombre' => '', 'logo' => null, 'ciudad' => '', 'estado' => ''];
+$clubTable = null;
+if (!empty($torneo['club_id'])) {
+    foreach (['clubs', 'campos'] as $cand) {
+        if (tbl_exists($conn, $cand)) { $clubTable = $cand; break; }
+    }
+}
+if ($clubTable) {
+    $idCol = api_first_existing_column($conn, $clubTable, ['id', 'campo_id', 'club_id']);
+    $nameCol = api_first_existing_column($conn, $clubTable, ['nombre', 'campo', 'name']);
+    $logoCol = api_first_existing_column($conn, $clubTable, ['logo', 'logotipo']);
+    $cityCol = api_first_existing_column($conn, $clubTable, ['ciudad']);
+    $stateCol = api_first_existing_column($conn, $clubTable, ['estado']);
+    if ($idCol && $nameCol) {
+        $cid = esc($conn, $torneo['club_id']);
+        $parts = ["`$nameCol` AS nombre"];
+        if ($logoCol)  $parts[] = "`$logoCol` AS logo";
+        if ($cityCol)  $parts[] = "`$cityCol` AS ciudad";
+        if ($stateCol) $parts[] = "`$stateCol` AS estado";
+        $row = query_one($conn, 'SELECT ' . implode(', ', $parts) . " FROM `$clubTable` WHERE `$idCol` = $cid");
+        if ($row) $club = array_merge($club, $row);
+    }
+    $diag['club_table'] = $clubTable;
+} else {
+    $diag['notes'][] = 'Sin tabla de clubes/campos o torneo sin club_id';
+}
 
-// Years of history: calculate from min/max fecha_ini for same club_id
-$sql = "SELECT MIN(YEAR(fecha_ini)) as min_year, MAX(YEAR(fecha_ini)) as max_year
-        FROM torneo
-        WHERE club_id = (SELECT club_id FROM torneo WHERE torneo_id = $tid)";
-$yearStats = query_one($conn, $sql);
+/** Build the proxied logo URL from a stored file name (may be empty). */
+function logo_url($value) {
+    global $LOGOS_BASE_URL;
+    $value = trim((string)$value);
+    if ($value === '') return null;
+    // Keep only the file name; DB rows sometimes include folder prefixes.
+    $value = basename(str_replace('\\', '/', $value));
+    return $LOGOS_BASE_URL . rawurlencode($value);
+}
+
+// ============= Best-effort statistics =============
+$totalHistorical = 0;
 $yearsHistory = 0;
-if ($yearStats && $yearStats['min_year'] && $yearStats['max_year']) {
-    $yearsHistory = (int)$yearStats['max_year'] - (int)$yearStats['min_year'];
+$maxCategorias = 0;
+if (!empty($torneo['club_id']) && api_column_exists($conn, 'torneo', 'club_id')) {
+    $row = query_one($conn, "SELECT MIN(YEAR(fecha_ini)) AS min_year, MAX(YEAR(fecha_ini)) AS max_year
+                             FROM torneo WHERE club_id = (SELECT club_id FROM torneo WHERE torneo_id = $tid)");
+    if ($row && $row['min_year'] && $row['max_year']) {
+        $yearsHistory = (int)$row['max_year'] - (int)$row['min_year'];
+    }
 }
-// Round down to nearest multiple of 2
-$yearsHistoryRounded = (int)(floor($yearsHistory / 2) * 2);
+if (tbl_exists($conn, 'categorias') && api_column_exists($conn, 'categorias', 'torneo_id')) {
+    $row = query_one($conn, "SELECT COUNT(*) AS total FROM categorias WHERE torneo_id = $tid");
+    $maxCategorias = (int)($row['total'] ?? 0);
+}
+if (tbl_exists($conn, 'jugadores') && api_column_exists($conn, 'jugadores', 'torneoid')) {
+    $row = query_one($conn, "SELECT COUNT(*) AS total FROM jugadores WHERE torneoid = $tid");
+    $totalHistorical = (int)($row['total'] ?? 0);
+}
 
-// Max categories in any single tournament for this club
-$sql = "SELECT MAX(x.categorias_por_torneo) AS max_categorias
-        FROM (SELECT t.torneo_id, COUNT(c.categoria_id) AS categorias_por_torneo
-              FROM torneo t
-              JOIN categorias c ON c.torneo_id = t.torneo_id
-              WHERE t.club_id = (SELECT club_id FROM torneo WHERE torneo_id = $tid)
-              GROUP BY t.torneo_id) AS x";
-$maxCatStats = query_one($conn, $sql);
-
-json_response([
+$payload = [
     'id'          => $torneo['torneo_id'],
-    'name'        => $torneo['nombre'],
-    'club'        => $torneo['club'],
-    'clubLogo'    => $torneo['club_logo'] ? $LOGOS_BASE_URL . $torneo['club_logo'] : null,
-    'logo'        => $torneo['logo'] ? $LOGOS_BASE_URL . $torneo['logo'] : null,
-    'startDate'   => $torneo['fecha_ini'],
-    'endDate'     => $torneo['fecha_fin'],
-    'status'      => $torneo['status'],
-    'format'      => $torneo['formato'],
-    'style'       => $torneo['estilo'],
-    'system'      => $torneo['sistemajuego'],
-    'type'        => $torneo['tipotorneo'],
-    'ribbonColor' => $torneo['color_cinta'],
-    'heroImage'   => $torneo['logo_fondo'] ? $LOGOS_BASE_URL . $torneo['logo_fondo'] : ($torneo['imagen_gif'] ? $LOGOS_BASE_URL . $torneo['imagen_gif'] : null),
-    'logoHeader'  => $torneo['logo_header'] ? $LOGOS_BASE_URL . $torneo['logo_header'] : null,
+    'name'        => $torneo['nombre'] ?? '',
+    'club'        => $club['nombre'] ?? '',
+    'clubLogo'    => logo_url($club['logo'] ?? ''),
+    'logo'        => logo_url($torneo['logo'] ?? ''),
+    'startDate'   => $torneo['fecha_ini'] ?? null,
+    'endDate'     => $torneo['fecha_fin'] ?? null,
+    'status'      => $torneo['status'] ?? '',
+    'format'      => $torneo['formato'] ?? '',
+    'style'       => $torneo['estilo'] ?? '',
+    'system'      => $torneo['sistemajuego'] ?? '',
+    'type'        => $torneo['tipotorneo'] ?? '',
+    'ribbonColor' => $torneo['color_cinta'] ?? '',
+    'heroImage'   => logo_url($torneo['logo_fondo'] ?? '') ?: logo_url($torneo['imagen_gif'] ?? ''),
+    'logoHeader'  => logo_url($torneo['logo_header'] ?? ''),
     'phone'       => $torneo['telefono'] ?? '',
     'email'       => $torneo['correotorne'] ?? '',
-    'city'        => $torneo['ciudad'] ?? '',
-    'state'       => $torneo['estado'] ?? '',
+    'city'        => $club['ciudad'] ?? '',
+    'state'       => $club['estado'] ?? '',
     'stats' => [
-        'totalHistoricalPlayers' => (int)($allPlayersStats['total'] ?? 0),
+        'totalHistoricalPlayers' => $totalHistorical,
         'yearsHistory'           => $yearsHistory,
-        'yearsHistoryRounded'    => $yearsHistoryRounded,
-        'maxCategories'          => (int)($maxCatStats['max_categorias'] ?? 0),
-    ]
-]);
+        'yearsHistoryRounded'    => (int)(floor($yearsHistory / 2) * 2),
+        'maxCategories'          => $maxCategorias,
+    ],
+];
+
+if ($debug) {
+    $diag['raw_logo_fondo']  = $torneo['logo_fondo'] ?? null;
+    $diag['raw_logo_header'] = $torneo['logo_header'] ?? null;
+    $payload['_debug'] = $diag;
+}
+
+json_response($payload);

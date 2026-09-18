@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
 import { useGiraInfo } from '@/hooks/useGiraData';
+import { useTournamentInfo } from '@/hooks/useTournamentData';
 import heroImage from '@/assets/competicion-hero.jpg';
 
 /** Regex to match leading Roman numerals (I, V, X, L, C, D, M) */
@@ -38,6 +39,9 @@ const Hero = () => {
    * `uso = 0` la gira ya terminó y se muestra el aviso "COPA TERMINADA".
    */
   const { data: gira } = useGiraInfo();
+  /** Torneo activo: su logo_fondo se usa como imagen del hero cuando existe. */
+  const { data: tournament } = useTournamentInfo();
+  const backgroundImage = tournament?.heroImageUrl || heroImage;
 
   /**
    * Resuelve un slot del hero:
@@ -94,7 +98,7 @@ const Hero = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('${heroImage}')`,
+          backgroundImage: `url('${backgroundImage}')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-golf-dark/70 via-golf-dark/50 to-golf-dark/80" />
