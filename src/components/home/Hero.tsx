@@ -35,11 +35,11 @@ const parseTournamentName = (name: string) => {
 const Hero = () => {
   const { data: siteConfig } = useSiteConfig();
   /**
-   * Gira activa (eje del sitio). Su nombre es el título del hero; cuando
-   * `uso = 0` la gira ya terminó y se muestra el aviso "COPA TERMINADA".
+   * Gira activa (eje del sitio). Cuando `uso = 0` la gira ya terminó y se
+   * muestra el aviso "COPA TERMINADA".
    */
   const { data: gira } = useGiraInfo();
-  /** Torneo activo: su logo_fondo se usa como imagen del hero cuando existe. */
+  /** Torneo activo: su nombre es el título del hero y su logo_fondo la imagen. */
   const { data: tournament } = useTournamentInfo();
   const backgroundImage = tournament?.heroImageUrl || heroImage;
 
@@ -74,9 +74,10 @@ const Hero = () => {
   const slot2 = resolveSlot(cfg2, fallback2);
 
   /**
-   * Título del hero: nombre de la GIRA configurada.
+   * Título del hero: nombre del TORNEO configurado.
+   * Respaldo al nombre de la gira si aún no hay torneo.
    */
-  const heroName = gira?.name || '';
+  const heroName = tournament?.name || gira?.name || '';
   /** Gira terminada => aviso público "COPA TERMINADA". */
   const giraFinished = !!gira && gira.uso === 0;
 
@@ -85,7 +86,7 @@ const Hero = () => {
     ? parseTournamentName(heroName)
     : { roman: '', rest: '' };
 
-  /** Set document/tab title dynamically from the active gira. */
+  /** Set document/tab title dynamically from the active tournament. */
   useEffect(() => {
     if (heroName) {
       document.title = heroName;
