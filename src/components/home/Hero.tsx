@@ -1,8 +1,8 @@
 /**
  * Hero Section
- * Displays the active gira name and status.
- * 
- * Gira names may follow the pattern: "XLVI TORNEO ANUAL SEMANA SANTA"
+ * Displays the active tournament name and status.
+ *
+ * Tournament names may follow the pattern: "XLVI TORNEO ANUAL SEMANA SANTA"
  * - Roman numeral prefix is displayed large in gold (secondary)
  * - Remaining name is displayed as h1 below
  * - Document title is also set dynamically
