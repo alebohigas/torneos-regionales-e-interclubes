@@ -1344,21 +1344,19 @@ const Registro = () => {
      * VENTANA DE REGISTRO PREFERENTE
      * ---------------------------------------------------------------
      * Si el servidor reporta `active_now = true`, sólo permitimos el
-     * envío si el jugador declaró ser socio (`reg_es_socio = SI`) Y el
-     * club seleccionado está en la lista `allowed_club_ids` con ventana
-     * vigente hoy. En caso contrario, bloqueamos con un toast.
+     * envío si el club seleccionado está en la lista `allowed_club_ids`
+     * con ventana vigente hoy. En caso contrario, bloqueamos con un toast.
      */
     if (preferenteCfg?.active_now) {
-      const isSocio = values.reg_es_socio === 'SI';
       const typedClub = (values.reg_club || '').trim().toLowerCase();
       const chosen = socioClubs.find(c => c.nombre.trim().toLowerCase() === typedClub);
       const allowedIds = preferenteCfg.allowed_club_ids || [];
       const clubAllowed = !!chosen && allowedIds.includes(chosen.id);
-      if (!isSocio || !clubAllowed) {
+      if (!clubAllowed) {
         toast({
           title: 'Registro preferente activo',
           description:
-            'En este momento sólo pueden pre-registrarse socios de los clubes autorizados. ' +
+            'En este periodo únicamente pueden pre-registrarse jugadores de los clubes autorizados. ' +
             'Si consideras que esto es un error, indícalo en el campo "Notas adicionales".',
           variant: 'destructive',
         });
@@ -2187,14 +2185,14 @@ const Registro = () => {
                   <form key={formInstanceKey} onSubmit={onSubmit} className="space-y-8">
                     {/* Banner: ventana de registro preferente activa.
                         Informa al jugador antes de que llene el formulario
-                        que sólo socios de clubes autorizados pueden
+                        que únicamente jugadores de clubes autorizados pueden
                         pre-registrarse ahora. */}
                     {preferenteCfg?.active_now && (
                       <div className="rounded-md border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-900 dark:text-amber-200">
                         <strong>Registro preferente activo.</strong> En este periodo únicamente
-                        pueden pre-registrarse los socios de los clubes autorizados por el
-                        comité. Al terminar el rango preferente, el registro se abrirá al
-                        público general.
+                        pueden pre-registrarse los jugadores de los clubes autorizados por el
+                        comité. Al terminar el rango preferente, el registro se abrirá a los
+                        demás clubes afiliados.
                       </div>
                     )}
                     {(() => {
