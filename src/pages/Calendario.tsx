@@ -23,14 +23,14 @@ const ClubLogos = ({ etapa }: { etapa: CalendarioGiraEtapa }) => {
   if (logos.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1 md:gap-2">
       {logos.map((club) => (
         <img
           key={club.clubId}
           src={club.logo}
           alt={club.name || 'Club'}
           title={club.name}
-          className="h-10 w-auto max-w-[96px] object-contain bg-white p-0.5"
+          className="h-7 md:h-9 w-auto max-w-[56px] md:max-w-[72px] object-contain bg-white p-0.5"
           loading="lazy"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
