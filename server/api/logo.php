@@ -127,6 +127,31 @@ foreach ($candidates as $path) {
     if ($exists) { $found = $path; break; }
 }
 
+/*
+ * Case-insensitive retry: Linux is case sensitive but the DB may store
+ * "mty_e1_2627.jpg" while the real file is "mty_e1_2627.JPG".
+ */
+if ($found === null) {
+    $wanted = strtolower($file);
+    $seenDirs = [];
+    foreach ($candidates as $path) {
+        $dir = dirname($path);
+        if (isset($seenDirs[$dir]) || !is_dir($dir)) continue;
+        $seenDirs[$dir] = true;
+        foreach ((array)@scandir($dir) as $name) {
+            if ($name === '.' || $name === '..') continue;
+            if (strtolower($name) === $wanted) {
+                $candidate = $dir . '/' . $name;
+                if (is_file($candidate) && is_readable($candidate)) {
+                    $found = $candidate;
+                    $tried[] = ['path' => $candidate, 'exists' => true, 'ci' => true];
+                    break 2;
+                }
+            }
+        }
+    }
+}
+
 // ============= Detect content type =============
 $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 $mimeTypes = [
