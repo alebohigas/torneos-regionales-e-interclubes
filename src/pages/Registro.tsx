@@ -1794,7 +1794,18 @@ const Registro = () => {
        * usa "SIN CLUB" (clubid 770042).
        */
       const isSocio = values.reg_es_socio === 'SI';
-      const listOptions = isSocio && socioClubs.length > 0 ? socioClubs : clubs;
+      let listOptions = isSocio && socioClubs.length > 0 ? socioClubs : clubs;
+      /**
+       * Durante la ventana de Registro Preferente solo se ofrecen los
+       * clubes autorizados vigentes (allowed_club_ids). Fuera de la
+       * ventana se muestra el catálogo completo.
+       */
+      if (preferenteCfg?.active_now) {
+        const allowed = new Set((preferenteCfg.allowed_club_ids || []).map(Number));
+        if (allowed.size > 0) {
+          listOptions = listOptions.filter(c => allowed.has(Number(c.id)));
+        }
+      }
       const currentClub = values[name] || '';
       return (
         <div className="space-y-2" key={name}>
@@ -2199,7 +2210,7 @@ const Registro = () => {
                       // Group enabled fields by section while preserving order.
                       const order: Array<{ key: string; title: string }> = [
                         { key: 'basica',      title: 'Información básica' },
-                        { key: 'socios',      title: '¿Eres socio?' },
+                        { key: 'socios',      title: '¿Cuál es tu Club de procedencia?' },
                         { key: 'adicionales', title: 'Información adicional' },
                       ];
                       const grouped: Record<string, typeof visibleFields> = {};
