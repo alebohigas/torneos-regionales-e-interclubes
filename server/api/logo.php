@@ -92,6 +92,31 @@ if (!empty($_SERVER['DOCUMENT_ROOT'])) {
     $candidates[] = $dr . '/alien_golftour/logos/' . $file;
 }
 
+/*
+ * Generic discovery: walk up the directory tree (both the real path and the
+ * DOCUMENT_ROOT variant, which on IONOS may carry a /kunden prefix) and look
+ * for ANY "*\/logos" folder, not just "alien_golftour/logos".
+ */
+$bases = array_filter([
+    $apiDir,
+    $docroot,
+    $parent,
+    dirname($parent),
+    !empty($_SERVER['DOCUMENT_ROOT']) ? rtrim($_SERVER['DOCUMENT_ROOT'], '/') : null,
+    !empty($_SERVER['DOCUMENT_ROOT']) ? dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')) : null,
+    !empty($_SERVER['DOCUMENT_ROOT']) ? dirname(dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/'))) : null,
+]);
+
+foreach ($bases as $base) {
+    $candidates[] = $base . '/logos/' . $file;
+    foreach ((array)@glob($base . '/*/logos', GLOB_ONLYDIR) as $dir) {
+        $candidates[] = $dir . '/' . $file;
+    }
+    foreach ((array)@glob($base . '/*/*/logos', GLOB_ONLYDIR) as $dir) {
+        $candidates[] = $dir . '/' . $file;
+    }
+}
+
 $candidates = array_values(array_unique($candidates));
 
 $found = null;
