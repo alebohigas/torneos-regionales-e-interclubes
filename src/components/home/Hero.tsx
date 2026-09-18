@@ -39,6 +39,9 @@ const Hero = () => {
    * `uso = 0` la gira ya terminó y se muestra el aviso "COPA TERMINADA".
    */
   const { data: gira } = useGiraInfo();
+  /** Torneo activo: su logo_fondo se usa como imagen del hero cuando existe. */
+  const { data: tournament } = useTournamentInfo();
+  const backgroundImage = tournament?.heroImageUrl || heroImage;
 
   /**
    * Resuelve un slot del hero:

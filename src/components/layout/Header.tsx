@@ -18,6 +18,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Shield, ChevronDown, MoreHorizontal, EyeOff } from 'lucide-react';
 import { useGiraInfo } from '@/hooks/useGiraData';
+import { useTournamentInfo } from '@/hooks/useTournamentData';
 import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
 import { formatEtapaLabel } from '@/lib/etapaLabel';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
