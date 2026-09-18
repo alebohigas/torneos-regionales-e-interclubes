@@ -239,6 +239,8 @@ const DesktopNavSection = ({
 
 const Header = () => {
   const { data: gira } = useGiraInfo();
+  /** Torneo activo: aporta logo_header para la cintilla superior. */
+  const { data: tournament } = useTournamentInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   /** Sub-grupo (etapa) abierto dentro del menú móvil de GIRA */
@@ -646,12 +648,21 @@ const Header = () => {
         */}
         {/* Mobile min-h reduced ~5% (7rem → 6.65rem) to match smaller logo. */}
         <div className="flex items-center justify-between min-h-[6.65rem] md:min-h-[6.5rem] py-3 md:py-2">
-          {/* Logo */}
+          {/* Logo: imagen del torneo activo (torneo.logo_header) con respaldo al nombre de la gira */}
           <div ref={logoRef} className="flex-shrink-0 overflow-visible">
             <Link to="/" className="flex items-center gap-3 overflow-visible">
-              <div className="flex min-h-12 max-w-[13.3rem] items-center rounded-lg px-3 py-2 font-display text-sm font-bold uppercase text-primary md:max-w-[16rem] md:text-base">
-                {gira?.name || 'Golf Tour'}
-              </div>
+              {tournament?.logoHeaderUrl ? (
+                <img
+                  src={tournament.logoHeaderUrl}
+                  alt={gira?.name || 'Golf Tour'}
+                  className="h-20 w-auto max-w-[13.3rem] object-contain md:h-24 md:max-w-[18rem]"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <div className="flex min-h-12 max-w-[13.3rem] items-center rounded-lg px-3 py-2 font-display text-sm font-bold uppercase text-primary md:max-w-[16rem] md:text-base">
+                  {gira?.name || 'Golf Tour'}
+                </div>
+              )}
             </Link>
           </div>
 

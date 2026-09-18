@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
 import { menuConfig } from '@/data/mockData';
 import { useGiraInfo } from '@/hooks/useGiraData';
+import { useTournamentInfo } from '@/hooks/useTournamentData';
 import heroImage from '@/assets/competicion-hero.jpg';
 
 /** Regex to match leading Roman numerals (I, V, X, L, C, D, M) */
