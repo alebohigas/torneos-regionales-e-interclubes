@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Save, CalendarRange, Search } from 'lucide-react';
+import { Loader2, Save, CalendarRange, Search, RotateCcw } from 'lucide-react';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { useToast } from '@/hooks/use-toast';
 import { useRegistroPreferente, useSaveRegistroPreferente, type PreferenteClub } from '@/hooks/useRegistroPreferente';
@@ -131,6 +131,25 @@ const AdminRegistroPreferente = () => {
     });
   };
 
+  /**
+   * resetFechas
+   * Limpia el rango global y las fechas individuales de cada club
+   * autorizado. No borra la selección de clubes; el cambio se aplica
+   * al guardar.
+   */
+  const resetFechas = () => {
+    setFechaInicio('');
+    setFechaFin('');
+    setSelected(prev => {
+      const next: Record<number, EditRow> = {};
+      Object.values(prev).forEach(r => {
+        next[r.id] = { ...r, fecha_inicio: '', fecha_fin: '' };
+      });
+      return next;
+    });
+    toast({ title: 'Fechas reiniciadas', description: 'Presiona Guardar para aplicar los cambios.' });
+  };
+
   /** POST the whole config. */
   const onSave = () => {
     if (!torneoId) {
@@ -198,7 +217,7 @@ const AdminRegistroPreferente = () => {
             </div>
 
             {/* Rango global */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-1.5">
                 <Label htmlFor="fi">Fecha inicio (global)</Label>
                 <Input id="fi" type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} />
@@ -212,6 +231,18 @@ const AdminRegistroPreferente = () => {
                 <Label htmlFor="same" className="cursor-pointer">
                   Todos los clubes usan el mismo rango
                 </Label>
+              </div>
+              {/* Limpia el rango global y las fechas por club (requiere Guardar) */}
+              <div className="pt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetFechas}
+                  className="gap-2 bg-primary/10 hover:bg-primary/20 border-primary/20"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Resetear fechas
+                </Button>
               </div>
             </div>
 
