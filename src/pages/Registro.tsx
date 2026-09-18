@@ -2210,7 +2210,7 @@ const Registro = () => {
                       // Group enabled fields by section while preserving order.
                       const order: Array<{ key: string; title: string }> = [
                         { key: 'basica',      title: 'Información básica' },
-                        { key: 'socios',      title: '¿Eres socio?' },
+                        { key: 'socios',      title: '¿Cuál es tu Club de procedencia?' },
                         { key: 'adicionales', title: 'Información adicional' },
                       ];
                       const grouped: Record<string, typeof visibleFields> = {};
