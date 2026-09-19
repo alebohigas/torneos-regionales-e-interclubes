@@ -197,7 +197,7 @@ const Historial = () => {
                 className="gap-2 bg-primary/10 hover:bg-primary/20"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver a años
+                Volver a temporadas
               </Button>
               <h2 className="text-2xl font-bold text-foreground mt-6 text-center">
                 {selected.label || `Resultados ${selected.year}`}
