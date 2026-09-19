@@ -1058,7 +1058,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $fields[] = "r.$torneoCol AS torneoid";
     $optional = [
         'reg_nombre','reg_apellido','reg_correo','reg_telefono','reg_handicap',
-        'reg_categoria','reg_sexo','reg_fechanac','reg_es_socio','reg_tipo_socio',
+        'reg_categoria','reg_sexo','reg_fechanac','reg_fecnac','reg_es_socio','reg_tipo_socio',
         'reg_club','reg_ghin','reg_pais','reg_estado','reg_ciudad','reg_notas',
         'reg_fecha','created_at','fecha_alta','reg_archivo_nombre',
         // Cargo a cuenta de socio
@@ -1072,7 +1072,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Tallas (optional columns)
         'reg_talla_gorra',
         // Canonical / akron columns
-        'reg_genero','reg_celular','reg_mensaje','numghinspei','reg_spei',
+        'reg_genero','reg_celular','reg_celuular','reg_celtutor','reg_mensaje','numghinspei','reg_spei',
         'reg_direccion','reg_cp','reg_id_club','reg_cargo',
         'akron_edad','akron_talla','akron_talla_guante','akron_calzado',
         'akron_codigo','akron_monto_pago',
