@@ -6,7 +6,7 @@
  * bordes finos en todas las celdas, números alineados a la izquierda y
  * tipografía tabular.
  *
- * Se reutiliza en /reglas, /convocatoria y /admin (Convocatoria) para
+ * Se reutiliza en /reglas, /convocatoria y /admin (Bases) para
  * garantizar el MISMO formato en todas las páginas.
  *
  * Props:

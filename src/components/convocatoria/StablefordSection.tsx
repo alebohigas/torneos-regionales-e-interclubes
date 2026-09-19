@@ -5,7 +5,7 @@
  * leídos de la base de datos (`torneos.valorstable`, filtrada por
  * `torneoid`) mediante el hook `useValorStable`.
  *
- * Visibilidad: se controla desde /admin → "Secciones de Convocatoria"
+ * Visibilidad: se controla desde /admin → "Secciones de Bases"
  * (sección `stableford`), igual que el resto de las secciones.
  * Si la BD no tiene fila para el torneo, la sección se auto-oculta.
  */

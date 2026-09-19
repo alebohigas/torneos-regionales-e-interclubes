@@ -11,7 +11,7 @@
  * Folders auto-scanned (eager glob, so URLs are resolved at build):
  *   - src/assets/eventos/       → Eventos page (AtraccionesSection)
  *   - src/assets/avisos/        → Avisos page (AvisosPostersSection)
- *   - src/assets/convocatoria/  → Convocatoria page (reserved)
+ *   - src/assets/convocatoria/  → Bases page (reserved)
  *
  * Ordering rules:
  *   - Files are returned in **case-insensitive alphabetical order**
@@ -150,7 +150,7 @@ export const HOTELES_POSTERS: DiscoveredPoster[] = buildPosterList(
 );
 
 /**
- * All Convocatoria posters discovered under `src/assets/convocatoria/`.
+ * All Bases posters discovered under `src/assets/convocatoria/`.
  * Reserved for future use — the Convocatoria page does not currently
  * render a poster grid, but the folder is wired up so editors can drop
  * imagery in without code changes if/when needed.

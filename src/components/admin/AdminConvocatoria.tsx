@@ -144,7 +144,7 @@ const AdminConvocatoria = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-primary" />
-          Secciones de Convocatoria
+          Secciones de Bases
         </CardTitle>
         <CardDescription>
           Arrastra para reordenar, activa/desactiva secciones y edita el contenido.

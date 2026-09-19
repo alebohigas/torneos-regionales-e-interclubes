@@ -24,7 +24,7 @@ export interface HeroPageDef {
 
 export const HERO_PAGES: HeroPageDef[] = [
   { path: '/', label: 'Inicio', aiPrompt: 'Campo de golf al amanecer con fairway impecable y neblina baja' },
-  { path: '/convocatoria', label: 'Convocatoria', aiPrompt: 'Fairway exuberante en hora dorada con bunkers y palmeras' },
+  { path: '/convocatoria', label: 'Bases', aiPrompt: 'Fairway exuberante en hora dorada con bunkers y palmeras' },
   { path: '/resultados', label: 'Resultados', aiPrompt: 'Pelota de golf junto al hoyo en un green perfectamente cortado' },
   { path: '/live', label: 'LIVE', aiPrompt: 'Golfista en silueta al atardecer con ambiente de torneo' },
   { path: '/salidas', label: 'Salidas', aiPrompt: 'Primer tee al amanecer con carritos de golf alineados' },
