@@ -74,21 +74,35 @@ $report['phpmailer'] = [
 ];
 
 // -------- 3) cuentas_correo — cuentas disponibles hoy --------
+// El esquema se detecta en runtime (torneos: id/cuenta_correo/numcorreos/fecha;
+// golftour: idcuentas_correo/cuenta/pwd/acum).
 $cuentas = [];
-if ($conn) {
+$schema = $conn ? smtp_accounts_schema($conn) : null;
+$report['cuentas_correo_schema'] = $schema
+    ? array_map(fn($v) => $v ?: null, $schema)
+    : null;
+if ($conn && $schema) {
+    $emailCol = "`{$schema['email']}`";
+    $cntCol   = $schema['count'] ? "`{$schema['count']}`" : 'NULL';
+    $idCol    = $schema['id'] ? "`{$schema['id']}`" : 'NULL';
+    $dateCol  = $schema['date'] ? "`{$schema['date']}`" : 'NULL';
+    $order    = $schema['count'] ? "$cntCol ASC" : ($schema['id'] ? "$idCol ASC" : '1');
     $r = @$conn->query(
-        "SELECT id, cuenta_correo, numcorreos, fecha "
-        . "FROM cuentas_correo ORDER BY numcorreos ASC, id ASC"
+        "SELECT $idCol AS _id, $emailCol AS _email, $cntCol AS _cnt, $dateCol AS _fecha, "
+        . ($schema['pwd'] ? "CHAR_LENGTH(`{$schema['pwd']}`)" : '0') . " AS _pwdlen "
+        . "FROM `{$schema['table']}` ORDER BY $order"
     );
     if ($r) {
         while ($row = $r->fetch_assoc()) {
+            $cnt = $row['_cnt'] === null ? null : (int)$row['_cnt'];
             $cuentas[] = [
-                'id'         => (int)$row['id'],
-                'cuenta'     => $row['cuenta_correo'],
-                'numcorreos' => (int)$row['numcorreos'],
-                'fecha'      => $row['fecha'],
-                'disponible_hoy_normal'    => (int)$row['numcorreos'] < 250,
-                'disponible_hoy_emergencia' => (int)$row['numcorreos'] < 500,
+                'id'         => $row['_id'] === null ? null : (int)$row['_id'],
+                'cuenta'     => $row['_email'],
+                'numcorreos' => $cnt,
+                'fecha'      => $row['_fecha'],
+                'pwd_len'    => (int)$row['_pwdlen'],   // NO expone el valor
+                'disponible_hoy_normal'     => $cnt === null ? true : $cnt < 250,
+                'disponible_hoy_emergencia' => $cnt === null ? true : $cnt < 500,
             ];
         }
         $r->free();
@@ -169,9 +183,18 @@ if ($regId > 0) {
     if ($rr) $rr->free();
     $regDiag['row_lookup'] = $rowInfo ?: '(row not found)';
     // Contar cuentas antes/después para confirmar que sí intentó enviar
-    $before = (int)($conn->query("SELECT SUM(numcorreos) s FROM cuentas_correo")->fetch_assoc()['s'] ?? 0);
+    $sch = smtp_accounts_schema($conn);
+    $sumSql = ($sch && $sch['count'])
+        ? "SELECT SUM(`{$sch['count']}`) s FROM `{$sch['table']}`"
+        : null;
+    $sumFn = function () use ($conn, $sumSql) {
+        if (!$sumSql) return 0;
+        $r = @$conn->query($sumSql);
+        return (int)($r ? ($r->fetch_assoc()['s'] ?? 0) : 0);
+    };
+    $before = $sumFn();
     send_registration_ack_email($conn, $regId);
-    $after = (int)($conn->query("SELECT SUM(numcorreos) s FROM cuentas_correo")->fetch_assoc()['s'] ?? 0);
+    $after = $sumFn();
     $regDiag['numcorreos_delta'] = $after - $before;
     ini_set('error_log', $prevErr);
     ini_set('display_errors', $prevDisp);
@@ -189,11 +212,17 @@ if ($toParam !== '') {
         $report['send_test'] = ['ok' => false, 'error' => 'Falta "to" (correo destino válido) en el body JSON'];
     } else {
         $picked = smtp_pick_sender($conn);
-        $report['send_test_sender_picked'] = $picked ?: '(null → usará SMTP_USER fallback)';
+        $report['send_test_sender_picked'] = $picked['email'] ?? '(null → usará SMTP_USER fallback)';
+        $report['send_test_sender_pwd_source'] = !empty($picked['pass'])
+            ? 'cuentas_correo.pwd' : 'credentials.php ($SMTP_PASS)';
         // Rollback del +1 que hizo smtp_pick_sender, porque smtp_send() lo volverá a hacer.
-        if ($picked) {
-            $s = $conn->real_escape_string($picked);
-            @$conn->query("UPDATE cuentas_correo SET numcorreos = numcorreos - 1 WHERE cuenta_correo = '$s' LIMIT 1");
+        $sch2 = smtp_accounts_schema($conn);
+        if ($picked && $sch2 && $sch2['count']) {
+            $s = $conn->real_escape_string($picked['email']);
+            @$conn->query(
+                "UPDATE `{$sch2['table']}` SET `{$sch2['count']}` = `{$sch2['count']}` - 1 "
+                . "WHERE `{$sch2['email']}` = '$s' LIMIT 1"
+            );
         }
         $html = '<p>Prueba de envío desde <b>' . htmlspecialchars($_SERVER['HTTP_HOST'] ?? '?') . '</b></p>'
               . '<p>Timestamp: ' . date('c') . '</p>';

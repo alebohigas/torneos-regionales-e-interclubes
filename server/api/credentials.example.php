@@ -11,22 +11,25 @@ $DB_PASS = 'your_password';
 $DB_NAME = 'your_database';
 $DB_PORT = 3306;
 
-// ============= SMTP (Pre-Registro email flow) =============
-// Used by /api/registro_email.php via PHPMailer (drop sources at
-// /api/PHPMailer/{PHPMailer,SMTP,Exception}.php). When PHPMailer is
-// missing or these are blank, the code falls back to PHP mail().
+// ============= SMTP (correos del Pre-Registro) =============
+// Lo usa /api/registro_email.php (y todo el flujo de pre-registro) vía
+// PHPMailer: deja las fuentes en /api/PHPMailer/{PHPMailer,SMTP,Exception}.php.
+// Si falta PHPMailer o el host/contraseña van vacíos, cae a mail() nativo
+// (entrega NO garantizada).
 //
-// El remitente (Username/From) se ROTA dinámicamente desde la tabla
-// `cuentas_correo` vía la función MySQL `f_correo()`, que devuelve la
-// siguiente cuenta con < 250 envíos del día e incrementa su contador.
-// Todos los buzones comparten el mismo $SMTP_PASS (mismo dominio + SPF).
-// $SMTP_USER queda como fallback por si f_correo() no regresa cuenta.
-$SMTP_HOST      = 'smtp.ionos.mx';
-$SMTP_PORT      = 587;
-$SMTP_USER      = 'registro.torneo01@speitour.mx';
-$SMTP_PASS      = 'your_shared_smtp_password';
-$SMTP_FROM_NAME = 'Speitour Registros';
-$SMTP_REPLY_TO  = 'noreply@speitour.mx';
+// Remitente: se ROTA por envío desde la tabla `cuentas_correo`. El código
+// detecta el esquema automáticamente:
+//   A) id, cuenta_correo, numcorreos, fecha        → contraseña compartida
+//   B) idcuentas_correo, cuenta, pwd, acum         → contraseña POR cuenta
+// Si la fila trae `pwd`, ésa se usa para autenticar; si no, se usa
+// $SMTP_PASS. $SMTP_USER/$SMTP_PASS son el respaldo cuando la tabla no
+// existe o todas las cuentas llegaron a su límite diario.
+$SMTP_HOST      = 'smtp.ionos.mx';   // servidor del contrato que hospeda los buzones
+$SMTP_PORT      = 587;               // 587 STARTTLS · 465 SSL
+$SMTP_USER      = 'resguardoacgn@speitour.mx';  // buzón de respaldo
+$SMTP_PASS      = 'tu_password_del_buzon';      // contraseña de ese buzón
+$SMTP_FROM_NAME = 'Speitour Registros';         // nombre visible del remitente
+$SMTP_REPLY_TO  = 'resguardoacgn@speitour.mx';  // a dónde llegan las respuestas
 
 // ============= Tabla de usuarios de la app =============
 // La app usa `usuarios` (los datos de `usuarios2` se copiaron ahí con la
