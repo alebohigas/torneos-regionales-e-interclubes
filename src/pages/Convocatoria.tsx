@@ -14,6 +14,9 @@ import { useTournamentInfo } from '@/hooks/useTournamentData';
 import { useConvocatoriaSections } from '@/hooks/useConvocatoriaSections';
 import { useConvocatoriaContent, type ConvocatoriaContentRow } from '@/hooks/useConvocatoriaContent';
 import { useUploadsList } from '@/hooks/useUploads';
+import { useGiraId } from '@/hooks/useGiraId';
+import { useTorneoId } from '@/hooks/useTorneoId';
+import { getBasesDocumentUrl } from '@/config/basesDocuments';
 import { Calendar } from 'lucide-react';
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -158,6 +161,8 @@ const renderSection = (sectionId: string, dbRow?: ConvocatoriaContentRow) => {
 
 const Convocatoria = () => {
   const [activeSection, setActiveSection] = useState('descripcion');
+  const { giraId } = useGiraId();
+  const { torneoId } = useTorneoId();
 
   useEffect(() => {
     document.title = 'Bases';
@@ -181,7 +186,8 @@ const Convocatoria = () => {
   // If no admin upload exists, the "Ver en PDF" button is hidden entirely.
   const { data: convocatoriaUploads } = useUploadsList('convocatoria');
   const firstSectionPdf = convocatoriaUploads?.files.find((f) => /\.pdf$/i.test(f.name));
-  const convocatoriaPdfUrl = firstSectionPdf?.url ?? null;
+  const configuredPdfUrl = getBasesDocumentUrl(giraId, torneoId);
+  const convocatoriaPdfUrl = configuredPdfUrl ?? firstSectionPdf?.url ?? null;
   const parsed = tournamentData?.name ? parseTournamentName(tournamentData.name) : null;
 
   // ----- Auto-hide sections that have no content -----
