@@ -212,11 +212,17 @@ if ($toParam !== '') {
         $report['send_test'] = ['ok' => false, 'error' => 'Falta "to" (correo destino válido) en el body JSON'];
     } else {
         $picked = smtp_pick_sender($conn);
-        $report['send_test_sender_picked'] = $picked ?: '(null → usará SMTP_USER fallback)';
+        $report['send_test_sender_picked'] = $picked['email'] ?? '(null → usará SMTP_USER fallback)';
+        $report['send_test_sender_pwd_source'] = !empty($picked['pass'])
+            ? 'cuentas_correo.pwd' : 'credentials.php ($SMTP_PASS)';
         // Rollback del +1 que hizo smtp_pick_sender, porque smtp_send() lo volverá a hacer.
-        if ($picked) {
-            $s = $conn->real_escape_string($picked);
-            @$conn->query("UPDATE cuentas_correo SET numcorreos = numcorreos - 1 WHERE cuenta_correo = '$s' LIMIT 1");
+        $sch2 = smtp_accounts_schema($conn);
+        if ($picked && $sch2 && $sch2['count']) {
+            $s = $conn->real_escape_string($picked['email']);
+            @$conn->query(
+                "UPDATE `{$sch2['table']}` SET `{$sch2['count']}` = `{$sch2['count']}` - 1 "
+                . "WHERE `{$sch2['email']}` = '$s' LIMIT 1"
+            );
         }
         $html = '<p>Prueba de envío desde <b>' . htmlspecialchars($_SERVER['HTTP_HOST'] ?? '?') . '</b></p>'
               . '<p>Timestamp: ' . date('c') . '</p>';
