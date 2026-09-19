@@ -132,7 +132,7 @@ const SECTIONS: SectionMeta[] = [
   },
   {
     id: 'convocatoria',
-    label: 'Convocatoria',
+    label: 'Bases',
     Icon: ScrollText,
     description:
       'Dos botones independientes: "Subir imágenes" para una galería complementaria (uso futuro) y "Subir PDF" para el documento oficial. El primer PDF subido es el que aparece en el botón "Ver en PDF" de la página pública — el nombre del archivo no importa.',
