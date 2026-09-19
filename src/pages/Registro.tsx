@@ -1959,7 +1959,10 @@ const Registro = () => {
     /** Default: text/email/number/date input. */
     let type: string = 'text';
     if (name === 'reg_correo')     type = 'email';
+    if (name === 'reg_emailtutor') type = 'email';
     if (name === 'reg_telefono')   type = 'tel';
+    if (name === 'reg_celtutor')   type = 'tel';
+
 
     /**
      * Specialized birthdate input: dd/mm/aaaa with auto-mask while typing,
