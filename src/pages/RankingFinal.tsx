@@ -260,7 +260,7 @@ const RankingFinal = ({ embedded = false }: RankingFinalProps = {}) => {
                                                   ))}
                                                   <TableRow className="bg-muted hover:bg-muted">
                                                     <TableCell colSpan={showR2 ? 5 : 4} className="font-bold text-right">
-                                                      Total ranking (mejores 5)
+                                                      Total ranking (mejores 4)
                                                     </TableCell>
                                                     <TableCell className="text-center font-bold text-primary">
                                                       {formatPuntos(detail?.totalPuntos ?? 0)}
