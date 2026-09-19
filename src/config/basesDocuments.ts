@@ -1,4 +1,10 @@
-import juniorClassic2026Bases from '@/assets/bases/Bases_Junior_Classic_2026-2027.pdf.asset.json';
+/**
+ * Catálogo de documentos de Bases por gira/torneo.
+ *
+ * Los PDF viven en `public/bases/`, así se sirven desde el propio sitio
+ * (funciona en el hosting final y en la vista previa) sin depender de un CDN
+ * externo que pueda no existir en el dominio publicado.
+ */
 
 interface BasesDocument {
   giraId: string;
@@ -10,7 +16,7 @@ const BASES_DOCUMENTS: BasesDocument[] = [
   {
     giraId: '22',
     torneoId: '135',
-    url: juniorClassic2026Bases.url,
+    url: '/bases/Bases_Junior_Classic_2026-2027.pdf',
   },
 ];
 
