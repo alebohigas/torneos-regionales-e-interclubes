@@ -30,7 +30,12 @@ const LOGO_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%23166534" rx="4"/></svg>'
 )}`;
 
-const RankingFinal = () => {
+/** `embedded` omite Layout y hero (lo usa /historial). */
+interface RankingFinalProps {
+  embedded?: boolean;
+}
+
+const RankingFinal = ({ embedded = false }: RankingFinalProps = {}) => {
   const [selectedCategory, setSelectedCategory] = useState<RankingFinalCategory | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<RankingFinalPlayer | null>(null);
 
@@ -51,13 +56,7 @@ const RankingFinal = () => {
 
 
 
-  return (
-    <Layout>
-      <PageHero
-        title="Ranking Final"
-        subtitle="Mejores 5 resultados acumulados de la gira"
-        backgroundImage={rankingHero}
-      />
+  const body = (
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           {!selectedCategory ? (
@@ -312,7 +311,18 @@ const RankingFinal = () => {
           )}
         </div>
       </section>
+  );
 
+  if (embedded) return body;
+
+  return (
+    <Layout>
+      <PageHero
+        title="Ranking Final"
+        subtitle="Mejores 5 resultados acumulados de la gira"
+        backgroundImage={rankingHero}
+      />
+      {body}
     </Layout>
   );
 };

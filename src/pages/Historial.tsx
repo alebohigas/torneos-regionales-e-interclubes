@@ -1,13 +1,14 @@
 /**
  * Historial Page (/historial)
  * ------------------------------------------------------------------
- * Historical results browser. Works exactly like /resultados but for a PAST
- * tournament edition: the user first picks a year from a card grid (same
- * card-based navigation used in Competición), then the standard leaderboard
- * UI is rendered in embedded mode with the year's `torneo_id` override.
+ * Consulta de ediciones pasadas. Dos bloques configurables en
+ * Admin > Historial:
  *
- * Years come from Admin > Historial (`site_config.historial_config`),
- * limited to 5 previous editions.
+ *  1) AÑOS: por cada año se guarda un `torneo_id` y se reutiliza la
+ *     página /resultados en modo embebido.
+ *  2) TEMPORADAS / GIRAS: por cada gira pasada se publica su Ranking
+ *     Final y/o sus Copas, reutilizando esas páginas en modo embebido
+ *     con la gira forzada (GiraOverrideContext).
  */
 
 import { useState } from 'react';
@@ -15,11 +16,17 @@ import Layout from '@/components/layout/Layout';
 import PageHero from '@/components/shared/PageHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CalendarClock, History, Loader2 } from 'lucide-react';
+import { ArrowLeft, CalendarClock, History, Loader2, Star, Trophy } from 'lucide-react';
 // Hero HD propio de la página de Historial
 import historialHero from '@/assets/historial-hero.jpg';
 import Resultados from '@/pages/Resultados';
-import { useSiteConfig, type HistorialEdition } from '@/hooks/useSiteConfig';
+import RankingFinal from '@/pages/RankingFinal';
+import Copa from '@/pages/Copa';
+import { GiraOverrideContext } from '@/hooks/useGiraId';
+import { useSiteConfig, type HistorialEdition, type HistorialSeason } from '@/hooks/useSiteConfig';
+
+/** Vista abierta dentro de una temporada. */
+type SeasonView = 'ranking' | 'copas';
 
 const Historial = () => {
   const { data: siteConfig, isLoading } = useSiteConfig();
@@ -30,9 +37,47 @@ const Historial = () => {
     .sort((a, b) => Number(b.year) - Number(a.year))
     .slice(0, 5);
 
+  /** Temporadas/giras publicadas con al menos un reporte activo. */
+  const seasons: HistorialSeason[] = (siteConfig?.historial_config?.seasons || [])
+    .filter(s => s && String(s.giraId || '').trim() !== '')
+    .slice(0, 5);
+
   /** Selected year (null = show the year selector grid). */
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const selected = editions.find(e => Number(e.year) === selectedYear) || null;
+
+  /** Temporada y reporte abiertos. */
+  const [openSeason, setOpenSeason] = useState<string | null>(null);
+  const [seasonView, setSeasonView] = useState<SeasonView | null>(null);
+  const season = seasons.find(s => String(s.giraId) === openSeason) || null;
+
+  /** Vista embebida de una temporada (Ranking Final o Copas). */
+  if (season && seasonView) {
+    return (
+      <Layout>
+        <PageHero
+          title={season.name || 'Historial'}
+          subtitle={seasonView === 'ranking' ? 'Ranking Final de la temporada' : 'Copas de la temporada'}
+          backgroundImage={historialHero}
+        />
+        <section className="pt-10 bg-white">
+          <div className="container mx-auto px-4">
+            <Button
+              variant="ghost"
+              onClick={() => setSeasonView(null)}
+              className="gap-2 bg-primary/10 hover:bg-primary/20"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver a {season.name || 'la temporada'}
+            </Button>
+          </div>
+        </section>
+        <GiraOverrideContext.Provider value={String(season.giraId)}>
+          {seasonView === 'ranking' ? <RankingFinal embedded /> : <Copa embedded />}
+        </GiraOverrideContext.Provider>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -80,6 +125,64 @@ const Historial = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+
+            {/* Temporadas / Giras: Ranking Final y Copas */}
+            {seasons.length > 0 && (
+              <div className="mt-16">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold text-foreground">TEMPORADAS</h2>
+                  <p className="text-muted-foreground mt-2">
+                    Ranking Final y Copas de temporadas anteriores
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
+                  {seasons.map((s) => {
+                    const isOpen = openSeason === String(s.giraId);
+                    return (
+                      <Card key={s.giraId} className="border-border/50">
+                        <CardContent className="p-5">
+                          <button
+                            className="w-full text-left"
+                            onClick={() => setOpenSeason(isOpen ? null : String(s.giraId))}
+                          >
+                            <h3 className="font-bold text-foreground text-xl flex items-center gap-2">
+                              <Trophy className="h-5 w-5 text-primary" />
+                              {s.name || `Gira ${s.giraId}`}
+                            </h3>
+                          </button>
+
+                          {isOpen && (
+                            <div className="mt-4 space-y-2">
+                              {s.showRankingFinal !== false && (
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20"
+                                  onClick={() => setSeasonView('ranking')}
+                                >
+                                  <Star className="h-4 w-4 text-primary" />
+                                  Ranking Final
+                                </Button>
+                              )}
+                              {s.showCopas !== false && (
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20"
+                                  onClick={() => setSeasonView('copas')}
+                                >
+                                  <Trophy className="h-4 w-4 text-primary" />
+                                  Copas
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

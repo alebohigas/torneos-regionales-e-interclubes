@@ -10,7 +10,13 @@
  * momento en que `site_config.php` resuelve el valor.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, createContext, useContext } from 'react';
+
+/**
+ * Permite forzar una gira distinta a la activa para un subárbol de la app
+ * (lo usa /historial para mostrar copas y ranking final de giras pasadas).
+ */
+export const GiraOverrideContext = createContext<string | null>(null);
 
 /** localStorage key con la gira activa */
 const GIRA_ID_KEY = 'golf-app-gira-id';
@@ -37,6 +43,7 @@ export const getGiraId = (): string => {
 
 /** Devuelve la gira activa y un setter que persiste + notifica. */
 export const useGiraId = () => {
+  const override = useContext(GiraOverrideContext);
   const [giraId, setGiraIdState] = useState<string>(() => getGiraId());
 
   const setGiraId = useCallback((id: string) => {
@@ -58,5 +65,6 @@ export const useGiraId = () => {
     };
   }, []);
 
-  return { giraId, setGiraId };
+  // Si hay override (p.ej. /historial mostrando una gira pasada) manda ese valor.
+  return { giraId: (override ?? '').trim() || giraId, setGiraId };
 };
