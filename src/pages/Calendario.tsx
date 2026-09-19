@@ -107,7 +107,7 @@ const Calendario = () => {
                         <td className="px-2 md:px-4 py-2 md:py-3 align-middle">
                           <ClubLogos etapa={etapa} />
                         </td>
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-xs md:text-sm">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-sm md:text-base">
                           <DateLabel label={etapa.dateLabel} />
                         </td>
                       </tr>
