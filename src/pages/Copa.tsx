@@ -87,7 +87,7 @@ const Copa = () => {
                       className="border-border/50 hover:border-primary/50 transition-colors"
                     >
                       <CardContent className="p-5 text-center">
-                        <h3 className="font-bold text-foreground">{copa.name}</h3>
+                        <h3 className="font-bold text-foreground">{copaDisplayName(copa)}</h3>
                         <p className="text-sm text-muted-foreground my-2">{copaTipo(copa)}</p>
                         <Button
                           size="sm"
@@ -121,7 +121,7 @@ const Copa = () => {
 
               <div className="mb-8 text-left md:text-center">
                 <h2 className="text-2xl font-light text-foreground mb-2">
-                  Copa: <span className="font-bold">{copaData?.name || selectedCopa.name}</span>
+                  Copa: <span className="font-bold">{copaDisplayName(selectedCopa)}</span>
                 </h2>
                 <p className="text-muted-foreground">
                   <span className="font-bold text-foreground">Total clubes:</span>{' '}
