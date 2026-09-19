@@ -74,21 +74,35 @@ $report['phpmailer'] = [
 ];
 
 // -------- 3) cuentas_correo — cuentas disponibles hoy --------
+// El esquema se detecta en runtime (torneos: id/cuenta_correo/numcorreos/fecha;
+// golftour: idcuentas_correo/cuenta/pwd/acum).
 $cuentas = [];
-if ($conn) {
+$schema = $conn ? smtp_accounts_schema($conn) : null;
+$report['cuentas_correo_schema'] = $schema
+    ? array_map(fn($v) => $v ?: null, $schema)
+    : null;
+if ($conn && $schema) {
+    $emailCol = "`{$schema['email']}`";
+    $cntCol   = $schema['count'] ? "`{$schema['count']}`" : 'NULL';
+    $idCol    = $schema['id'] ? "`{$schema['id']}`" : 'NULL';
+    $dateCol  = $schema['date'] ? "`{$schema['date']}`" : 'NULL';
+    $order    = $schema['count'] ? "$cntCol ASC" : ($schema['id'] ? "$idCol ASC" : '1');
     $r = @$conn->query(
-        "SELECT id, cuenta_correo, numcorreos, fecha "
-        . "FROM cuentas_correo ORDER BY numcorreos ASC, id ASC"
+        "SELECT $idCol AS _id, $emailCol AS _email, $cntCol AS _cnt, $dateCol AS _fecha, "
+        . ($schema['pwd'] ? "CHAR_LENGTH(`{$schema['pwd']}`)" : '0') . " AS _pwdlen "
+        . "FROM `{$schema['table']}` ORDER BY $order"
     );
     if ($r) {
         while ($row = $r->fetch_assoc()) {
+            $cnt = $row['_cnt'] === null ? null : (int)$row['_cnt'];
             $cuentas[] = [
-                'id'         => (int)$row['id'],
-                'cuenta'     => $row['cuenta_correo'],
-                'numcorreos' => (int)$row['numcorreos'],
-                'fecha'      => $row['fecha'],
-                'disponible_hoy_normal'    => (int)$row['numcorreos'] < 250,
-                'disponible_hoy_emergencia' => (int)$row['numcorreos'] < 500,
+                'id'         => $row['_id'] === null ? null : (int)$row['_id'],
+                'cuenta'     => $row['_email'],
+                'numcorreos' => $cnt,
+                'fecha'      => $row['_fecha'],
+                'pwd_len'    => (int)$row['_pwdlen'],   // NO expone el valor
+                'disponible_hoy_normal'     => $cnt === null ? true : $cnt < 250,
+                'disponible_hoy_emergencia' => $cnt === null ? true : $cnt < 500,
             ];
         }
         $r->free();
