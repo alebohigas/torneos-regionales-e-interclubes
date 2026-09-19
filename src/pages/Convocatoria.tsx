@@ -1,5 +1,5 @@
 /**
- * Bases Page
+ * Convocatoria Page
  * Displays tournament bases with 8 dynamic, reorderable sections
  * Sections: Descripción, Elegibilidad, Costos, Categorías, Premiación,
  *           Calendario, Reglas Locales, Competencias Especiales
@@ -165,7 +165,7 @@ const Convocatoria = () => {
   const { torneoId } = useTorneoId();
 
   useEffect(() => {
-    document.title = 'Bases';
+    document.title = 'Convocatoria';
   }, []);
   const { data: tournamentData } = useTournamentInfo();
   const { sections } = useConvocatoriaSections();
@@ -286,7 +286,7 @@ const Convocatoria = () => {
   return (
     <Layout>
       <PageHero
-        title="Bases"
+        title="Convocatoria"
         subtitle="Información completa sobre inscripciones, categorías y requisitos"
         backgroundImage={convocatoriaHero}
         // Midpoint between the previous 65% framing and the lower 95%
@@ -302,7 +302,7 @@ const Convocatoria = () => {
 
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          {/* PDF viewer — stays inside the Bases page. Hidden when no PDF exists. */}
+          {/* PDF viewer — stays inside the Convocatoria page. Hidden when no PDF exists. */}
           {convocatoriaPdfUrl && (
             <div className="mb-8 space-y-4">
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -337,7 +337,7 @@ const Convocatoria = () => {
                 >
                   <iframe
                     src={convocatoriaPdfUrl}
-                    title="Bases del torneo"
+                    title="Convocatoria del torneo"
                     className="h-full w-full overflow-auto"
                     scrolling="yes"
                   />

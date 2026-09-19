@@ -174,7 +174,7 @@ const CORE_MODULES: ModuleDef[] = [
 const OPTIONAL_MODULES: ModuleDef[] = [
   {
     id: 'convocatoria',
-    label: 'Bases',
+    label: 'Convocatoria',
     description:
       'Página de bases con secciones dinámicas (descripción, elegibilidad, costos, ' +
       'categorías, premiación, desempates, valores Stableford, competencias, calendario) y su editor en /admin.',
