@@ -219,6 +219,48 @@ const parseHcpFromName = (name: string): { min: number; max: number } | null => 
 };
 
 /**
+ * parseAgeCategoryFromName
+ * En este circuito las categorías NO son por hándicap: son por EDAD y GÉNERO,
+ * y eso ya viene codificado en el propio nombre de la categoría:
+ *   "VAR 10/11"   → varonil, 10 a 11 años
+ *   "VAR 14/18"   → varonil, 14 a 18 años
+ *   "VAR 7/MEN"   → varonil, 7 años y menores
+ *   "FEM 12/13"   → femenil, 12 a 13 años
+ *   "VAR 19/MAY"  → varonil, 19 años y mayores
+ * Devuelve el género y el rango de edad detectado, o null si el nombre no
+ * sigue este patrón (categorías tradicionales por hándicap siguen igual).
+ */
+const parseAgeCategoryFromName = (
+  name: string
+): { gender: string | null; ageMin: number | null; ageMax: number | null } | null => {
+  if (!name) return null;
+  const s = norm(name).replace(/\s+/g, ' ');
+
+  /** Prefijo de género (opcional). */
+  let gender: string | null = null;
+  if (/\b(var|varonil|varoniles|cab|caballero|caballeros|masculino|hombres?)\b/.test(s)) gender = 'M';
+  else if (/\b(fem|femenil|femeniles|dam|dama|damas|femenino|mujeres?)\b/.test(s)) gender = 'F';
+
+  /** Rango numérico "a/b" — ej. "10/11", "14/18". */
+  let m = s.match(/(\d{1,2})\s*[\/\-–]\s*(\d{1,2})\b/);
+  if (m) {
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    if (b >= a && b <= 99) return { gender, ageMin: a, ageMax: b };
+  }
+
+  /** "7/MEN" → 7 años y menores. */
+  m = s.match(/(\d{1,2})\s*[\/\-–]\s*(men|menor|menores|inf|infantil)\b/);
+  if (m) return { gender, ageMin: null, ageMax: parseInt(m[1], 10) };
+
+  /** "19/MAY" → 19 años y mayores. */
+  m = s.match(/(\d{1,2})\s*[\/\-–]\s*(may|mayor|mayores|\+)\b/);
+  if (m) return { gender, ageMin: parseInt(m[1], 10), ageMax: null };
+
+  return null;
+};
+
+/**
  * Normalize a string for tolerant matching: lowercase, trimmed, and with
  * combining diacritics stripped ("México" → "mexico", "Nuevo León" →
  * "nuevo leon"). Used when matching club location strings against the
@@ -1024,6 +1066,31 @@ const Registro = () => {
       : hcpRaw;
     const evaluations = categories.map(c => {
       const catReglas = reglas.filter(r => !!r.is_active && ruleMatchesCategory(r, { id: c.id, name: c.name }));
+
+      /**
+       * Categorías por EDAD/GÉNERO (ej. "VAR 10/11", "FEM 7/MEN"): el nombre
+       * es la fuente de verdad y manda sobre cualquier rango de hándicap.
+       * Con género + fecha de nacimiento capturados, sólo queda elegible la
+       * categoría que corresponde exactamente a la edad del jugador.
+       */
+      const ageSpec = parseAgeCategoryFromName(c.name || '');
+      if (ageSpec) {
+        const playerGender = normalizeGenderCode(sex);
+        if (ageSpec.gender && playerGender && ageSpec.gender !== playerGender) {
+          return { c, ok: false, reason: `Género ${ageSpec.gender} ≠ ${playerGender}` };
+        }
+        if (age === null) {
+          return { c, ok: false, reason: 'Falta fecha de nacimiento para determinar la edad' };
+        }
+        if (ageSpec.ageMin != null && age < ageSpec.ageMin) {
+          return { c, ok: false, reason: `Edad ${age} < mínima ${ageSpec.ageMin}` };
+        }
+        if (ageSpec.ageMax != null && age > ageSpec.ageMax) {
+          return { c, ok: false, reason: `Edad ${age} > máxima ${ageSpec.ageMax}` };
+        }
+        return { c, ok: true, reason: '' };
+      }
+
 
       /**
        * Explicit admin rules are the source of truth when present. This avoids
