@@ -495,6 +495,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'veri
         // Snapshot del precio mostrado al jugador al enviar el form.
         // Lo escribe el cliente con base en /api/registro_precios.php?action=match.
         'reg_precio_estimado', 'reg_precio_moneda', 'reg_precio_regla_id',
+        // Datos del tutor (menores de edad)
+        'reg_tutor', 'reg_emailtutor', 'reg_celtutor',
+
     ];
 
     $cols = [$torneoCol];
@@ -513,6 +516,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'veri
         $cols[] = $target;
         $vals[] = "'" . esc($conn, $v) . "'";
     }
+
+    /**
+     * Espejo de columnas gemelas. Esta base tiene AMBAS variantes de género
+     * (reg_genero + reg_sexo) y de fecha de nacimiento (reg_fechanac +
+     * reg_fecnac). resolve_reg_column() escribe sólo la primera que existe,
+     * dejando la otra vacía. Aquí replicamos el valor en la gemela.
+     */
+    $regMirrorPairs = [
+        ['reg_genero',   'reg_sexo',      'sexo'],
+        ['reg_fechanac', 'reg_fecnac',    'date'],
+    ];
+    foreach ($regMirrorPairs as [$a, $b, $kind]) {
+        $raw = trim((string)($_POST[$a] ?? $_POST[$b] ?? ''));
+        if ($raw === '') continue;
+        foreach ([$a, $b] as $target) {
+            if (!registro_has($conn, $target)) continue;
+            if (isset($writtenCols[$target])) continue;
+            $v = $raw;
+            if ($kind === 'sexo') {
+                // reg_sexo es VARCHAR(1): recortar a la inicial (M/F)
+                $v = strtoupper(substr($raw, 0, $target === 'reg_sexo' ? 1 : 2));
+            }
+            $writtenCols[$target] = true;
+            $cols[] = $target;
+            $vals[] = "'" . esc($conn, $v) . "'";
+        }
+    }
+
 
     /**
      * Auto-calculate akron_edad against the tournament start date so a
