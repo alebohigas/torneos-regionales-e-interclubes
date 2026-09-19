@@ -19,7 +19,6 @@ import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
 import { Calendar, ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BasesPreguntas from '@/components/convocatoria/BasesPreguntas';
 
 // Section components
 import DescripcionSection from '@/components/convocatoria/DescripcionSection';
@@ -345,11 +344,6 @@ const Convocatoria = () => {
               )}
             </div>
           )}
-
-          {/* Preguntas sobre las Bases respondidas con el texto del documento */}
-          <div className="mb-12">
-            <BasesPreguntas />
-          </div>
 
           {/* Tournament header */}
           <div className="text-center mb-16">
