@@ -305,7 +305,7 @@ const Convocatoria = () => {
           {/* PDF viewer — stays inside the Bases page. Hidden when no PDF exists. */}
           {convocatoriaPdfUrl && (
             <div className="mb-8 space-y-4">
-              <div className="flex justify-center">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
                   type="button"
                   size="lg"
@@ -321,6 +321,13 @@ const Convocatoria = () => {
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
+                </Button>
+                {/* Descarga directa del documento oficial */}
+                <Button asChild size="lg" variant="outline" className="gap-2">
+                  <a href={convocatoriaPdfUrl} download>
+                    <Download className="h-5 w-5" />
+                    Descargar PDF
+                  </a>
                 </Button>
               </div>
               {isPdfVisible && (
