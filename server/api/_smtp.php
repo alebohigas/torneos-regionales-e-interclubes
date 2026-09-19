@@ -49,52 +49,99 @@ function smtp_load_phpmailer() {
 }
 
 /**
- * Pick the next sender mailbox from `cuentas_correo`.
+ * Detecta el esquema real de `cuentas_correo` en la base activa.
  *
- * Política de rotación (replicada en PHP para tener control fino sobre el
- * fallback — la función MySQL f_correo() corta en 250 y devuelve vacío si
- * todas pasaron de ese umbral):
+ * Hay dos variantes en producción:
+ *   A) torneos  : id, cuenta_correo, numcorreos, fecha
+ *   B) golftour : idcuentas_correo, cuenta, pwd, acum   (contraseña por cuenta)
  *
- *   1) Reset diario: pone `numcorreos = 0` en las filas cuya `fecha` es
- *      anterior a hoy (mismo comportamiento que f_correo).
- *   2) Modo normal: elige la cuenta con `numcorreos < 250`, priorizando
- *      la de menor contador (ORDER BY numcorreos ASC, id ASC). Cambia de
- *      buzón en cuanto el actual llega a 250.
- *   3) Modo emergencia: si TODAS las cuentas ya pasaron de 250 (no
- *      debería ocurrir), se eligen cuentas con `numcorreos < 500` rotando
- *      cada 50 envíos. Se usa ORDER BY FLOOR(numcorreos/50) ASC, id ASC
- *      → la misma cuenta atiende un bloque de 50 antes de saltar a otra.
- *      Limite duro: 500/día (IONOS = 500, dejamos margen).
- *   4) Incrementa `numcorreos` y refresca `fecha` para el destinatario
- *      principal (los CC se cargan después vía smtp_bump_counter()).
+ * Devuelve ['table','id','email','count','date','pwd'] o null si no existe.
+ */
+function smtp_accounts_schema($conn) {
+    static $schema = null;
+    static $checked = false;
+    if ($checked) return $schema;
+    $checked = true;
+    if (!$conn) return null;
+
+    $res = @$conn->query("SHOW COLUMNS FROM cuentas_correo");
+    if (!$res) {
+        error_log('[smtp] tabla cuentas_correo no disponible; se usará SMTP_USER/SMTP_PASS de credentials.php');
+        return null;
+    }
+    $cols = [];
+    while ($r = $res->fetch_assoc()) $cols[strtolower($r['Field'])] = $r['Field'];
+    $res->free();
+
+    $pick = function (array $names) use ($cols) {
+        foreach ($names as $n) if (isset($cols[$n])) return $cols[$n];
+        return null;
+    };
+
+    $schema = [
+        'table' => 'cuentas_correo',
+        'id'    => $pick(['id', 'idcuentas_correo', 'idcuenta', 'idcuentas']),
+        'email' => $pick(['cuenta_correo', 'cuenta', 'correo', 'email']),
+        'count' => $pick(['numcorreos', 'acum', 'contador']),
+        'date'  => $pick(['fecha', 'fecha_envio', 'ultimo_envio']),
+        'pwd'   => $pick(['pwd', 'password', 'contrasena', 'clave', 'pass']),
+    ];
+    if (!$schema['email']) {
+        error_log('[smtp] cuentas_correo sin columna de correo reconocible');
+        $schema = null;
+    }
+    return $schema;
+}
+
+/**
+ * Elige el siguiente buzón remitente de `cuentas_correo`.
  *
- * Devuelve el correo elegido, o null si no hay ninguno bajo 500 (en cuyo
- * caso el caller cae al $SMTP_USER estático de credentials.php).
+ * Política de rotación:
+ *   1) Reset diario del contador (solo si la tabla tiene columna de fecha).
+ *   2) Modo normal: la cuenta con menor contador y < 250 envíos del día.
+ *   3) Modo emergencia: si todas pasaron de 250, rota cada 50 hasta 500
+ *      (límite duro de IONOS).
+ *   4) Reserva +1 envío para el destinatario principal (los CC se cargan
+ *      luego con smtp_bump_counter()).
+ *
+ * Devuelve ['email'=>..., 'pass'=>string|null] o null si no hay cuenta
+ * disponible (en ese caso el caller usa $SMTP_USER/$SMTP_PASS estáticos).
  */
 function smtp_pick_sender($conn = null) {
     if (!$conn) { global $conn; }
     if (!$conn) return null;
 
-    // 1) Reset diario (mismo criterio que f_correo()).
-    @$conn->query(
-        "UPDATE cuentas_correo SET numcorreos = 0 "
-        . "WHERE LEFT(fecha,10) < LEFT(CURDATE(),10)"
-    );
+    $s = smtp_accounts_schema($conn);
+    if (!$s) return null;
 
-    // 2) Modo normal: la primera cuenta con < 250 envíos del día.
-    $sql = "SELECT id, cuenta_correo FROM cuentas_correo "
-         . "WHERE numcorreos < 250 "
-         . "ORDER BY numcorreos ASC, id ASC LIMIT 1";
-    $res = @$conn->query($sql);
+    $t     = $s['table'];
+    $email = "`{$s['email']}`";
+    $cnt   = $s['count'] ? "`{$s['count']}`" : null;
+    $idc   = $s['id'] ? "`{$s['id']}`" : null;
+    $pwdc  = $s['pwd'] ? "`{$s['pwd']}`" : null;
+    $order = $cnt ? "$cnt ASC" . ($idc ? ", $idc ASC" : '') : ($idc ? "$idc ASC" : '1');
+
+    // 1) Reset diario del contador cuando la tabla guarda fecha.
+    if ($cnt && $s['date']) {
+        @$conn->query(
+            "UPDATE $t SET $cnt = 0 "
+            . "WHERE LEFT(`{$s['date']}`,10) < LEFT(CURDATE(),10)"
+        );
+    }
+
+    $select = "SELECT $email AS _email" . ($idc ? ", $idc AS _id" : '')
+            . ($pwdc ? ", $pwdc AS _pwd" : '') . ($cnt ? ", $cnt AS _cnt" : '');
+
+    // 2) Modo normal: la cuenta con menos envíos del día (< 250).
+    $where = $cnt ? "WHERE $cnt < 250 " : '';
+    $res = @$conn->query("$select FROM $t $where ORDER BY $order LIMIT 1");
     $row = $res ? $res->fetch_assoc() : null;
     if ($res) $res->free();
 
     // 3) Modo emergencia: nadie bajo 250 → rotar cada 50 hasta tope 500.
-    if (!$row) {
-        $sql2 = "SELECT id, cuenta_correo FROM cuentas_correo "
-              . "WHERE numcorreos < 500 "
-              . "ORDER BY FLOOR(numcorreos/50) ASC, id ASC LIMIT 1";
-        $res2 = @$conn->query($sql2);
+    if (!$row && $cnt) {
+        $order2 = "FLOOR($cnt/50) ASC" . ($idc ? ", $idc ASC" : '');
+        $res2 = @$conn->query("$select FROM $t WHERE $cnt < 500 ORDER BY $order2 LIMIT 1");
         $row = $res2 ? $res2->fetch_assoc() : null;
         if ($res2) $res2->free();
         if ($row) {
@@ -103,37 +150,45 @@ function smtp_pick_sender($conn = null) {
     }
 
     if (!$row) {
-        error_log('[smtp] cuentas_correo agotado: todas las cuentas llegaron al limite diario (500).');
+        error_log('[smtp] cuentas_correo agotado o vacío: no hay cuenta de envío disponible.');
         return null;
     }
 
-    // 4) Reservar +1 envío (TO) y refrescar fecha para el reset diario.
-    $idv = (int)$row['id'];
-    @$conn->query(
-        "UPDATE cuentas_correo SET numcorreos = numcorreos + 1, fecha = NOW() "
-        . "WHERE id = $idv LIMIT 1"
-    );
+    $picked = trim((string)($row['_email'] ?? ''));
+    if ($picked === '') return null;
 
-    $picked = trim((string)$row['cuenta_correo']);
-    return $picked !== '' ? $picked : null;
+    // 4) Reservar +1 envío (TO) y refrescar fecha si existe la columna.
+    if ($cnt) {
+        $sets = "$cnt = $cnt + 1" . ($s['date'] ? ", `{$s['date']}` = NOW()" : '');
+        if ($idc && isset($row['_id'])) {
+            $idv = (int)$row['_id'];
+            @$conn->query("UPDATE $t SET $sets WHERE $idc = $idv LIMIT 1");
+        } else {
+            $esc = $conn->real_escape_string($picked);
+            @$conn->query("UPDATE $t SET $sets WHERE $email = '$esc' LIMIT 1");
+        }
+    }
+
+    $pass = isset($row['_pwd']) ? trim((string)$row['_pwd']) : '';
+    return ['email' => $picked, 'pass' => $pass !== '' ? $pass : null];
 }
 
 /**
- * Increment the daily send counter for a sender mailbox by N additional
- * units. Used to charge CC recipients to the same picked account (the
- * primary TO was already counted inside f_correo()).
+ * Suma N envíos extra (destinatarios en CC) al contador del buzón usado.
  *
- * @param mysqli $conn   Active DB connection.
- * @param string $sender Email address that was used as sender.
- * @param int    $extra  Number of additional recipients to charge.
+ * @param mysqli $conn   Conexión activa.
+ * @param string $sender Correo usado como remitente.
+ * @param int    $extra  Destinatarios adicionales a cargar.
  */
 function smtp_bump_counter($conn, $sender, $extra) {
     if (!$conn || !$sender || $extra <= 0) return;
-    $s = $conn->real_escape_string($sender);
+    $s = smtp_accounts_schema($conn);
+    if (!$s || !$s['count']) return;
+    $esc = $conn->real_escape_string($sender);
     $n = (int)$extra;
     @$conn->query(
-        "UPDATE cuentas_correo SET numcorreos = numcorreos + $n "
-        . "WHERE cuenta_correo = '$s' LIMIT 1"
+        "UPDATE `{$s['table']}` SET `{$s['count']}` = `{$s['count']}` + $n "
+        . "WHERE `{$s['email']}` = '$esc' LIMIT 1"
     );
 }
 
