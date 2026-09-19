@@ -92,10 +92,10 @@ const Historial = () => {
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold text-foreground">
-                SELECCIONA EL AÑO
+                SELECCIONA LA TEMPORADA
               </h2>
               <p className="text-muted-foreground mt-2">
-                Historial de resultados de hasta 5 años anteriores
+                Historial de resultados de hasta 5 temporadas anteriores
               </p>
             </div>
 
@@ -197,7 +197,7 @@ const Historial = () => {
                 className="gap-2 bg-primary/10 hover:bg-primary/20"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver a años
+                Volver a temporadas
               </Button>
               <h2 className="text-2xl font-bold text-foreground mt-6 text-center">
                 {selected.label || `Resultados ${selected.year}`}
