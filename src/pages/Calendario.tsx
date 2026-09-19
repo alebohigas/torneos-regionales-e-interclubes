@@ -94,22 +94,22 @@ const Calendario = () => {
                 <table className="w-full text-sm bg-background">
                   <thead>
                     <tr className="bg-primary text-primary-foreground">
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-16 md:w-24">Etapa</th>
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-20 md:w-28">Club</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-[88px] md:w-28">Etapa</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-16 md:w-28">Club</th>
                       <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((etapa) => (
                       <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0 bg-background">
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground whitespace-nowrap">
                           {etapa.etapaDisplay || etapa.etapaLabel || '—'}
                         </td>
                         <td className="px-2 md:px-4 py-2 md:py-3 align-middle">
                           <ClubLogos etapa={etapa} />
                         </td>
                         <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-xs md:text-sm">
-                          {etapa.dateLabel || '—'}
+                          <DateLabel label={etapa.dateLabel} />
                         </td>
                       </tr>
                     ))}
