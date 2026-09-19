@@ -26,17 +26,13 @@ $gid = (int)$giraid;
 
 // ---------- Helpers ----------
 
-/** Deduce el filtro de sexo de una copa a partir de su nombre / grupocopas. */
-function copa_sexo_filter($nombre, $grupoRaw) {
+/** Deduce el filtro de sexo de una copa a partir de su nombre (siempre). */
+function copa_sexo_filter($nombre) {
     $n = strtolower((string)$nombre);
     $n = strtr($n, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u']);
-    $hasGroup = trim((string)$grupoRaw) !== '';
 
-    // Una copa que consolida otras copas siempre es conjunta.
-    if (!$hasGroup) {
-        if (preg_match('/(varonil|caballer|masculin|varon)/', $n)) return 'M';
-        if (preg_match('/(femenil|damas|femenin|mujer)/', $n))     return 'F';
-    }
+    if (preg_match('/(varonil|caballer|masculin|varon)/', $n)) return 'M';
+    if (preg_match('/(femenil|damas|femenin|mujer)/', $n))     return 'F';
     return '';
 }
 
