@@ -346,6 +346,11 @@ const Convocatoria = () => {
             </div>
           )}
 
+          {/* Preguntas sobre las Bases respondidas con el texto del documento */}
+          <div className="mb-12">
+            <BasesPreguntas />
+          </div>
+
           {/* Tournament header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-4 mb-6">
