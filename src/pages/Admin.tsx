@@ -582,7 +582,7 @@ const AdminDashboard = () => {
           />
         </TabsContent>
 
-        {/* Bases Tab */}
+        {/* Convocatoria Tab */}
         <TabsContent value="convocatoria">
           <AdminConvocatoria />
         </TabsContent>
