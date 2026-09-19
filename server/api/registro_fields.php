@@ -32,6 +32,11 @@ $DEFAULT_FIELDS = [
     ['field_name' => 'reg_handicap',   'field_label' => 'Hándicap',                                     'is_enabled' => 1, 'is_required' => 1, 'display_order' => 50,  'section' => 'basica'],
     ['field_name' => 'reg_sexo',       'field_label' => 'Género',                                       'is_enabled' => 1, 'is_required' => 0, 'display_order' => 60,  'section' => 'basica'],
     ['field_name' => 'reg_fechanac',   'field_label' => 'Fecha de nacimiento',                          'is_enabled' => 1, 'is_required' => 0, 'display_order' => 70,  'section' => 'basica'],
+    // Datos del tutor (juveniles / menores de edad)
+    ['field_name' => 'reg_tutor',      'field_label' => 'Nombre del tutor',                             'is_enabled' => 1, 'is_required' => 0, 'display_order' => 71,  'section' => 'basica'],
+    ['field_name' => 'reg_emailtutor', 'field_label' => 'Correo del tutor',                             'is_enabled' => 1, 'is_required' => 0, 'display_order' => 72,  'section' => 'basica'],
+    ['field_name' => 'reg_celtutor',   'field_label' => 'Celular del tutor',                            'is_enabled' => 1, 'is_required' => 0, 'display_order' => 73,  'section' => 'basica'],
+
     // Edad — alternativa o complemento de fechanac. Si fechanac está activa
     // se auto-calcula y queda en gris; si no, el jugador la captura.
     ['field_name' => 'akron_edad',     'field_label' => 'Edad',                                         'is_enabled' => 0, 'is_required' => 0, 'display_order' => 75,  'section' => 'basica'],

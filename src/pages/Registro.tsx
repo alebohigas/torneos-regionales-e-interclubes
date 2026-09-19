@@ -104,6 +104,10 @@ const PLACEHOLDERS: Record<string, string> = {
   reg_notas:      'Notas adicionales para el comité…',
   reg_mensaje:    'Notas adicionales para el comité…',
   reg_fechanac:   'dd/mm/aaaa',
+  reg_tutor:        'Ej: María López',
+  reg_emailtutor:   'tutor@correo.com',
+  reg_celtutor:     '+52 55 1234 5678',
+
   reg_direccion:  'Calle, número, colonia',
   reg_cp:         'Ej: 64000',
 };
