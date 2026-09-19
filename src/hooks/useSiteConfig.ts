@@ -313,11 +313,29 @@ export interface HistorialEdition {
 }
 
 /**
+ * HistorialSeason
+ * Temporada / gira pasada publicada en /historial. Permite mostrar el
+ * Ranking Final y/o las Copas de esa gira (`gira.giraid`).
+ */
+export interface HistorialSeason {
+  /** gira.giraid de la temporada */
+  giraId: string;
+  /** Nombre visible, p.ej. "Gira 2025-2026" */
+  name: string;
+  /** Publicar el Ranking Final de esa gira */
+  showRankingFinal?: boolean;
+  /** Publicar las Copas de esa gira */
+  showCopas?: boolean;
+}
+
+/**
  * HistorialConfig
- * /historial page config: up to 5 previous editions (most recent first).
+ * /historial page config: up to 5 previous editions (most recent first)
+ * y las temporadas/giras publicadas con su Ranking Final y Copas.
  */
 export interface HistorialConfig {
   editions: HistorialEdition[];
+  seasons?: HistorialSeason[];
 }
 
 /**
