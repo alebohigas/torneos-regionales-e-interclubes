@@ -17,8 +17,9 @@ import { useUploadsList } from '@/hooks/useUploads';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
-import { Calendar, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BasesPreguntas from '@/components/convocatoria/BasesPreguntas';
 
 // Section components
 import DescripcionSection from '@/components/convocatoria/DescripcionSection';
@@ -305,7 +306,7 @@ const Convocatoria = () => {
           {/* PDF viewer — stays inside the Bases page. Hidden when no PDF exists. */}
           {convocatoriaPdfUrl && (
             <div className="mb-8 space-y-4">
-              <div className="flex justify-center">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
                   type="button"
                   size="lg"
@@ -322,6 +323,13 @@ const Convocatoria = () => {
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </Button>
+                {/* Descarga directa del documento oficial */}
+                <Button asChild size="lg" variant="outline" className="gap-2">
+                  <a href={convocatoriaPdfUrl} download>
+                    <Download className="h-5 w-5" />
+                    Descargar PDF
+                  </a>
+                </Button>
               </div>
               {isPdfVisible && (
                 <div
@@ -337,6 +345,11 @@ const Convocatoria = () => {
               )}
             </div>
           )}
+
+          {/* Preguntas sobre las Bases respondidas con el texto del documento */}
+          <div className="mb-12">
+            <BasesPreguntas />
+          </div>
 
           {/* Tournament header */}
           <div className="text-center mb-16">
