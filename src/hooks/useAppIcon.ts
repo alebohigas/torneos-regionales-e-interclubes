@@ -20,7 +20,8 @@ export const useAppIcon = () => {
     if (!tournament?.logoHeaderUrl) return;
 
     /** Logo URL - already includes proxy path from API response */
-    const logoUrl = tournament.logoHeaderUrl;
+    const separator = tournament.logoHeaderUrl.includes('?') ? '&' : '?';
+    const logoUrl = `${tournament.logoHeaderUrl}${separator}app-icon=${encodeURIComponent(String(tournament.id))}`;
 
     // ============= Apple Touch Icon (home screen shortcut) =============
     let appleTouchIcon = document.querySelector<HTMLLinkElement>(
@@ -32,6 +33,7 @@ export const useAppIcon = () => {
       document.head.appendChild(appleTouchIcon);
     }
     appleTouchIcon.href = logoUrl;
+    appleTouchIcon.setAttribute('sizes', '180x180');
 
     // ============= Standard Favicon (browser tabs) =============
     // Also update the standard favicon so mobile browsers use the
@@ -45,7 +47,7 @@ export const useAppIcon = () => {
       document.head.appendChild(favicon);
     }
     favicon.href = logoUrl;
-    favicon.type = 'image/png';
+    favicon.removeAttribute('type');
 
     // ============= Additional sizes for Android/Chrome =============
     let icon192 = document.querySelector<HTMLLinkElement>(
@@ -59,5 +61,17 @@ export const useAppIcon = () => {
     }
     icon192.href = logoUrl;
 
-  }, [tournament?.logoHeaderUrl]);
+    /** Some Android browsers also inspect a 512px icon declaration. */
+    let icon512 = document.querySelector<HTMLLinkElement>(
+      'link[rel="icon"][sizes="512x512"]'
+    );
+    if (!icon512) {
+      icon512 = document.createElement('link');
+      icon512.rel = 'icon';
+      icon512.setAttribute('sizes', '512x512');
+      document.head.appendChild(icon512);
+    }
+    icon512.href = logoUrl;
+
+  }, [tournament?.id, tournament?.logoHeaderUrl]);
 };

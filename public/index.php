@@ -153,6 +153,14 @@ if ($ov) {
         );
     }
     if ($img !== '') {
+        // iPhone/iPad reads this server-rendered tag when creating the
+        // home-screen shortcut, before the React application has loaded.
+        $html = preg_replace(
+            '#<link\s+rel="apple-touch-icon"[^>]*>#i',
+            '<link rel="apple-touch-icon" sizes="180x180" href="' . $img . '" />',
+            $html,
+            1
+        );
         $html = preg_replace(
             '#<meta\s+property="og:image"[^>]*>#i',
             '<meta property="og:image" content="' . $img . '" />',
