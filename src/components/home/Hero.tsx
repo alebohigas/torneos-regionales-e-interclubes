@@ -53,7 +53,7 @@ const Hero = () => {
    *   - Slot 1 → /convocatoria
    *   - Slot 2 → /jugadores
    */
-  const fallback1 = { label: 'Ver Bases', href: '/convocatoria' };
+  const fallback1 = { label: 'Ver Convocatoria', href: '/convocatoria' };
   const fallback2 = { label: 'Ver Jugadores', href: '/jugadores' };
 
   const resolveSlot = (pageId: string | null | undefined, fallback: { label: string; href: string }) => {
