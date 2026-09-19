@@ -30,7 +30,7 @@ const ClubLogos = ({ etapa }: { etapa: CalendarioGiraEtapa }) => {
           src={club.logo}
           alt={club.name || 'Club'}
           title={club.name}
-          className="h-10 md:h-11 w-auto max-w-[72px] md:max-w-[84px] object-contain bg-white p-0.5"
+          className="h-12 md:h-14 w-auto max-w-[90px] md:max-w-[110px] object-contain bg-white p-0.5"
           loading="lazy"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
