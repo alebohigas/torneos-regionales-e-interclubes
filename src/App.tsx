@@ -74,11 +74,20 @@ const queryClient = new QueryClient();
  * Fetches server-side config and pushes values into PageVisibility context
  * Must be rendered inside PageVisibilityProvider
  */
+/**
+ * AppIconSync
+ * Componente aislado: mantiene el icono del navegador y del acceso en el
+ * teléfono alineados con el torneo activo, sin añadir hooks a SiteConfigSync.
+ */
+const AppIconSync = () => {
+  useAppIcon();
+  return null;
+};
+
 const SiteConfigSync = ({ children }: { children: React.ReactNode }) => {
   const { data } = useSiteConfig();
 
-  /** Keep browser and phone home-screen icons aligned with the active tournament. */
-  useAppIcon();
+
 
   /**
    * Empuja la configuración de módulos al estado global. Debe ir aquí (una sola
