@@ -39,25 +39,14 @@ function _regmail_meta($conn) {
 
 /**
  * Lista de CC internos para los correos de pre-registro.
- * Siempre incluye info@speitour.mx y, cuando existe y es válido,
- * el correo del torneo (`torneo.correotorne`). Soporta varios correos
- * separados por coma o punto y coma en ese campo y evita duplicados.
+ * ÚNICAMENTE info@speitour.mx; se ignoran los correos adicionales
+ * que pudiera traer el torneo para evitar destinatarios no deseados.
  *
- * @param string $torneoMail Valor crudo de torneo.correotorne
+ * @param string $torneoMail Valor crudo de torneo.correotorne (ignorado)
  * @return array<int,array{0:string,1:string}> Pares [email, nombre]
  */
 function _regmail_admin_cc($torneoMail = '') {
-    $cc   = [['info@speitour.mx', 'SPEI Tour']];
-    $seen = ['info@speitour.mx' => true];
-    foreach (preg_split('/[;,]+/', (string)$torneoMail) as $mail) {
-        $mail = trim($mail);
-        if ($mail === '' || !filter_var($mail, FILTER_VALIDATE_EMAIL)) continue;
-        $key = strtolower($mail);
-        if (isset($seen[$key])) continue;
-        $seen[$key] = true;
-        $cc[] = [$mail, 'Comité del Torneo'];
-    }
-    return $cc;
+    return [['info@speitour.mx', 'SPEI Tour']];
 }
 
 /**
@@ -237,7 +226,7 @@ function send_registration_ack_email($conn, $registroId) {
         . "\n";
 
     // CC fijo al buzón de coordinación para tener trazabilidad de cada paso del pre-registro.
-    // Se añade también el correo del torneo (torneo.correotorne) cuando existe.
+    // Solo info@speitour.mx; los correos del torneo se ignoran.
     $ccAdmin = _regmail_admin_cc($torneoMail);
     $res = smtp_send($row['reg_correo'], $nombre, $subject, $html, $textAlt, $ccAdmin);
     if (!$res['ok']) {
@@ -316,7 +305,7 @@ function send_comprobante_received_email($conn, $registroId) {
         . ($torneoName ? "Torneo: $torneoName\n" : '');
 
     // CC fijo al buzón de coordinación para tener trazabilidad de cada paso del pre-registro.
-    // Se añade también el correo del torneo (torneo.correotorne) cuando existe.
+    // Solo info@speitour.mx; los correos del torneo se ignoran.
     $ccAdmin = _regmail_admin_cc($torneoMail);
     $res = smtp_send($row['reg_correo'], $nombre, $subject, $html, $textAlt, $ccAdmin);
     if (!$res['ok']) {
