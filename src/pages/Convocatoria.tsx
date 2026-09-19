@@ -1,6 +1,6 @@
 /**
- * Convocatoria Page
- * Displays tournament convocatoria with 8 dynamic, reorderable sections
+ * Bases Page
+ * Displays tournament bases with 8 dynamic, reorderable sections
  * Sections: Descripción, Elegibilidad, Costos, Categorías, Premiación,
  *           Calendario, Reglas Locales, Competencias Especiales
  */
@@ -158,6 +158,10 @@ const renderSection = (sectionId: string, dbRow?: ConvocatoriaContentRow) => {
 
 const Convocatoria = () => {
   const [activeSection, setActiveSection] = useState('descripcion');
+
+  useEffect(() => {
+    document.title = 'Bases';
+  }, []);
   const { data: tournamentData } = useTournamentInfo();
   const { sections } = useConvocatoriaSections();
   // DB-backed convocatoria content for the active tournament.
@@ -276,7 +280,7 @@ const Convocatoria = () => {
   return (
     <Layout>
       <PageHero
-        title="Convocatoria"
+        title="Bases"
         subtitle="Información completa sobre inscripciones, categorías y requisitos"
         backgroundImage={convocatoriaHero}
         // Midpoint between the previous 65% framing and the lower 95%
@@ -305,7 +309,7 @@ const Convocatoria = () => {
                   href={convocatoriaPdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Ver convocatoria en PDF"
+                  aria-label="Ver bases en PDF"
                 >
                   <FileText className="h-5 w-5" />
                   Ver en PDF

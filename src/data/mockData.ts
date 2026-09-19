@@ -76,7 +76,7 @@ export interface TournamentStats {
 // Menu Configuration - Binary enabled/disabled from DB
 export const menuConfig: MenuItem[] = [
   { id: 'home', label: 'HOME', path: '/', enabled: true, order: 1 },
-  { id: 'convocatoria', label: 'CONVOCATORIA', path: '/convocatoria', enabled: true, order: 2 },
+  { id: 'convocatoria', label: 'BASES', path: '/convocatoria', enabled: true, order: 2 },
   { id: 'eventos', label: 'EVENTOS', path: '/eventos', enabled: true, order: 3 },
   { id: 'jugadores', label: 'JUGADORES', path: '/jugadores', enabled: true, order: 4 },
   /** FIELD-GIRA: duplicado de JUGADORES con datos seed de la gira (categorias_tmp/jugadores_seed) */
@@ -281,7 +281,7 @@ export const diaDePracticaText = "";
 /** Información general disclaimer */
 export const informacionGeneralText = "";
 
-/** Convocatoria section configuration */
+/** Bases section configuration */
 export interface ConvocatoriaSection {
   id: string;
   label: string;
@@ -289,7 +289,7 @@ export interface ConvocatoriaSection {
   order: number;
 }
 
-/** Default sections for convocatoria page — disabled if no info */
+/** Default sections for bases page — disabled if no info */
 export const convocatoriaSections: ConvocatoriaSection[] = [
   { id: 'descripcion', label: 'Descripción', enabled: true, order: 1 },
   { id: 'elegibilidad', label: 'Elegibilidad', enabled: true, order: 2 },
@@ -298,7 +298,7 @@ export const convocatoriaSections: ConvocatoriaSection[] = [
   { id: 'premiacion', label: 'Premiación', enabled: true, order: 5 },
   { id: 'desempates', label: 'Desempate', enabled: false, order: 6 },
   // Valores de puntaje Stableford (BD: torneos.valorstable por torneoid).
-  // Visible por default; se puede ocultar desde /admin → Convocatoria.
+  // Visible por default; se puede ocultar desde /admin → Bases.
   { id: 'stableford', label: 'Valores Stableford', enabled: true, order: 6.5 },
   { id: 'reglas', label: 'Reglas Locales', enabled: true, order: 7 },
   { id: 'competencias', label: 'Competencias Especiales', enabled: true, order: 8 },
@@ -407,7 +407,7 @@ export interface DesempatesData {
   /** Nota final mostrada debajo */
   nota?: string;
   /**
-   * Interruptores administrables desde /admin → Convocatoria → Desempate.
+   * Interruptores administrables desde /admin → Bases → Desempate.
    * Cuando son `false` el bloque correspondiente no se publica aunque
    * tenga criterios capturados. `undefined` = visible (retrocompatible).
    */

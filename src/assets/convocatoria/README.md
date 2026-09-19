@@ -1,4 +1,4 @@
-# Convocatoria posters
+# Bases posters
 
 Drop poster images (`.webp`, `.jpg`, `.png`, `.gif`) in this folder and they will be
 auto-discovered by `src/lib/posterAssets.ts` (`CONVOCATORIA_POSTERS`).

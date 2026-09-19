@@ -133,7 +133,7 @@ const CORE_MODULES: ModuleDef[] = [
     label: 'Archivos (uploads)',
     description:
       'Subida y borrado de imágenes/PDF desde /admin hacia el servidor, sin necesidad de FTP. ' +
-      'Lo usan Eventos, Avisos, Menús, Premios, Hoteles, Convocatoria, Reglas y Heros.',
+      'Lo usan Eventos, Avisos, Menús, Premios, Hoteles, Bases, Reglas y Heros.',
     losesOnDisable: 'No se puede apagar: varios módulos dependen de él.',
     core: true,
     group: 'nucleo',
@@ -174,9 +174,9 @@ const CORE_MODULES: ModuleDef[] = [
 const OPTIONAL_MODULES: ModuleDef[] = [
   {
     id: 'convocatoria',
-    label: 'Convocatoria',
+    label: 'Bases',
     description:
-      'Página de convocatoria con secciones dinámicas (descripción, elegibilidad, costos, ' +
+      'Página de bases con secciones dinámicas (descripción, elegibilidad, costos, ' +
       'categorías, premiación, desempates, valores Stableford, competencias, calendario) y su editor en /admin.',
     losesOnDisable: 'Se oculta /convocatoria y su editor. El contenido queda en la base de datos.',
     core: false,
