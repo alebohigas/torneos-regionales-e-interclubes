@@ -1068,6 +1068,31 @@ const Registro = () => {
       const catReglas = reglas.filter(r => !!r.is_active && ruleMatchesCategory(r, { id: c.id, name: c.name }));
 
       /**
+       * Categorías por EDAD/GÉNERO (ej. "VAR 10/11", "FEM 7/MEN"): el nombre
+       * es la fuente de verdad y manda sobre cualquier rango de hándicap.
+       * Con género + fecha de nacimiento capturados, sólo queda elegible la
+       * categoría que corresponde exactamente a la edad del jugador.
+       */
+      const ageSpec = parseAgeCategoryFromName(c.name || '');
+      if (ageSpec) {
+        const playerGender = normalizeGenderCode(sex);
+        if (ageSpec.gender && playerGender && ageSpec.gender !== playerGender) {
+          return { c, ok: false, reason: `Género ${ageSpec.gender} ≠ ${playerGender}` };
+        }
+        if (age === null) {
+          return { c, ok: false, reason: 'Falta fecha de nacimiento para determinar la edad' };
+        }
+        if (ageSpec.ageMin != null && age < ageSpec.ageMin) {
+          return { c, ok: false, reason: `Edad ${age} < mínima ${ageSpec.ageMin}` };
+        }
+        if (ageSpec.ageMax != null && age > ageSpec.ageMax) {
+          return { c, ok: false, reason: `Edad ${age} > máxima ${ageSpec.ageMax}` };
+        }
+        return { c, ok: true, reason: '' };
+      }
+
+
+      /**
        * Explicit admin rules are the source of truth when present. This avoids
        * mixing stale `categorias.hcpIdxMin/Max` values with the eligibility
        * rules: age-restricted categories (e.g. Campeonato Mayor) are removed by
