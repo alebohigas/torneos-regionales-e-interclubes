@@ -127,7 +127,12 @@ const SiteConfigSync = ({ children }: { children: React.ReactNode }) => {
     applyThemeConfig(data.theme_config ?? null);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <>{children}</>;
+  return (
+    <>
+      <AppIconSync />
+      {children}
+    </>
+  );
 };
 
 // ============= App Component =============
