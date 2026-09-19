@@ -17,8 +17,7 @@ import { useUploadsList } from '@/hooks/useUploads';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
-import { Calendar } from 'lucide-react';
-import { FileText } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Section components
@@ -161,6 +160,7 @@ const renderSection = (sectionId: string, dbRow?: ConvocatoriaContentRow) => {
 
 const Convocatoria = () => {
   const [activeSection, setActiveSection] = useState('descripcion');
+  const [isPdfVisible, setIsPdfVisible] = useState(false);
   const { giraId } = useGiraId();
   const { torneoId } = useTorneoId();
 
@@ -302,25 +302,39 @@ const Convocatoria = () => {
 
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          {/* PDF download button — opens the admin-uploaded convocatoria PDF in
-              a new tab. Hidden when no PDF has been uploaded via /admin. */}
+          {/* PDF viewer — stays inside the Bases page. Hidden when no PDF exists. */}
           {convocatoriaPdfUrl && (
-            <div className="flex justify-center mb-8">
-              <Button
-                asChild
-                size="lg"
-                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <a
-                  href={convocatoriaPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Ver bases en PDF"
+            <div className="mb-8 space-y-4">
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  size="lg"
+                  className="gap-2"
+                  aria-expanded={isPdfVisible}
+                  aria-controls="bases-pdf-viewer"
+                  onClick={() => setIsPdfVisible((visible) => !visible)}
                 >
                   <FileText className="h-5 w-5" />
-                  Ver en PDF
-                </a>
-              </Button>
+                  {isPdfVisible ? 'Ocultar PDF' : 'Ver en PDF'}
+                  {isPdfVisible ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {isPdfVisible && (
+                <div
+                  id="bases-pdf-viewer"
+                  className="h-[72vh] min-h-[32rem] overflow-hidden rounded-md border border-border bg-card md:h-[80vh]"
+                >
+                  <iframe
+                    src={convocatoriaPdfUrl}
+                    title="Bases del torneo"
+                    className="h-full w-full"
+                  />
+                </div>
+              )}
             </div>
           )}
 
