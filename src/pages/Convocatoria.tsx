@@ -333,12 +333,13 @@ const Convocatoria = () => {
               {isPdfVisible && (
                 <div
                   id="bases-pdf-viewer"
-                  className="h-[72vh] min-h-[32rem] overflow-hidden rounded-md border border-border bg-card md:h-[80vh]"
+                  className="h-[72vh] min-h-[32rem] overflow-auto rounded-md border border-border bg-card md:h-[80vh]"
                 >
                   <iframe
                     src={convocatoriaPdfUrl}
                     title="Bases del torneo"
-                    className="h-full w-full"
+                    className="h-full w-full overflow-auto"
+                    scrolling="yes"
                   />
                 </div>
               )}
