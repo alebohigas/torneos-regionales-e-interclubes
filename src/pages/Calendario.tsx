@@ -30,7 +30,7 @@ const ClubLogos = ({ etapa }: { etapa: CalendarioGiraEtapa }) => {
           src={club.logo}
           alt={club.name || 'Club'}
           title={club.name}
-          className="h-10 md:h-11 w-auto max-w-[72px] md:max-w-[84px] object-contain bg-white p-0.5"
+          className="h-12 md:h-14 w-auto max-w-[90px] md:max-w-[110px] object-contain bg-white p-0.5"
           loading="lazy"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -90,24 +90,24 @@ const Calendario = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm bg-background">
+                <table className="w-full text-sm bg-background table-fixed">
                   <thead>
                     <tr className="bg-primary text-primary-foreground">
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-[72px] md:w-28">Etapa</th>
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-24 md:w-32">Club</th>
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-full">Fecha</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-center font-semibold w-1/3">Etapa</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-center font-semibold w-1/3">Club</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-center font-semibold w-1/3">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((etapa) => (
                       <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0 bg-background">
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground whitespace-nowrap">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground whitespace-nowrap text-center w-1/3">
                           {etapa.etapaDisplay || etapa.etapaLabel || '—'}
                         </td>
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-center w-1/3">
                           <ClubLogos etapa={etapa} />
                         </td>
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-sm md:text-base">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-sm md:text-base text-center w-1/3">
                           <DateLabel label={etapa.dateLabel} />
                         </td>
                       </tr>
