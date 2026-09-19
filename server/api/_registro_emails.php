@@ -226,7 +226,7 @@ function send_registration_ack_email($conn, $registroId) {
         . "\n";
 
     // CC fijo al buzón de coordinación para tener trazabilidad de cada paso del pre-registro.
-    // Se añade también el correo del torneo (torneo.correotorne) cuando existe.
+    // Solo info@speitour.mx; los correos del torneo se ignoran.
     $ccAdmin = _regmail_admin_cc($torneoMail);
     $res = smtp_send($row['reg_correo'], $nombre, $subject, $html, $textAlt, $ccAdmin);
     if (!$res['ok']) {
@@ -305,7 +305,7 @@ function send_comprobante_received_email($conn, $registroId) {
         . ($torneoName ? "Torneo: $torneoName\n" : '');
 
     // CC fijo al buzón de coordinación para tener trazabilidad de cada paso del pre-registro.
-    // Se añade también el correo del torneo (torneo.correotorne) cuando existe.
+    // Solo info@speitour.mx; los correos del torneo se ignoran.
     $ccAdmin = _regmail_admin_cc($torneoMail);
     $res = smtp_send($row['reg_correo'], $nombre, $subject, $html, $textAlt, $ccAdmin);
     if (!$res['ok']) {
