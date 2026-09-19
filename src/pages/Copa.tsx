@@ -24,10 +24,15 @@ const LOGO_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%23166534" rx="4"/></svg>'
 )}`;
 
-/** Etiqueta descriptiva del tipo de copa. */
+/** Título y subtítulo que se muestran para cada copa. */
+const copaDisplayName = (copa: CopaItem): string => {
+  if (copa.sexo === 'M') return 'PUNTAJE VARONIL';
+  if (copa.sexo === 'F') return 'PUNTAJE FEMENIL';
+  return copa.name;
+};
 const copaTipo = (copa: CopaItem): string => {
-  if (copa.sexo === 'M') return 'Puntaje varonil';
-  if (copa.sexo === 'F') return 'Puntaje femenil';
+  if (copa.sexo === 'M') return 'Solo jugadores varoniles';
+  if (copa.sexo === 'F') return 'Solo jugadores femeniles';
   return 'Puntaje conjunto';
 };
 

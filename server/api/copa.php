@@ -65,7 +65,7 @@ $copasParam = isset($_GET['copasid']) ? trim((string)$_GET['copasid']) : '';
 if ($copasParam === '') {
     $copas = [];
     foreach ($copasRows as $r) {
-        $sexo = copa_sexo_filter($r['nombre'] ?? '', $r['grupocopas'] ?? '');
+        $sexo = copa_sexo_filter($r['nombre'] ?? '');
         $copas[] = [
             'copasid'      => (string)(int)$r['copasid'],
             'name'         => $r['nombre'] ?? '',
@@ -89,7 +89,7 @@ if (!$copa) {
     json_error('Copa no encontrada en esta gira', 404);
 }
 
-$sexo = copa_sexo_filter($copa['nombre'] ?? '', $copa['grupocopas'] ?? '');
+$sexo = copa_sexo_filter($copa['nombre'] ?? '');
 $sexoCol = $sexo !== '' ? sexo_source($conn) : '';
 
 $torneoIds = gira_torneo_ids($conn, $gid);
