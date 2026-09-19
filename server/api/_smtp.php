@@ -195,10 +195,11 @@ function smtp_bump_counter($conn, $sender, $extra) {
 /**
  * Send an HTML email. Returns ['ok'=>bool, 'error'=>string|null].
  *
- * The sender (Username/From) is rotated per call via `f_correo()` so that
- * no single IONOS mailbox exceeds the 250/day limit. All mailboxes share
- * $SMTP_PASS and live under @speitour.mx (SPF-authorized). Reply-To is
- * fixed to $SMTP_REPLY_TO (default noreply@speitour.mx).
+ * El remitente (Username/From) se rota por llamada desde `cuentas_correo`
+ * para que ningún buzón de IONOS pase de 250 envíos al día. Si la tabla
+ * guarda la contraseña de cada cuenta (columna `pwd`), se usa esa; si no,
+ * se usa la compartida $SMTP_PASS de credentials.php. Reply-To queda fijo
+ * en $SMTP_REPLY_TO.
  *
  * @param string       $to       Primary recipient email
  * @param string       $toName   Recipient display name
@@ -213,10 +214,12 @@ function smtp_send($to, $toName, $subject, $html, $textAlt = '', $cc = []) {
 
     // 1) Rotate sender via cuentas_correo. Fall back to static SMTP_USER
     //    if the DB lookup fails so registro_email keeps working.
-    $fromAddr = smtp_pick_sender($conn);
-    if (!$fromAddr) $fromAddr = $SMTP_USER ?? '';
+    $picked   = smtp_pick_sender($conn);
+    $fromAddr = $picked['email'] ?? ($SMTP_USER ?? '');
+    $fromPass = $picked['pass'] ?? null;
+    if (!$fromPass) $fromPass = $SMTP_PASS ?? '';
     $fromName = $SMTP_FROM_NAME ?? 'Pre-Registro';
-    $replyTo  = $SMTP_REPLY_TO ?? 'noreply@speitour.mx';
+    $replyTo  = $SMTP_REPLY_TO ?? ($fromAddr ?: 'noreply@speitour.mx');
     if (!$fromAddr) {
         return ['ok' => false, 'error' => 'No hay cuenta de envío disponible (cuentas_correo agotado y SMTP_USER vacío)'];
     }
