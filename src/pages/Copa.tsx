@@ -58,13 +58,7 @@ const Copa = ({ embedded = false }: CopaProps = {}) => {
 
   const clubs = copaData?.clubs ?? [];
 
-  return (
-    <Layout>
-      <PageHero
-        title="Copa"
-        subtitle="Puntos que aporta cada jugador a su club"
-        backgroundImage={copaHero}
-      />
+  const body = (
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           {!selectedCopa ? (
@@ -339,6 +333,18 @@ const Copa = ({ embedded = false }: CopaProps = {}) => {
           )}
         </div>
       </section>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <Layout>
+      <PageHero
+        title="Copa"
+        subtitle="Puntos que aporta cada jugador a su club"
+        backgroundImage={copaHero}
+      />
+      {body}
     </Layout>
   );
 };
