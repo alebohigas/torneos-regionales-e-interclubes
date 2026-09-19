@@ -62,6 +62,10 @@ interface RegistroRow {
   reg_telefono?: string;
   /** Alias canónico del teléfono en algunos esquemas. */
   reg_celular?: string;
+  /** Datos del tutor (para jugadores menores de edad). */
+  reg_tutor?: string;
+  reg_emailtutor?: string;
+  reg_celtutor?: string;
   reg_handicap?: string;
   reg_categoria?: string;
   /** Nombre legible de la categoría (JOIN del backend). */
@@ -1080,6 +1084,9 @@ export const RegistrosDashboard = ({ password }: { password: string }) => {
                                 ['Apellido', r.reg_apellido],
                                 ['Correo', r.reg_correo],
                                 ['Teléfono', formatPhone(r.reg_telefono || r.reg_celular)],
+                                ['Nombre del tutor', r.reg_tutor],
+                                ['Correo del tutor', r.reg_emailtutor],
+                                ['Teléfono del tutor', formatPhone(r.reg_celtutor)],
                                 ['Handicap', r.reg_handicap],
                                 ['Categoría', r.categoria_name],
                                 ['Club', r.reg_club],
