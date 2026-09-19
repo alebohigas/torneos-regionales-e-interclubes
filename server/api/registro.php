@@ -544,6 +544,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'veri
         }
     }
 
+    /**
+     * Espejo de celular: el formulario envía reg_telefono y se resuelve a
+     * reg_celular. Rellenamos también reg_celuular y reg_celtutor con el
+     * mismo número cuando existan esas columnas.
+     */
+    $phoneRaw = trim((string)($_POST['reg_telefono'] ?? $_POST['reg_celular'] ?? $_POST['reg_celuular'] ?? ''));
+    if ($phoneRaw !== '') {
+        foreach (['reg_celuular', 'reg_celtutor'] as $target) {
+            if (!registro_has($conn, $target)) continue;
+            if (isset($writtenCols[$target])) continue;
+            $writtenCols[$target] = true;
+            $cols[] = $target;
+            $vals[] = "'" . esc($conn, $phoneRaw) . "'";
+        }
+    }
+
 
     /**
      * Auto-calculate akron_edad against the tournament start date so a
