@@ -66,6 +66,7 @@ interface RegistroRow {
   reg_tutor?: string;
   reg_emailtutor?: string;
   reg_celtutor?: string;
+  reg_fechanac?: string;
   reg_handicap?: string;
   reg_categoria?: string;
   /** Nombre legible de la categoría (JOIN del backend). */
