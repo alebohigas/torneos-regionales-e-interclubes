@@ -8,6 +8,33 @@
 import { useEffect } from 'react';
 import { useTournamentInfo } from '@/hooks/useTournamentData';
 
+/** Marca los <link> creados por este hook para poder reemplazarlos limpiamente. */
+const ICON_MARK = 'data-app-icon';
+
+/**
+ * Crea (o recrea) un <link> de icono. Se elimina el anterior en vez de
+ * reutilizarlo: algunos navegadores ignoran un cambio de `href` en un link ya
+ * existente y siguen mostrando el icono en caché.
+ */
+const setIconLink = (rel: string, href: string, sizes?: string) => {
+  const selector = sizes
+    ? `link[${ICON_MARK}][rel="${rel}"][sizes="${sizes}"]`
+    : `link[${ICON_MARK}][rel="${rel}"]:not([sizes])`;
+  document.head.querySelectorAll(selector).forEach((el) => el.remove());
+
+  /** Quita también los links originales del index.html para evitar conflictos. */
+  const legacy = sizes
+    ? `link:not([${ICON_MARK}])[rel="${rel}"][sizes="${sizes}"]`
+    : `link:not([${ICON_MARK}])[rel="${rel}"]`;
+  document.head.querySelectorAll(legacy).forEach((el) => el.remove());
+
+  const link = document.createElement('link');
+  link.setAttribute(ICON_MARK, 'true');
+  link.rel = rel;
+  if (sizes) link.setAttribute('sizes', sizes);
+  link.href = href;
+  document.head.appendChild(link);
+};
 
 /**
  * Sets <link rel="apple-touch-icon"> and <link rel="icon"> dynamically
@@ -17,61 +44,27 @@ export const useAppIcon = () => {
   const { data: tournament } = useTournamentInfo();
 
   useEffect(() => {
-    if (!tournament?.logoHeaderUrl) return;
+    const logoHeaderUrl = tournament?.logoHeaderUrl;
+    if (!logoHeaderUrl) return;
 
-    /** Logo URL - already includes proxy path from API response */
-    const separator = tournament.logoHeaderUrl.includes('?') ? '&' : '?';
-    const logoUrl = `${tournament.logoHeaderUrl}${separator}app-icon=${encodeURIComponent(String(tournament.id))}`;
+    /**
+     * Token de versión: cambia al cambiar de torneo o de logo, así el
+     * navegador pide la imagen nueva en vez de servir la de su caché.
+     */
+    const version = `${tournament?.id ?? ''}-${logoHeaderUrl}`.replace(/\W+/g, '').slice(-24);
+    const separator = logoHeaderUrl.includes('?') ? '&' : '?';
+    const logoUrl = `${logoHeaderUrl}${separator}app-icon=${encodeURIComponent(version)}`;
 
-    // ============= Apple Touch Icon (home screen shortcut) =============
-    let appleTouchIcon = document.querySelector<HTMLLinkElement>(
-      'link[rel="apple-touch-icon"]'
-    );
-    if (!appleTouchIcon) {
-      appleTouchIcon = document.createElement('link');
-      appleTouchIcon.rel = 'apple-touch-icon';
-      document.head.appendChild(appleTouchIcon);
-    }
-    appleTouchIcon.href = logoUrl;
-    appleTouchIcon.setAttribute('sizes', '180x180');
+    // ============= Apple (acceso en pantalla de inicio de iPhone) =============
+    setIconLink('apple-touch-icon', logoUrl, '180x180');
+    setIconLink('apple-touch-icon-precomposed', logoUrl, '180x180');
 
-    // ============= Standard Favicon (browser tabs) =============
-    // Also update the standard favicon so mobile browsers use the
-    // tournament logo when creating home-screen shortcuts.
-    let favicon = document.querySelector<HTMLLinkElement>(
-      'link[rel="icon"]'
-    );
-    if (!favicon) {
-      favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      document.head.appendChild(favicon);
-    }
-    favicon.href = logoUrl;
-    favicon.removeAttribute('type');
+    // ============= Favicon estándar (pestañas del navegador) =============
+    setIconLink('icon', logoUrl);
+    setIconLink('shortcut icon', logoUrl);
 
-    // ============= Additional sizes for Android/Chrome =============
-    let icon192 = document.querySelector<HTMLLinkElement>(
-      'link[rel="icon"][sizes="192x192"]'
-    );
-    if (!icon192) {
-      icon192 = document.createElement('link');
-      icon192.rel = 'icon';
-      icon192.setAttribute('sizes', '192x192');
-      document.head.appendChild(icon192);
-    }
-    icon192.href = logoUrl;
-
-    /** Some Android browsers also inspect a 512px icon declaration. */
-    let icon512 = document.querySelector<HTMLLinkElement>(
-      'link[rel="icon"][sizes="512x512"]'
-    );
-    if (!icon512) {
-      icon512 = document.createElement('link');
-      icon512.rel = 'icon';
-      icon512.setAttribute('sizes', '512x512');
-      document.head.appendChild(icon512);
-    }
-    icon512.href = logoUrl;
-
+    // ============= Tamaños adicionales para Android/Chrome =============
+    setIconLink('icon', logoUrl, '192x192');
+    setIconLink('icon', logoUrl, '512x512');
   }, [tournament?.id, tournament?.logoHeaderUrl]);
 };
