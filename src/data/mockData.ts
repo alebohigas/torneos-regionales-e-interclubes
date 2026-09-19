@@ -281,7 +281,7 @@ export const diaDePracticaText = "";
 /** Información general disclaimer */
 export const informacionGeneralText = "";
 
-/** Convocatoria section configuration */
+/** Bases section configuration */
 export interface ConvocatoriaSection {
   id: string;
   label: string;
