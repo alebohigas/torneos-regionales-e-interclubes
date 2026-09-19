@@ -183,9 +183,18 @@ if ($regId > 0) {
     if ($rr) $rr->free();
     $regDiag['row_lookup'] = $rowInfo ?: '(row not found)';
     // Contar cuentas antes/después para confirmar que sí intentó enviar
-    $before = (int)($conn->query("SELECT SUM(numcorreos) s FROM cuentas_correo")->fetch_assoc()['s'] ?? 0);
+    $sch = smtp_accounts_schema($conn);
+    $sumSql = ($sch && $sch['count'])
+        ? "SELECT SUM(`{$sch['count']}`) s FROM `{$sch['table']}`"
+        : null;
+    $sumFn = function () use ($conn, $sumSql) {
+        if (!$sumSql) return 0;
+        $r = @$conn->query($sumSql);
+        return (int)($r ? ($r->fetch_assoc()['s'] ?? 0) : 0);
+    };
+    $before = $sumFn();
     send_registration_ack_email($conn, $regId);
-    $after = (int)($conn->query("SELECT SUM(numcorreos) s FROM cuentas_correo")->fetch_assoc()['s'] ?? 0);
+    $after = $sumFn();
     $regDiag['numcorreos_delta'] = $after - $before;
     ini_set('error_log', $prevErr);
     ini_set('display_errors', $prevDisp);
