@@ -26,17 +26,13 @@ $gid = (int)$giraid;
 
 // ---------- Helpers ----------
 
-/** Deduce el filtro de sexo de una copa a partir de su nombre / grupocopas. */
-function copa_sexo_filter($nombre, $grupoRaw) {
+/** Deduce el filtro de sexo de una copa a partir de su nombre (siempre). */
+function copa_sexo_filter($nombre) {
     $n = strtolower((string)$nombre);
     $n = strtr($n, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u']);
-    $hasGroup = trim((string)$grupoRaw) !== '';
 
-    // Una copa que consolida otras copas siempre es conjunta.
-    if (!$hasGroup) {
-        if (preg_match('/(varonil|caballer|masculin|varon)/', $n)) return 'M';
-        if (preg_match('/(femenil|damas|femenin|mujer)/', $n))     return 'F';
-    }
+    if (preg_match('/(varonil|caballer|masculin|varon)/', $n)) return 'M';
+    if (preg_match('/(femenil|damas|femenin|mujer)/', $n))     return 'F';
     return '';
 }
 
@@ -69,7 +65,7 @@ $copasParam = isset($_GET['copasid']) ? trim((string)$_GET['copasid']) : '';
 if ($copasParam === '') {
     $copas = [];
     foreach ($copasRows as $r) {
-        $sexo = copa_sexo_filter($r['nombre'] ?? '', $r['grupocopas'] ?? '');
+        $sexo = copa_sexo_filter($r['nombre'] ?? '');
         $copas[] = [
             'copasid'      => (string)(int)$r['copasid'],
             'name'         => $r['nombre'] ?? '',
@@ -93,7 +89,7 @@ if (!$copa) {
     json_error('Copa no encontrada en esta gira', 404);
 }
 
-$sexo = copa_sexo_filter($copa['nombre'] ?? '', $copa['grupocopas'] ?? '');
+$sexo = copa_sexo_filter($copa['nombre'] ?? '');
 $sexoCol = $sexo !== '' ? sexo_source($conn) : '';
 
 $torneoIds = gira_torneo_ids($conn, $gid);

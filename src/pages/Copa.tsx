@@ -24,10 +24,15 @@ const LOGO_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%23166534" rx="4"/></svg>'
 )}`;
 
-/** Etiqueta descriptiva del tipo de copa. */
+/** Título y subtítulo que se muestran para cada copa. */
+const copaDisplayName = (copa: CopaItem): string => {
+  if (copa.sexo === 'M') return 'PUNTAJE VARONIL';
+  if (copa.sexo === 'F') return 'PUNTAJE FEMENIL';
+  return copa.name;
+};
 const copaTipo = (copa: CopaItem): string => {
-  if (copa.sexo === 'M') return 'Puntaje varonil';
-  if (copa.sexo === 'F') return 'Puntaje femenil';
+  if (copa.sexo === 'M') return 'Solo jugadores varoniles';
+  if (copa.sexo === 'F') return 'Solo jugadores femeniles';
   return 'Puntaje conjunto';
 };
 
@@ -82,7 +87,7 @@ const Copa = () => {
                       className="border-border/50 hover:border-primary/50 transition-colors"
                     >
                       <CardContent className="p-5 text-center">
-                        <h3 className="font-bold text-foreground">{copa.name}</h3>
+                        <h3 className="font-bold text-foreground">{copaDisplayName(copa)}</h3>
                         <p className="text-sm text-muted-foreground my-2">{copaTipo(copa)}</p>
                         <Button
                           size="sm"
@@ -116,7 +121,7 @@ const Copa = () => {
 
               <div className="mb-8 text-left md:text-center">
                 <h2 className="text-2xl font-light text-foreground mb-2">
-                  Copa: <span className="font-bold">{copaData?.name || selectedCopa.name}</span>
+                  Copa: <span className="font-bold">{copaDisplayName(selectedCopa)}</span>
                 </h2>
                 <p className="text-muted-foreground">
                   <span className="font-bold text-foreground">Total clubes:</span>{' '}
