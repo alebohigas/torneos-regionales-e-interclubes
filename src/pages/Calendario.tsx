@@ -41,6 +41,27 @@ const ClubLogos = ({ etapa }: { etapa: CalendarioGiraEtapa }) => {
   );
 };
 
+/**
+ * Splits a date label like "22 y 23 noviembre 2025" into two lines on mobile
+ * when two dates are joined by " y ", so the Fecha column can be narrower.
+ */
+const DateLabel = ({ label }: { label?: string | null }) => {
+  if (!label) return <span>—</span>;
+  const parts = label.split(/\s+y\s+/i);
+  if (parts.length === 2) {
+    return (
+      <span className="block whitespace-normal leading-tight">
+        <span>{parts[0]}</span>
+        <span className="inline md:hidden">{' '}&</span>
+        <span className="hidden md:inline">{' '}y </span>
+        <br className="md:hidden" />
+        <span>{parts[1]}</span>
+      </span>
+    );
+  }
+  return <span className="whitespace-normal">{label}</span>;
+};
+
 const Calendario = () => {
   const { data: etapas, isLoading } = useCalendarioGira();
   const { data: siteConfig } = useSiteConfig();
