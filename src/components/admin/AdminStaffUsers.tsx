@@ -36,7 +36,7 @@ export const STAFF_AREAS: { id: StaffArea; label: string }[] = [
   { id: 'avisos',       label: 'Avisos' },
   { id: 'premios',      label: 'Premios' },
   { id: 'hoteles',      label: 'Hoteles' },
-  { id: 'convocatoria', label: 'Convocatoria' },
+  { id: 'convocatoria', label: 'Bases' },
   { id: 'reglas',       label: 'Reglas' },
   { id: 'uploads',      label: 'Archivos' },
   { id: 'stats',        label: 'Estadísticas' },

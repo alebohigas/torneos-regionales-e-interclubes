@@ -166,7 +166,7 @@ const Convocatoria = () => {
   const { torneoId } = useTorneoId();
 
   useEffect(() => {
-    document.title = 'Convocatoria';
+    document.title = 'Bases';
   }, []);
   const { data: tournamentData } = useTournamentInfo();
   const { sections } = useConvocatoriaSections();
@@ -287,7 +287,7 @@ const Convocatoria = () => {
   return (
     <Layout>
       <PageHero
-        title="Convocatoria"
+        title="Bases"
         subtitle="Información completa sobre inscripciones, categorías y requisitos"
         backgroundImage={convocatoriaHero}
         // Midpoint between the previous 65% framing and the lower 95%

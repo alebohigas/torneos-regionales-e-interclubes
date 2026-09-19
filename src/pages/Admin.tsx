@@ -496,7 +496,7 @@ const AdminDashboard = () => {
             { value: 'gira',         icon: Route,           label: 'Gira' },
             { value: 'archivos',     icon: Upload,          label: 'Archivos' },
             { value: 'pagina',       icon: LayoutPanelTop,  label: 'Página' },
-            { value: 'convocatoria', icon: FileText,        label: 'Convocatoria' },
+            { value: 'convocatoria', icon: FileText,        label: 'Bases' },
             { value: 'eventos',      icon: CalendarDays,    label: 'Eventos' },
             { value: 'avisos',       icon: Bell,            label: 'Avisos' },
             { value: 'menus',        icon: UtensilsCrossed, label: 'Menús' },
