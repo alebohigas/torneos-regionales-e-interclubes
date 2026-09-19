@@ -17,8 +17,9 @@ import { useUploadsList } from '@/hooks/useUploads';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
-import { Calendar, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BasesPreguntas from '@/components/convocatoria/BasesPreguntas';
 
 // Section components
 import DescripcionSection from '@/components/convocatoria/DescripcionSection';
