@@ -7,7 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
 import { useSiteConfig } from '@/hooks/useSiteConfig';
-import { getTorneoId } from '@/hooks/useTorneoId';
+import { useTorneoId } from '@/hooks/useTorneoId';
 import {
   getMenuUrl,
   getSponsorsUrl,
@@ -48,7 +48,8 @@ export const useSponsors = () => {
 
 /** Fetch tournament general info */
 export const useTournamentInfo = () => {
-  const torneoId = getTorneoId();
+  /** React to the tournament selected in Admin instead of reading it only once. */
+  const { torneoId } = useTorneoId();
   return useQuery<TournamentInfo>({
     queryKey: ['tournament', torneoId],
     queryFn: async () => {

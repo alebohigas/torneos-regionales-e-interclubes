@@ -12,6 +12,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PageVisibilityProvider, usePageVisibility } from "@/contexts/PageVisibilityContext";
 import { StaffAuthProvider } from "@/contexts/StaffAuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { useAppIcon } from "@/hooks/useAppIcon";
 import { applyThemeConfig } from "@/lib/theme-palettes";
 import { useEffect } from "react";
 import Index from "./pages/Index";
@@ -75,6 +76,9 @@ const queryClient = new QueryClient();
  */
 const SiteConfigSync = ({ children }: { children: React.ReactNode }) => {
   const { data } = useSiteConfig();
+
+  /** Keep browser and phone home-screen icons aligned with the active tournament. */
+  useAppIcon();
 
   /**
    * Empuja la configuración de módulos al estado global. Debe ir aquí (una sola
