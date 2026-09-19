@@ -1085,6 +1085,14 @@ export const RegistrosDashboard = ({ password }: { password: string }) => {
                                 ['Apellido', r.reg_apellido],
                                 ['Correo', r.reg_correo],
                                 ['Teléfono', formatPhone(r.reg_telefono || r.reg_celular)],
+                                ['Fecha de nacimiento',
+                                  r.reg_fechanac
+                                    ? (() => {
+                                        const m = String(r.reg_fechanac).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                        return m ? `${m[3]}/${m[2]}/${m[1]}` : r.reg_fechanac;
+                                      })()
+                                    : '—'
+                                ],
                                 ['Nombre del tutor', r.reg_tutor],
                                 ['Correo del tutor', r.reg_emailtutor],
                                 ['Teléfono del tutor', formatPhone(r.reg_celtutor)],
