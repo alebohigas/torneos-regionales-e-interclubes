@@ -62,6 +62,10 @@ interface RegistroRow {
   reg_telefono?: string;
   /** Alias canónico del teléfono en algunos esquemas. */
   reg_celular?: string;
+  /** Datos del tutor (para jugadores menores de edad). */
+  reg_tutor?: string;
+  reg_emailtutor?: string;
+  reg_celtutor?: string;
   reg_handicap?: string;
   reg_categoria?: string;
   /** Nombre legible de la categoría (JOIN del backend). */
