@@ -51,11 +51,10 @@ const DateLabel = ({ label }: { label?: string | null }) => {
   if (parts.length === 2) {
     return (
       <span className="block whitespace-normal leading-tight">
-        <span>{parts[0]}</span>
-        <span className="inline md:hidden">{' '}&</span>
-        <span className="hidden md:inline">{' '}y </span>
+        <span>{parts[0]} y</span>
         <br className="md:hidden" />
-        <span>{parts[1]}</span>
+        <span className="md:hidden">{parts[1]}</span>
+        <span className="hidden md:inline"> {parts[1]}</span>
       </span>
     );
   }
