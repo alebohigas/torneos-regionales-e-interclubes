@@ -41,6 +41,26 @@ const ClubLogos = ({ etapa }: { etapa: CalendarioGiraEtapa }) => {
   );
 };
 
+/**
+ * Splits a date label like "22 y 23 noviembre 2025" into two lines on mobile
+ * when two dates are joined by " y ", so the Fecha column can be narrower.
+ */
+const DateLabel = ({ label }: { label?: string | null }) => {
+  if (!label) return <span>—</span>;
+  const parts = label.split(/\s+y\s+/i);
+  if (parts.length === 2) {
+    return (
+      <span className="block whitespace-normal leading-tight">
+        <span>{parts[0]} y</span>
+        <br className="md:hidden" />
+        <span className="md:hidden">{parts[1]}</span>
+        <span className="hidden md:inline"> {parts[1]}</span>
+      </span>
+    );
+  }
+  return <span className="whitespace-normal">{label}</span>;
+};
+
 const Calendario = () => {
   const { data: etapas, isLoading } = useCalendarioGira();
   const { data: siteConfig } = useSiteConfig();
@@ -73,22 +93,22 @@ const Calendario = () => {
                 <table className="w-full text-sm bg-background">
                   <thead>
                     <tr className="bg-primary text-primary-foreground">
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-16 md:w-24">Etapa</th>
-                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-20 md:w-28">Club</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-[88px] md:w-28">Etapa</th>
+                      <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold w-16 md:w-28">Club</th>
                       <th className="px-2 md:px-4 py-2 md:py-3 text-left font-semibold">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((etapa) => (
                       <tr key={etapa.torneoid} className="border-b border-border/60 last:border-0 bg-background">
-                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground">
+                        <td className="px-2 md:px-4 py-2 md:py-3 align-middle font-semibold text-foreground whitespace-nowrap">
                           {etapa.etapaDisplay || etapa.etapaLabel || '—'}
                         </td>
                         <td className="px-2 md:px-4 py-2 md:py-3 align-middle">
                           <ClubLogos etapa={etapa} />
                         </td>
                         <td className="px-2 md:px-4 py-2 md:py-3 align-middle text-muted-foreground text-xs md:text-sm">
-                          {etapa.dateLabel || '—'}
+                          <DateLabel label={etapa.dateLabel} />
                         </td>
                       </tr>
                     ))}
