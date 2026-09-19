@@ -92,10 +92,10 @@ const Historial = () => {
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold text-foreground">
-                SELECCIONA EL AÑO
+                SELECCIONA LA TEMPORADA
               </h2>
               <p className="text-muted-foreground mt-2">
-                Historial de resultados de hasta 5 años anteriores
+                Historial de resultados de hasta 5 temporadas anteriores
               </p>
             </div>
 
