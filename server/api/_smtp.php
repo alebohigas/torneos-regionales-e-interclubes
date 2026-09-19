@@ -238,14 +238,14 @@ function smtp_send($to, $toName, $subject, $html, $textAlt = '', $cc = []) {
     }
 
     // Preferred path: PHPMailer over SMTP with credentials.
-    if (smtp_load_phpmailer() && !empty($SMTP_HOST) && !empty($SMTP_PASS)) {
+    if (smtp_load_phpmailer() && !empty($SMTP_HOST) && !empty($fromPass)) {
         try {
             $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
             $mail->isSMTP();
             $mail->Host       = $SMTP_HOST;
             $mail->SMTPAuth   = true;
             $mail->Username   = $fromAddr;
-            $mail->Password   = $SMTP_PASS;
+            $mail->Password   = $fromPass;
             $mail->Port       = (int)($SMTP_PORT ?? 587);
             $mail->SMTPSecure = ((int)$mail->Port === 465)
                 ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
