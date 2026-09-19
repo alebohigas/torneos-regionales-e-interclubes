@@ -151,7 +151,7 @@ export const HOTELES_POSTERS: DiscoveredPoster[] = buildPosterList(
 
 /**
  * All Bases posters discovered under `src/assets/convocatoria/`.
- * Reserved for future use — the Convocatoria page does not currently
+ * Reserved for future use — the Bases page does not currently
  * render a poster grid, but the folder is wired up so editors can drop
  * imagery in without code changes if/when needed.
  */

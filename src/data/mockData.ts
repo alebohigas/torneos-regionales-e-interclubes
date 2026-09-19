@@ -407,7 +407,7 @@ export interface DesempatesData {
   /** Nota final mostrada debajo */
   nota?: string;
   /**
-   * Interruptores administrables desde /admin → Convocatoria → Desempate.
+   * Interruptores administrables desde /admin → Bases → Desempate.
    * Cuando son `false` el bloque correspondiente no se publica aunque
    * tenga criterios capturados. `undefined` = visible (retrocompatible).
    */

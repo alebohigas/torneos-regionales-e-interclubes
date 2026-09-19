@@ -11,7 +11,7 @@
  *   - 'premios'      → poster grid for the Premios page
  *   - 'convocatoria' → reserved poster grid for the Bases page
  *   - 'reglas'       → reserved poster grid for the Reglas page
- *   - 'pdfs'         → PDFs referenced by Convocatoria/Reglas pages
+ *   - 'pdfs'         → PDFs referenced by Bases/Reglas pages
  *   - 'popup'        → images used by the site-wide POP UP overlay
  *
  * The list endpoint is public (read-only). Upload + delete require the

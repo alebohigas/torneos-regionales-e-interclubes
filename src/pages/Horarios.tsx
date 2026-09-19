@@ -64,7 +64,7 @@ const Horarios = () => {
    * Primera → Letras (AA,A,B,...) → Damas → Senior → Novatos → Otros.
    * Backend currently returns rows alphabetically; we override that here
    * so all matrix tables (Calendario + Horarios + their previews inside
-   * Convocatoria) keep the same row sequence.
+   * Bases) keep the same row sequence.
    */
   const entries = [...(data?.entries ?? [])].sort((a, b) =>
     compareCategories(

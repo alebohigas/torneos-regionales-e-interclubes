@@ -3,7 +3,7 @@
  * --------------------------------------------------------------
  * Shared helper that produces a deterministic sort key for tournament
  * categories so that all matrix tables (Calendario, Horarios, plus their
- * embedded previews inside Convocatoria) display rows in the same
+ * embedded previews inside Bases) display rows in the same
  * canonical order requested by the user:
  *
  *   1. Primera (1RA)

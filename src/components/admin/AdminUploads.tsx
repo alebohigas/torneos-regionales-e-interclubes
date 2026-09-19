@@ -6,7 +6,7 @@
  *
  *   - Eventos       (images for the Eventos page poster grid)
  *   - Avisos        (images for the Avisos page poster grid)
- *   - Convocatoria  (images for the Convocatoria gallery + the downloadable
+ *   - Bases  (images for the Bases gallery + the downloadable
  *                    convocatoria PDF — first PDF in this section is what
  *                    the public page links to, regardless of filename)
  *   - Reglas        (the downloadable Reglas y CC PDF — first PDF in this
@@ -180,7 +180,7 @@ const formatBytes = (bytes: number): string => {
 
 /**
  * Decide whether a single file is a PDF based on its extension.
- * Used to split mixed sections (Convocatoria) into PDF rows + image grid.
+ * Used to split mixed sections (Bases) into PDF rows + image grid.
  */
 const isPdfFile = (name: string): boolean => /\.pdf$/i.test(name);
 
@@ -197,7 +197,7 @@ interface SectionPanelProps {
  */
 const SectionPanel = ({ meta }: SectionPanelProps) => {
   const { toast } = useToast();
-  // Separate refs for the two upload modes so a `mixed` section (Convocatoria)
+  // Separate refs for the two upload modes so a `mixed` section (Bases)
   // can offer two distinct buttons — one strictly for images, one strictly
   // for PDFs — each with its own `accept` attribute. Single-mode sections
   // only use `imageInputRef` OR `pdfInputRef`.
@@ -397,7 +397,7 @@ const SectionPanel = ({ meta }: SectionPanelProps) => {
               No hay archivos en esta sección todavía. Usa el botón "Subir" para agregar.
             </p>
           ) : (() => {
-            // Split files by type so mixed sections (Convocatoria) can show
+            // Split files by type so mixed sections (Bases) can show
             // PDFs as rows AND images as thumbnails simultaneously.
             const pdfFiles = files.filter((f) => isPdfFile(f.name));
             const imageFiles = files.filter((f) => !isPdfFile(f.name));
