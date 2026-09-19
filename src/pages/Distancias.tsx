@@ -49,11 +49,17 @@ const teeText = (bg: string): string => {
   return L > 0.45 ? '#000000' : '#ffffff';
 };
 
-/** Tabla de un bloque categoría × campo. */
+/** Tabla de un bloque categoría × campo.
+ *  Solo muestra hoyos con yardaje > 0; los totales se recalculan sobre ellos. */
 const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
   const bg = teeBg(block.teeColor);
   const fg = teeText(bg);
 
+  const holes = block.holes.filter((h) => h.yardaje > 0);
+  if (holes.length === 0) return null;
+
+  const totalYardas = holes.reduce((sum, h) => sum + h.yardaje, 0);
+  const totalPar = holes.reduce((sum, h) => sum + h.par, 0);
 
   return (
     <Card className="overflow-hidden border-border/60">
@@ -85,7 +91,7 @@ const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
               <tr style={{ backgroundColor: bg, color: fg }}>
 
                 <th className="px-3 py-2 text-left font-semibold whitespace-nowrap">Hoyo</th>
-                {block.holes.map((h) => (
+                {holes.map((h) => (
                   <th key={h.numero} className="px-3 py-2 text-center font-semibold">
                     {h.numero}
                   </th>
@@ -96,17 +102,17 @@ const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
             <tbody>
               <tr className="bg-muted/40 border-b border-border/60">
                 <td className="px-3 py-2 text-center text-muted-foreground">Yardas</td>
-                {block.holes.map((h) => (
-                  <td key={h.numero} className="px-3 py-2 text-center">{h.yardaje || '—'}</td>
+                {holes.map((h) => (
+                  <td key={h.numero} className="px-3 py-2 text-center">{h.yardaje}</td>
                 ))}
-                <td className="px-3 py-2 text-center font-bold">{block.totalYardas}</td>
+                <td className="px-3 py-2 text-center font-bold">{totalYardas}</td>
               </tr>
               <tr>
                 <td className="px-3 py-2 text-center text-muted-foreground">Par</td>
-                {block.holes.map((h) => (
+                {holes.map((h) => (
                   <td key={h.numero} className="px-3 py-2 text-center">{h.par || '—'}</td>
                 ))}
-                <td className="px-3 py-2 text-center font-bold">{block.totalPar}</td>
+                <td className="px-3 py-2 text-center font-bold">{totalPar}</td>
               </tr>
             </tbody>
           </table>
