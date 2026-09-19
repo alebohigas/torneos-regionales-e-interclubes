@@ -1088,7 +1088,12 @@ export const RegistrosDashboard = ({ password }: { password: string }) => {
                                 ['Cargo a cuenta', String(r.reg_cargo_socio ?? '') === '1' ? 'Sí' : 'No'],
                                 ['Número de socio', r.reg_numsocio],
                                 ['Edad', r.akron_edad],
-                                ['Fecha registro', r.reg_fecha || r.created_at || (r as any).fecha_alta],
+                                ['Fecha registro', (() => {
+                                  const raw = String(r.reg_fecha || r.created_at || (r as any).fecha_alta || r.fecharegistro || '').trim();
+                                  if (!raw) return '';
+                                  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                  return m ? `${m[3]}/${m[2]}/${m[1]}` : raw;
+                                })()],
                                 ['Fecha y hora de registro',
                                   r.fecharegistro
                                     ? (() => {
