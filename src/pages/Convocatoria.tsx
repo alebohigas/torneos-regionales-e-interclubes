@@ -19,6 +19,7 @@ import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
 import { Calendar, ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PdfDocumentViewer from '@/components/convocatoria/PdfDocumentViewer';
 
 // Section components
 import DescripcionSection from '@/components/convocatoria/DescripcionSection';
@@ -333,14 +334,9 @@ const Convocatoria = () => {
               {isPdfVisible && (
                 <div
                   id="bases-pdf-viewer"
-                  className="h-[72vh] min-h-[32rem] overflow-auto rounded-md border border-border bg-card md:h-[80vh]"
+                  className="max-h-[75vh] overflow-y-auto overscroll-contain rounded-md border border-border bg-card md:max-h-[80vh]"
                 >
-                  <iframe
-                    src={convocatoriaPdfUrl}
-                    title="Convocatoria del torneo"
-                    className="h-full w-full overflow-auto"
-                    scrolling="yes"
-                  />
+                  <PdfDocumentViewer url={convocatoriaPdfUrl} />
                 </div>
               )}
             </div>
