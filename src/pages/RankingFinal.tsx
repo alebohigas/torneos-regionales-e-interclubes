@@ -51,13 +51,7 @@ const RankingFinal = () => {
 
 
 
-  return (
-    <Layout>
-      <PageHero
-        title="Ranking Final"
-        subtitle="Mejores 5 resultados acumulados de la gira"
-        backgroundImage={rankingHero}
-      />
+  const body = (
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           {!selectedCategory ? (
@@ -312,7 +306,18 @@ const RankingFinal = () => {
           )}
         </div>
       </section>
+  );
 
+  if (embedded) return body;
+
+  return (
+    <Layout>
+      <PageHero
+        title="Ranking Final"
+        subtitle="Mejores 5 resultados acumulados de la gira"
+        backgroundImage={rankingHero}
+      />
+      {body}
     </Layout>
   );
 };

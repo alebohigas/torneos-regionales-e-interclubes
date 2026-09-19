@@ -43,6 +43,7 @@ export const getGiraId = (): string => {
 
 /** Devuelve la gira activa y un setter que persiste + notifica. */
 export const useGiraId = () => {
+  const override = useContext(GiraOverrideContext);
   const [giraId, setGiraIdState] = useState<string>(() => getGiraId());
 
   const setGiraId = useCallback((id: string) => {
@@ -64,5 +65,6 @@ export const useGiraId = () => {
     };
   }, []);
 
-  return { giraId, setGiraId };
+  // Si hay override (p.ej. /historial mostrando una gira pasada) manda ese valor.
+  return { giraId: (override ?? '').trim() || giraId, setGiraId };
 };
