@@ -36,7 +36,12 @@ const copaTipo = (copa: CopaItem): string => {
   return 'Puntaje conjunto';
 };
 
-const Copa = () => {
+/** `embedded` omite Layout y hero (lo usa /historial). */
+interface CopaProps {
+  embedded?: boolean;
+}
+
+const Copa = ({ embedded = false }: CopaProps = {}) => {
   /** Copa seleccionada (null = grid de copas) */
   const [selectedCopa, setSelectedCopa] = useState<CopaItem | null>(null);
   /** Club con el desglose abierto */

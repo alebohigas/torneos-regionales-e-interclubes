@@ -30,7 +30,12 @@ const LOGO_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%23166534" rx="4"/></svg>'
 )}`;
 
-const RankingFinal = () => {
+/** `embedded` omite Layout y hero (lo usa /historial). */
+interface RankingFinalProps {
+  embedded?: boolean;
+}
+
+const RankingFinal = ({ embedded = false }: RankingFinalProps = {}) => {
   const [selectedCategory, setSelectedCategory] = useState<RankingFinalCategory | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<RankingFinalPlayer | null>(null);
 
