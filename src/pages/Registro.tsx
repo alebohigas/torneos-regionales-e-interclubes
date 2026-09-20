@@ -1678,31 +1678,23 @@ const Registro = () => {
               {eligibleCategories.map(c => (
                 (() => {
                   /**
-                   * Render category label con sufijo de disponibilidad:
-                   *   "[name] (registrados/max) N espacios disponibles".
-                   * Si la categoría llegó a su cupo (registrados >= max),
-                   * se muestra "LLENO" y el item queda deshabilitado en
-                   * el Select (pero sigue visible para el jugador).
-                   * Se omite el sufijo cuando max es 0 o 99 (ilimitado).
+                   * Render category label con sufijo de disponibilidad.
+                   * Categorías cerradas (maxjugadores = 0 o pre-registros
+                   * >= maxjugadores) se muestran como NO DISPONIBLE y el
+                   * item queda deshabilitado. max = 99 → ilimitado.
                    */
                   const max = Number(c.maxPlayers) || 0;
                   const reg = Number(c.registeredCount) || 0;
-                  const unlimited = !max || max === 99;
+                  const unlimited = max === 99;
                   const left = Math.max(max - reg, 0);
-                  const full = !unlimited && left <= 0;
+                  const full = isCategoriaBloqueada(c);
                   const label = unlimited
                     ? c.name
                     : full
-                      ? `${c.name} (${reg}/${max}) — LLENO (lista de espera)`
+                      ? `${c.name} — NO DISPONIBLE`
                       : `${c.name} (${reg}/${max}) ${left} espacios disponibles`;
                   return (
-                    /*
-                     * No deshabilitar categorías llenas: el jugador puede
-                     * inscribirse de todos modos y entrará a "lista de
-                     * espera" (status_pago=67 en BD). Un confirm en el
-                     * submit le avisa antes de registrar.
-                     */
-                    <SelectItem key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={c.id} disabled={full}>
                       {label}
                     </SelectItem>
                   );
