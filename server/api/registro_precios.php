@@ -241,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($torneoid <= 0) json_error('Missing torneoid', 400);
 
     if (!precios_table_exists($conn)) {
-        json_error('Table registro_precios not found. Corre la migración 2026_05_19_registro_precios.sql.', 500);
+        json_error('No se pudo crear la tabla registro_precios. Revisa permisos de la base de datos.', 500);
     }
     ensure_hcp_columns($conn);
 
