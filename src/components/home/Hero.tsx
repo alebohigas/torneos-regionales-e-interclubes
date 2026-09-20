@@ -63,8 +63,9 @@ const Hero = () => {
     const visible = siteConfig?.visibility?.[pageId];
     // If visibility isn't defined, we assume the page is visible (legacy).
     if (visible === false) return fallback;
+    const label = item.label.charAt(0) + item.label.slice(1).toLowerCase();
     return {
-      label: item.label.charAt(0) + item.label.slice(1).toLowerCase(),
+      label: label.startsWith('Ver ') ? label : `Ver ${label}`,
       href:  item.path,
     };
   };
