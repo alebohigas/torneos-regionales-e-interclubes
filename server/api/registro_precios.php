@@ -25,8 +25,9 @@
  * endpoint sigue aceptando las columnas legacy para no romper datos
  * existentes, pero el matching nuevo SÓLO usa `tipo_socio`.
  *
- * Patrón: si la tabla no existe, GET devuelve { rules: [] } y POST devuelve
- * 500 con instrucción de correr la migración.
+ * Compatibilidad: algunas instalaciones golftour crearon esta tabla con
+ * torneoid/monto/activo. El endpoint completa y migra esas columnas al
+ * esquema canónico torneo_id/precio/is_active sin perder datos.
  */
 require_once 'config.php';
 require_once '_staff_auth.php';
@@ -75,6 +76,55 @@ function precios_table_exists($conn) {
     return $exists;
 }
 
+/** Devuelve true si una columna existe en registro_precios. */
+function precios_column_exists($conn, $column) {
+    $column = esc($conn, $column);
+    $r = @$conn->query("SHOW COLUMNS FROM registro_precios LIKE '$column'");
+    $exists = $r && $r->num_rows > 0;
+    if ($r) $r->free();
+    return $exists;
+}
+
+/**
+ * Alinea instalaciones creadas con el bootstrap golftour antiguo.
+ * Cada columna se copia solamente cuando acaba de crearse, evitando
+ * sobrescribir posteriores ediciones legítimas (incluido un precio de 0).
+ */
+function ensure_precios_schema($conn) {
+    if (!precios_table_exists($conn)) return false;
+
+    $columns = [
+        'torneo_id'     => 'INT(11) NULL',
+        'categoria'     => 'VARCHAR(120) NULL',
+        'incluye'       => 'TEXT NULL',
+        'display_order' => 'INT(11) NOT NULL DEFAULT 0',
+        'is_active'     => 'TINYINT(1) NOT NULL DEFAULT 1',
+        'precio'        => 'DECIMAL(10,2) NOT NULL DEFAULT 0',
+        'hcp_min'       => 'DECIMAL(5,1) NULL',
+        'hcp_max'       => 'DECIMAL(5,1) NULL',
+    ];
+
+    foreach ($columns as $column => $definition) {
+        if (precios_column_exists($conn, $column)) continue;
+        if (!@$conn->query("ALTER TABLE registro_precios ADD COLUMN `$column` $definition")) {
+            error_log("registro_precios add $column failed: " . $conn->error);
+            return false;
+        }
+
+        if ($column === 'torneo_id' && precios_column_exists($conn, 'torneoid')) {
+            @$conn->query('UPDATE registro_precios SET torneo_id = torneoid');
+        } elseif ($column === 'precio' && precios_column_exists($conn, 'monto')) {
+            @$conn->query('UPDATE registro_precios SET precio = monto');
+        } elseif ($column === 'is_active' && precios_column_exists($conn, 'activo')) {
+            @$conn->query('UPDATE registro_precios SET is_active = activo');
+        }
+    }
+
+    return precios_column_exists($conn, 'torneo_id')
+        && precios_column_exists($conn, 'precio')
+        && precios_column_exists($conn, 'is_active');
+}
+
 /**
  * Garantiza que las columnas hcp_min / hcp_max existan en registro_precios.
  * Las añade silenciosamente si faltan; cachea el resultado por request.
@@ -83,7 +133,7 @@ function precios_table_exists($conn) {
 function ensure_hcp_columns($conn) {
     static $checked = null;
     if ($checked !== null) return $checked;
-    if (!precios_table_exists($conn)) return $checked = false;
+    if (!ensure_precios_schema($conn)) return $checked = false;
     foreach (['hcp_min', 'hcp_max'] as $col) {
         $r = $conn->query("SHOW COLUMNS FROM registro_precios LIKE '$col'");
         if (!$r || $r->num_rows === 0) {
@@ -178,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $torneoid = (int) require_torneoid($conn);
     $action   = optional_param('action', 'list');
 
-    if (!precios_table_exists($conn)) {
+    if (!ensure_precios_schema($conn)) {
         if ($action === 'match') json_response(['match' => null, 'source' => 'no_table']);
         json_response(['rules' => [], 'source' => 'no_table']);
     }
@@ -240,15 +290,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $torneoid = isset($body['torneoid']) ? (int)$body['torneoid'] : 0;
     if ($torneoid <= 0) json_error('Missing torneoid', 400);
 
-    if (!precios_table_exists($conn)) {
-        json_error('No se pudo crear la tabla registro_precios. Revisa permisos de la base de datos.', 500);
+    if (!ensure_precios_schema($conn)) {
+        json_error('No se pudo preparar la tabla registro_precios. Revisa permisos de la base de datos.', 500);
     }
     ensure_hcp_columns($conn);
 
     $rules = $body['rules'] ?? [];
     if (!is_array($rules)) json_error('rules must be an array', 400);
-
-    $conn->query("DELETE FROM registro_precios WHERE torneo_id = $torneoid");
 
     /** Acepta nulls reales para los filtros opcionales. */
     $nullable = function($v) use ($conn) {
@@ -267,6 +315,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $count = 0;
     $errors = [];
+    $conn->begin_transaction();
+    if (!$conn->query("DELETE FROM registro_precios WHERE torneo_id = $torneoid")) {
+        $conn->rollback();
+        json_error('No se pudieron reemplazar los precios: ' . $conn->error, 500);
+    }
     foreach ($rules as $r) {
         $etiqueta   = esc($conn, (string)($r['etiqueta'] ?? ''));
         $categoria  = $nullable($r['categoria'] ?? null);
@@ -292,7 +345,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
 
-    json_response(['saved' => count($errors) === 0, 'count' => $count, 'errors' => $errors]);
+    if (count($errors) > 0) {
+        $conn->rollback();
+        json_error('No se guardaron los precios: ' . implode(' | ', array_unique($errors)), 500);
+    }
+    if (!$conn->commit()) {
+        $conn->rollback();
+        json_error('No se pudo confirmar el guardado de precios: ' . $conn->error, 500);
+    }
+
+    json_response(['saved' => true, 'count' => $count]);
 }
 
 json_error('Method not allowed', 405);
