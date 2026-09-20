@@ -86,6 +86,52 @@ function categoria_esta_llena($conn, $torneoid, $categoriaId) {
 }
 
 /**
+ * ¿El PRE-REGISTRO está bloqueado para esta categoría?
+ * -----------------------------------------------------------------------
+ * Regla (solicitada por el comité):
+ *   - `categorias.maxjugadores` = 0  → la categoría NO acepta pre-registros.
+ *   - `categorias.maxjugadores` = 99 → ilimitado (nunca bloquea).
+ *   - En cualquier otro caso, se cuentan los PRE-REGISTROS existentes en la
+ *     tabla `registro` (excluyendo cancelados status_pago=99) y se bloquea
+ *     cuando el conteo alcanza o supera `maxjugadores`.
+ */
+function categoria_cupo_bloqueado($conn, $torneoid, $categoriaId) {
+    $torneoid    = (int)$torneoid;
+    $categoriaId = (int)$categoriaId;
+    if ($torneoid <= 0 || $categoriaId <= 0) return false;
+
+    $r = @$conn->query(
+        "SELECT maxjugadores FROM categorias "
+        . "WHERE categoria_id = $categoriaId AND torneo_id = $torneoid LIMIT 1"
+    );
+    if (!$r) return false;
+    $row = $r->fetch_assoc(); $r->free();
+    if (!$row || !array_key_exists('maxjugadores', $row) || $row['maxjugadores'] === null) return false;
+
+    $max = (int)$row['maxjugadores'];
+    if ($max === 99) return false;      // ilimitado
+    if ($max <= 0)   return true;       // cerrado explícitamente
+
+    $torneoCol = registro_torneo_col($conn);
+    $catCol = null;
+    foreach (['reg_categoria', 'categoriaid', 'categoria_id', 'catid'] as $c) {
+        if (registro_has($conn, $c)) { $catCol = $c; break; }
+    }
+    if (!$torneoCol || !$catCol) return false;
+
+    $statusFilter = registro_has($conn, 'status_pago')
+        ? ' AND (`status_pago` IS NULL OR `status_pago` <> 99)' : '';
+    $rc = @$conn->query(
+        "SELECT COUNT(*) AS n FROM registro "
+        . "WHERE `$torneoCol` = $torneoid AND `$catCol` = $categoriaId$statusFilter"
+    );
+    if (!$rc) return false;
+    $cnt = (int)($rc->fetch_assoc()['n'] ?? 0);
+    $rc->free();
+    return $cnt >= $max;
+}
+
+/**
  * Envía el correo automático para registros en LISTA DE ESPERA
  * (status_pago=67). Misma estructura visual que el correo de bienvenida
  * pero SIN imagen de datos bancarios y SIN CTA para subir comprobante;
