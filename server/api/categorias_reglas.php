@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($torneoid <= 0) json_error('Missing torneoid', 400);
 
     if (!reglas_table_exists($conn)) {
-        json_error('Tabla categorias_reglas no existe. Corre la migración 2026_05_22_categorias_reglas.sql.', 500);
+        json_error('No se pudo crear la tabla categorias_reglas. Revisa permisos de la base de datos.', 500);
     }
 
     $rules = $body['rules'] ?? [];
@@ -190,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
 
     $count = 0;
+    $errors = [];
     foreach ($rules as $r) {
         $cat   = (string)($r['categoria'] ?? '');
         if ($cat === '') continue; // skip filas sin categoría — son inútiles
@@ -208,9 +209,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES
                   ($torneoid, $catSql, $gen, $emin, $emax,
                    $hmin, $hmax, $ord, $act)";
-        if ($conn->query($sql)) $count++;
+        if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
-    json_response(['saved' => true, 'count' => $count]);
+    json_response(['saved' => count($errors) === 0, 'count' => $count, 'errors' => $errors]);
 }
 
 json_error('Method not allowed', 405);

@@ -266,6 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
 
     $count = 0;
+    $errors = [];
     foreach ($rules as $r) {
         $etiqueta   = esc($conn, (string)($r['etiqueta'] ?? ''));
         $categoria  = $nullable($r['categoria'] ?? null);
@@ -288,10 +289,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES
                   ($torneoid, '$etiqueta', $categoria, $tipoSocio, $genero, $edadMin, $edadMax,
                    $hcpMin, $hcpMax, $precio, '$moneda', '$incluye', $prioridad, $ord, $active)";
-        if ($conn->query($sql)) $count++;
+        if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
 
-    json_response(['saved' => true, 'count' => $count]);
+    json_response(['saved' => count($errors) === 0, 'count' => $count, 'errors' => $errors]);
 }
 
 json_error('Method not allowed', 405);
