@@ -71,8 +71,9 @@ export const useSaveRegistroPrecios = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Error al guardar');
+      if (!json.saved) throw new Error(json.error || 'El servidor no confirmó el guardado');
       return json;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['registro_precios'] }),

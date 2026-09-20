@@ -56,6 +56,57 @@ function reglas_table_exists($conn) {
     return $exists;
 }
 
+/** Devuelve true si una columna existe en categorias_reglas. */
+function reglas_column_exists($conn, $column) {
+    $column = esc($conn, $column);
+    $r = @$conn->query("SHOW COLUMNS FROM categorias_reglas LIKE '$column'");
+    $exists = $r && $r->num_rows > 0;
+    if ($r) $r->free();
+    return $exists;
+}
+
+/**
+ * Compatibilidad con el bootstrap golftour, que originalmente usó
+ * torneoid/sexo/orden/activo en lugar de los nombres canónicos de la API.
+ */
+function ensure_reglas_schema($conn) {
+    if (!reglas_table_exists($conn)) return false;
+
+    $columns = [
+        'torneo_id'     => 'INT(11) NULL',
+        'genero'        => 'VARCHAR(8) NULL',
+        'display_order' => 'INT(11) NOT NULL DEFAULT 0',
+        'is_active'     => 'TINYINT(1) NOT NULL DEFAULT 1',
+        'hcp_min'       => 'DECIMAL(5,1) NULL',
+        'hcp_max'       => 'DECIMAL(5,1) NULL',
+        'edad_min'      => 'INT(11) NULL',
+        'edad_max'      => 'INT(11) NULL',
+    ];
+
+    foreach ($columns as $column => $definition) {
+        if (reglas_column_exists($conn, $column)) continue;
+        if (!@$conn->query("ALTER TABLE categorias_reglas ADD COLUMN `$column` $definition")) {
+            error_log("categorias_reglas add $column failed: " . $conn->error);
+            return false;
+        }
+
+        if ($column === 'torneo_id' && reglas_column_exists($conn, 'torneoid')) {
+            @$conn->query('UPDATE categorias_reglas SET torneo_id = torneoid');
+        } elseif ($column === 'genero' && reglas_column_exists($conn, 'sexo')) {
+            @$conn->query('UPDATE categorias_reglas SET genero = sexo');
+        } elseif ($column === 'display_order' && reglas_column_exists($conn, 'orden')) {
+            @$conn->query('UPDATE categorias_reglas SET display_order = orden');
+        } elseif ($column === 'is_active' && reglas_column_exists($conn, 'activo')) {
+            @$conn->query('UPDATE categorias_reglas SET is_active = activo');
+        }
+    }
+
+    return reglas_column_exists($conn, 'torneo_id')
+        && reglas_column_exists($conn, 'genero')
+        && reglas_column_exists($conn, 'display_order')
+        && reglas_column_exists($conn, 'is_active');
+}
+
 /** ¿Existe registro_precios? Para detectar legacy data a migrar. */
 function precios_legacy_exists($conn) {
     static $e = null;
@@ -136,7 +187,7 @@ function auto_seed_from_precios($conn, $torneoid) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $torneoid = (int) require_torneoid($conn);
 
-    if (!reglas_table_exists($conn)) {
+    if (!ensure_reglas_schema($conn)) {
         json_response(['rules' => [], 'source' => 'no_table']);
     }
 
@@ -167,14 +218,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $torneoid = isset($body['torneoid']) ? (int)$body['torneoid'] : 0;
     if ($torneoid <= 0) json_error('Missing torneoid', 400);
 
-    if (!reglas_table_exists($conn)) {
-        json_error('No se pudo crear la tabla categorias_reglas. Revisa permisos de la base de datos.', 500);
+    if (!ensure_reglas_schema($conn)) {
+        json_error('No se pudo preparar la tabla categorias_reglas. Revisa permisos de la base de datos.', 500);
     }
 
     $rules = $body['rules'] ?? [];
     if (!is_array($rules)) json_error('rules must be an array', 400);
-
-    $conn->query("DELETE FROM categorias_reglas WHERE torneo_id = $torneoid");
 
     $nullable = function($v) use ($conn) {
         if ($v === null || $v === '' || $v === 'ANY') return 'NULL';
@@ -191,6 +240,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $count = 0;
     $errors = [];
+    $hasLegacyTorneoid = reglas_column_exists($conn, 'torneoid');
+    $hasLegacySexo = reglas_column_exists($conn, 'sexo');
+    $hasLegacyOrden = reglas_column_exists($conn, 'orden');
+    $hasLegacyActivo = reglas_column_exists($conn, 'activo');
+    $conn->begin_transaction();
+    if (!$conn->query("DELETE FROM categorias_reglas WHERE torneo_id = $torneoid")) {
+        $conn->rollback();
+        json_error('No se pudieron reemplazar las categorías: ' . $conn->error, 500);
+    }
     foreach ($rules as $r) {
         $cat   = (string)($r['categoria'] ?? '');
         if ($cat === '') continue; // skip filas sin categoría — son inútiles
@@ -203,15 +261,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ord   = (int)($r['display_order'] ?? 0);
         $act   = !empty($r['is_active']) ? 1 : 0;
 
-        $sql = "INSERT INTO categorias_reglas
-                  (torneo_id, categoria, genero, edad_min, edad_max,
-                   hcp_min, hcp_max, display_order, is_active)
-                VALUES
-                  ($torneoid, $catSql, $gen, $emin, $emax,
-                   $hmin, $hmax, $ord, $act)";
+        $columns = ['torneo_id', 'categoria', 'genero', 'edad_min', 'edad_max',
+                    'hcp_min', 'hcp_max', 'display_order', 'is_active'];
+        $values = [$torneoid, $catSql, $gen, $emin, $emax,
+                   $hmin, $hmax, $ord, $act];
+        // Completa también las columnas legacy porque `torneoid` puede seguir
+        // siendo NOT NULL aunque ya exista la columna canónica torneo_id.
+        if ($hasLegacyTorneoid) { $columns[] = 'torneoid'; $values[] = $torneoid; }
+        if ($hasLegacySexo) { $columns[] = 'sexo'; $values[] = $gen; }
+        if ($hasLegacyOrden) { $columns[] = 'orden'; $values[] = $ord; }
+        if ($hasLegacyActivo) { $columns[] = 'activo'; $values[] = $act; }
+
+        $sql = 'INSERT INTO categorias_reglas (`' . implode('`,`', $columns) . '`)' .
+               ' VALUES (' . implode(',', $values) . ')';
         if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
-    json_response(['saved' => count($errors) === 0, 'count' => $count, 'errors' => $errors]);
+    if (count($errors) > 0) {
+        $conn->rollback();
+        json_error('No se guardaron las categorías: ' . implode(' | ', array_unique($errors)), 500);
+    }
+    if (!$conn->commit()) {
+        $conn->rollback();
+        json_error('No se pudo confirmar el guardado de categorías: ' . $conn->error, 500);
+    }
+
+    json_response(['saved' => true, 'count' => $count]);
 }
 
 json_error('Method not allowed', 405);

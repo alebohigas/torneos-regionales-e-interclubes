@@ -24,22 +24,25 @@
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `registro_precios` (
   `id`          INT(11) NOT NULL AUTO_INCREMENT,
-  `torneoid`    INT(11) NOT NULL,
+  `torneo_id`   INT(11) NOT NULL,
+  `categoria`   VARCHAR(120) DEFAULT NULL,
   `tipo_socio`  VARCHAR(20)  DEFAULT NULL COMMENT 'TITULAR/EMERITO/DEPENDIENTE/INVITADO; NULL = comodín',
   `genero`      VARCHAR(2)   DEFAULT NULL COMMENT 'M/F; NULL = comodín',
   `edad_min`    INT(11)      DEFAULT NULL,
   `edad_max`    INT(11)      DEFAULT NULL,
   `hcp_min`     DECIMAL(5,1) DEFAULT NULL,
   `hcp_max`     DECIMAL(5,1) DEFAULT NULL,
-  `monto`       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `precio`      DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `moneda`      VARCHAR(6)   NOT NULL DEFAULT 'MXN',
   `etiqueta`    VARCHAR(160) NOT NULL DEFAULT '',
+  `incluye`     TEXT DEFAULT NULL,
   `prioridad`   INT(11)      NOT NULL DEFAULT 0,
-  `activo`      TINYINT(1)   NOT NULL DEFAULT 1,
+  `display_order` INT(11)    NOT NULL DEFAULT 0,
+  `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `updated_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_torneo` (`torneoid`),
-  KEY `idx_match` (`torneoid`,`tipo_socio`,`genero`,`activo`)
+  KEY `idx_torneo` (`torneo_id`),
+  KEY `idx_match` (`torneo_id`,`tipo_socio`,`genero`,`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
@@ -88,19 +91,19 @@ CREATE TABLE IF NOT EXISTS `clubs_registro` (
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `categorias_reglas` (
   `id`           INT(11) NOT NULL AUTO_INCREMENT,
-  `torneoid`     INT(11) NOT NULL,
+  `torneo_id`    INT(11) NOT NULL,
   `categoria_id` INT(11) DEFAULT NULL,
   `categoria`    VARCHAR(45) DEFAULT NULL,
-  `sexo`         VARCHAR(1)  DEFAULT NULL,
+  `genero`       VARCHAR(8)  DEFAULT NULL,
   `hcp_min`      DECIMAL(5,1) DEFAULT NULL,
   `hcp_max`      DECIMAL(5,1) DEFAULT NULL,
   `edad_min`     INT(11) DEFAULT NULL,
   `edad_max`     INT(11) DEFAULT NULL,
   `nota`         VARCHAR(255) DEFAULT NULL,
-  `orden`        INT(11) NOT NULL DEFAULT 0,
-  `activo`       TINYINT(1) NOT NULL DEFAULT 1,
+  `display_order` INT(11) NOT NULL DEFAULT 0,
+  `is_active`    TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  KEY `idx_torneo` (`torneoid`),
+  KEY `idx_torneo` (`torneo_id`),
   KEY `idx_cat` (`categoria_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
