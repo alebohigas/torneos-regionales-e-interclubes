@@ -4,16 +4,9 @@
  *
  * Column mapping (per product spec):
  *  - CATEGORÍAS       → categoria.categoria (name)
- *  - RANGO DE HÁNDICAP → "{hcpIdxMin} A {hcpIdxMax}" with leading "+" if negative
  *  - FORMATO           → categoria.sistema
- *  - VENTAJAS          → "{porcentaje}%" exactamente como está en la BD
- *                        (categorias.porcentaje, vía `percentageRaw`),
- *                        respetando el redondeo/decimales originales.
- *                        Muestra "—" solo si el valor no existe en la BD.
  *  - CUPO              → "∞" if maxjugadores = 99, otherwise the number
  *  - RONDA             → "{hoyosajugar} HOYOS" — total holes to play (categorias.hoyosajugar)
- *  - HOYOS A CORTE     → "{hoyosacorte} HOYOS" — holes played before cut (categorias.hoyosacorte)
- *  - CORTE FINAL       → "{corte}" — number of players advancing to final round (categorias.corte)
  *  - MARCAS            → tee color name from `salidas` (teeColorName), blank if missing
  */
 
@@ -95,31 +88,6 @@ const normalizeTeeColor = (raw?: string): string => {
   return trimmed;
 };
 
-/** Format the handicap range with proper sign (e.g. "+5.0 A 1.2") */
-const formatHcpRange = (min: number, max: number): string => {
-  const fmt = (n: number) => {
-    if (n === 0) return '0';
-    // Negative HCP indices in golf are written with a leading "+"
-    if (n < 0) return `+${Math.abs(n)}`;
-    return `${n}`;
-  };
-  return `${fmt(min)} A ${fmt(max)}`;
-};
-
-/**
- * Formatea la columna "VENTAJAS".
- * Prioriza `percentageRaw` (cadena tal cual viene de la BD) para conservar
- * exactamente el redondeo y los decimales almacenados (p.ej. "80.00" → "80.00%").
- * Si no existe el valor crudo, usa el numérico. Devuelve "—" cuando no hay dato.
- */
-const formatVentajas = (porcentaje?: number | null, raw?: string | null): string => {
-  if (raw !== null && raw !== undefined && String(raw).trim() !== '') {
-    return `${String(raw).trim()}%`;
-  }
-  if (porcentaje === null || porcentaje === undefined || Number.isNaN(Number(porcentaje))) return '—';
-  return `${porcentaje}%`;
-};
-
 /** Format the "CUPO" column (99 ⇒ ∞, anything else ⇒ number) */
 const formatCupo = (maxPlayers?: number): string => {
   if (!maxPlayers || maxPlayers === 99) return '∞';
@@ -154,27 +122,23 @@ const CategoryTable = () => {
         <TableHeader className="sticky top-0 z-10">
           <TableRow className="bg-primary hover:bg-primary">
             <TableHead className="text-primary-foreground font-semibold bg-primary sticky left-0 z-20">CATEGORÍAS</TableHead>
-            <TableHead className="text-primary-foreground font-semibold text-center bg-primary">RANGO DE HÁNDICAP</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center bg-primary">FORMATO</TableHead>
-            <TableHead className="text-primary-foreground font-semibold text-center bg-primary">VENTAJAS</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center bg-primary">CUPO</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center bg-primary">RONDA</TableHead>
-            <TableHead className="text-primary-foreground font-semibold text-center bg-primary">HOYOS A CORTE</TableHead>
-            <TableHead className="text-primary-foreground font-semibold text-center bg-primary">CORTE FINAL</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center bg-primary">MARCAS</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
                 Cargando categorías…
               </TableCell>
             </TableRow>
           )}
           {!isLoading && categories.length === 0 && (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
                 No hay categorías registradas para este torneo.
               </TableCell>
             </TableRow>
@@ -185,10 +149,6 @@ const CategoryTable = () => {
             const teeName = resolveTeeName(category.teeColorName, category.teeName);
             // Ronda → hoyosajugar (total holes to play in the tournament)
             const ronda = category.holes ? `${category.holes} HOYOS` : '';
-            // Hoyos a corte → hoyosacorte
-            const hoyosCorte = category.cutHoles ? `${category.cutHoles} HOYOS` : '';
-            // Corte final → corte (players advancing). Empty when 0/undefined.
-            const corteFinal = category.finalCut ? String(category.finalCut) : '';
             return (
               <TableRow
                 key={category.id}
@@ -204,9 +164,6 @@ const CategoryTable = () => {
                 >
                   {category.name}
                 </TableCell>
-                <TableCell className="text-center text-muted-foreground">
-                  {formatHcpRange(category.hcpMin, category.hcpMax)}
-                </TableCell>
                 <TableCell className="text-center">
                   <Badge
                     variant={isStrokePlay ? 'default' : 'secondary'}
@@ -215,20 +172,11 @@ const CategoryTable = () => {
                     {sistema || '—'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center text-muted-foreground">
-                  {formatVentajas(category.percentage, category.percentageRaw)}
-                </TableCell>
                 <TableCell className="text-center font-medium text-foreground">
                   {formatCupo(category.maxPlayers)}
                 </TableCell>
                 <TableCell className="text-center text-muted-foreground">
                   {ronda}
-                </TableCell>
-                <TableCell className="text-center text-muted-foreground">
-                  {hoyosCorte}
-                </TableCell>
-                <TableCell className="text-center font-medium text-foreground">
-                  {corteFinal || '—'}
                 </TableCell>
                 <TableCell className="text-center">
                   {teeName ? (
