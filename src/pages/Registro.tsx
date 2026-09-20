@@ -1202,6 +1202,32 @@ const Registro = () => {
 
   const eligibleCategories = categoryFilterResult.eligible;
 
+  /**
+   * CUPO DE CATEGORÍA
+   * -----------------------------------------------------------------
+   * `maxPlayers` = categorias.maxjugadores y `registeredCount` = número
+   * de pre-registros (tabla registro) de esa categoría.
+   *   - 99 → ilimitado.
+   *   - 0  → categoría cerrada (no acepta pre-registros).
+   *   - registrados >= max → categoría cerrada.
+   */
+  const isCategoriaBloqueada = useCallback((cat?: { maxPlayers?: number; registeredCount?: number }) => {
+    if (!cat) return false;
+    const max = Number(cat.maxPlayers ?? 0);
+    const reg = Number(cat.registeredCount ?? 0);
+    if (max === 99) return false;
+    if (max <= 0) return true;
+    return reg >= max;
+  }, []);
+
+  const selectedCategoriaBloqueada = useMemo(() => {
+    const cat = eligibleCategories.find(c => String(c.id) === String(values.reg_categoria));
+    return isCategoriaBloqueada(cat);
+  }, [eligibleCategories, values.reg_categoria, isCategoriaBloqueada]);
+
+  const CUPO_BLOQUEADO_MSG = 'PRE-REGISTRO NO DISPONIBLE HASTA NUEVO AVISO';
+
+
   /** If changed age/gender/hcp makes the selected category invalid, clear it immediately. */
   useEffect(() => {
     if (!values.reg_categoria) return;
