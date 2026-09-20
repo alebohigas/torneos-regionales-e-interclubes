@@ -2464,8 +2464,24 @@ const Registro = () => {
                         </p>
                       </div>
                     )}
+                    {/* Cupo agotado o categoría cerrada: se impide el envío. */}
+                    {selectedCategoriaBloqueada && (
+                      <div className="rounded-lg border-2 border-destructive/40 bg-destructive/10 p-4 text-center">
+                        <p className="text-sm font-bold uppercase tracking-wide text-destructive">
+                          {CUPO_BLOQUEADO_MSG}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          La categoría seleccionada ya no acepta pre-registros.
+                        </p>
+                      </div>
+                    )}
                     <div className="flex justify-end pt-2">
-                      <Button type="submit" disabled={submitting} className="gap-2" size="lg">
+                      <Button
+                        type="submit"
+                        disabled={submitting || selectedCategoriaBloqueada}
+                        className="gap-2"
+                        size="lg"
+                      >
                         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         Enviar pre-registro
                       </Button>
