@@ -33,12 +33,45 @@ require_once '_staff_auth.php';
 
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
-/** ¿Existe la tabla en este esquema? Cacheado por request. */
+/**
+ * ¿Existe la tabla en este esquema? Cacheado por request.
+ * Self-healing: si falta (base nueva sin la migración 2026_05_19) se crea
+ * automáticamente para que el admin pueda guardar sin intervención manual.
+ */
 function precios_table_exists($conn) {
     static $exists = null;
     if ($exists !== null) return $exists;
     $r = $conn->query("SHOW TABLES LIKE 'registro_precios'");
     $exists = $r && $r->num_rows > 0;
+    if (!$exists) {
+        $ddl = "CREATE TABLE IF NOT EXISTS `registro_precios` (
+                  `id`            INT(11)      NOT NULL AUTO_INCREMENT,
+                  `torneo_id`     INT(11)      NOT NULL,
+                  `etiqueta`      VARCHAR(120) NULL,
+                  `categoria`     VARCHAR(120) NULL,
+                  `tipo_socio`    VARCHAR(20)  NULL,
+                  `genero`        VARCHAR(8)   NULL,
+                  `edad_min`      INT(11)      NULL,
+                  `edad_max`      INT(11)      NULL,
+                  `hcp_min`       DECIMAL(4,1) NULL,
+                  `hcp_max`       DECIMAL(4,1) NULL,
+                  `precio`        DECIMAL(10,2) NOT NULL DEFAULT 0,
+                  `moneda`        VARCHAR(3)   NOT NULL DEFAULT 'MXN',
+                  `incluye`       TEXT         NULL,
+                  `prioridad`     INT(11)      NOT NULL DEFAULT 0,
+                  `display_order` INT(11)      NOT NULL DEFAULT 0,
+                  `is_active`     TINYINT(1)   NOT NULL DEFAULT 1,
+                  `updated_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_torneo` (`torneo_id`),
+                  KEY `idx_match` (`torneo_id`, `is_active`, `prioridad`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+        if (@$conn->query($ddl)) {
+            $exists = true;
+        } else {
+            error_log('registro_precios auto-create failed: ' . $conn->error);
+        }
+    }
     return $exists;
 }
 
