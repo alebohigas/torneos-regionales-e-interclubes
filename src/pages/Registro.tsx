@@ -1523,26 +1523,19 @@ const Registro = () => {
       }
 
       /**
-       * Lista de espera: si la categoría seleccionada ya está llena
-       * (registeredCount >= maxjugadores y max>0/<>99), pedimos
-       * confirmación al jugador antes de enviar. El servidor revalida
-       * el cupo y marca status_pago=67 cuando aplica.
+       * CUPO: si la categoría seleccionada está cerrada (maxjugadores = 0 o
+       * pre-registros >= maxjugadores) NO se permite enviar. El servidor
+       * revalida el cupo y responde con el mismo mensaje.
        */
-      const selectedCatId = values.reg_categoria;
-      const selectedCat = eligibleCategories.find(c => String(c.id) === String(selectedCatId));
-      if (selectedCat) {
-        const maxC = Number(selectedCat.maxPlayers) || 0;
-        const regC = Number(selectedCat.registeredCount) || 0;
-        const unlimitedC = !maxC || maxC === 99;
-        if (!unlimitedC && regC >= maxC) {
-          const ok = window.confirm(
-            'La categoria seleccionada esta llena. Serás registrado en lista de espera '
-            + 'y si se desocupa el lugar de alguien registrado antes que tu, avanzarás '
-            + 'en la cola para la categoría seleccionada.'
-          );
-          if (!ok) { setSubmitting(false); return; }
-          fd.append('_waitlist', '1');
-        }
+      const selectedCat = eligibleCategories.find(c => String(c.id) === String(values.reg_categoria));
+      if (isCategoriaBloqueada(selectedCat)) {
+        toast({
+          title: CUPO_BLOQUEADO_MSG,
+          description: 'La categoría seleccionada ya no acepta pre-registros. Consulta al comité del torneo.',
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+        return;
       }
 
       const res = await fetch(getRegistroSubmitUrl(), { method: 'POST', body: fd });
