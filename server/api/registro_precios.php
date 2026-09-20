@@ -315,6 +315,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $count = 0;
     $errors = [];
+    $hasLegacyTorneoid = precios_column_exists($conn, 'torneoid');
+    $hasLegacyMonto = precios_column_exists($conn, 'monto');
+    $hasLegacyActivo = precios_column_exists($conn, 'activo');
     $conn->begin_transaction();
     if (!$conn->query("DELETE FROM registro_precios WHERE torneo_id = $torneoid")) {
         $conn->rollback();
@@ -336,12 +339,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ord        = (int)($r['display_order'] ?? 0);
         $active     = !empty($r['is_active']) ? 1 : 0;
 
-        $sql = "INSERT INTO registro_precios
-                  (torneo_id, etiqueta, categoria, tipo_socio, genero, edad_min, edad_max,
-                   hcp_min, hcp_max, precio, moneda, incluye, prioridad, display_order, is_active)
-                VALUES
-                  ($torneoid, '$etiqueta', $categoria, $tipoSocio, $genero, $edadMin, $edadMax,
-                   $hcpMin, $hcpMax, $precio, '$moneda', '$incluye', $prioridad, $ord, $active)";
+        $columns = ['torneo_id', 'etiqueta', 'categoria', 'tipo_socio', 'genero', 'edad_min', 'edad_max',
+                    'hcp_min', 'hcp_max', 'precio', 'moneda', 'incluye', 'prioridad', 'display_order', 'is_active'];
+        $values = [$torneoid, "'$etiqueta'", $categoria, $tipoSocio, $genero, $edadMin, $edadMax,
+                   $hcpMin, $hcpMax, $precio, "'$moneda'", "'$incluye'", $prioridad, $ord, $active];
+        // Las columnas legacy siguen siendo NOT NULL en algunas bases. Se
+        // escriben también para mantener ambos esquemas sincronizados.
+        if ($hasLegacyTorneoid) { $columns[] = 'torneoid'; $values[] = $torneoid; }
+        if ($hasLegacyMonto) { $columns[] = 'monto'; $values[] = $precio; }
+        if ($hasLegacyActivo) { $columns[] = 'activo'; $values[] = $active; }
+
+        $sql = 'INSERT INTO registro_precios (`' . implode('`,`', $columns) . '`)' .
+               ' VALUES (' . implode(',', $values) . ')';
         if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
 

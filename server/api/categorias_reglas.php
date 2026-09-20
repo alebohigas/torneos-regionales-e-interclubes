@@ -240,6 +240,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $count = 0;
     $errors = [];
+    $hasLegacyTorneoid = reglas_column_exists($conn, 'torneoid');
+    $hasLegacySexo = reglas_column_exists($conn, 'sexo');
+    $hasLegacyOrden = reglas_column_exists($conn, 'orden');
+    $hasLegacyActivo = reglas_column_exists($conn, 'activo');
     $conn->begin_transaction();
     if (!$conn->query("DELETE FROM categorias_reglas WHERE torneo_id = $torneoid")) {
         $conn->rollback();
@@ -257,12 +261,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ord   = (int)($r['display_order'] ?? 0);
         $act   = !empty($r['is_active']) ? 1 : 0;
 
-        $sql = "INSERT INTO categorias_reglas
-                  (torneo_id, categoria, genero, edad_min, edad_max,
-                   hcp_min, hcp_max, display_order, is_active)
-                VALUES
-                  ($torneoid, $catSql, $gen, $emin, $emax,
-                   $hmin, $hmax, $ord, $act)";
+        $columns = ['torneo_id', 'categoria', 'genero', 'edad_min', 'edad_max',
+                    'hcp_min', 'hcp_max', 'display_order', 'is_active'];
+        $values = [$torneoid, $catSql, $gen, $emin, $emax,
+                   $hmin, $hmax, $ord, $act];
+        // Completa también las columnas legacy porque `torneoid` puede seguir
+        // siendo NOT NULL aunque ya exista la columna canónica torneo_id.
+        if ($hasLegacyTorneoid) { $columns[] = 'torneoid'; $values[] = $torneoid; }
+        if ($hasLegacySexo) { $columns[] = 'sexo'; $values[] = $gen; }
+        if ($hasLegacyOrden) { $columns[] = 'orden'; $values[] = $ord; }
+        if ($hasLegacyActivo) { $columns[] = 'activo'; $values[] = $act; }
+
+        $sql = 'INSERT INTO categorias_reglas (`' . implode('`,`', $columns) . '`)' .
+               ' VALUES (' . implode(',', $values) . ')';
         if ($conn->query($sql)) { $count++; } else { $errors[] = $conn->error; }
     }
     if (count($errors) > 0) {
