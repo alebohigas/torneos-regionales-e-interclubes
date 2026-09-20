@@ -521,6 +521,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (optional_param('action') !== 'veri
         );
     }
 
+    /**
+     * CUPO DE CATEGORÍA (bloqueo duro).
+     * Si `categorias.maxjugadores` es 0 o el número de pre-registros ya
+     * alcanzó ese máximo, NO se acepta el envío.
+     */
+    $postedCatId = (int)($_POST['reg_categoria'] ?? 0);
+    if ($postedCatId > 0 && categoria_cupo_bloqueado($conn, $torneoid, $postedCatId)) {
+        json_error('PRE-REGISTRO NO DISPONIBLE HASTA NUEVO AVISO', 409);
+    }
+
+
+
 
     /** Whitelist of safe field_names accepted from the form. */
     $allowedTextFields = [
