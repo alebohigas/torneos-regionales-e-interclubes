@@ -1202,6 +1202,32 @@ const Registro = () => {
 
   const eligibleCategories = categoryFilterResult.eligible;
 
+  /**
+   * CUPO DE CATEGORÍA
+   * -----------------------------------------------------------------
+   * `maxPlayers` = categorias.maxjugadores y `registeredCount` = número
+   * de pre-registros (tabla registro) de esa categoría.
+   *   - 99 → ilimitado.
+   *   - 0  → categoría cerrada (no acepta pre-registros).
+   *   - registrados >= max → categoría cerrada.
+   */
+  const isCategoriaBloqueada = useCallback((cat?: { maxPlayers?: number; registeredCount?: number }) => {
+    if (!cat) return false;
+    const max = Number(cat.maxPlayers ?? 0);
+    const reg = Number(cat.registeredCount ?? 0);
+    if (max === 99) return false;
+    if (max <= 0) return true;
+    return reg >= max;
+  }, []);
+
+  const selectedCategoriaBloqueada = useMemo(() => {
+    const cat = eligibleCategories.find(c => String(c.id) === String(values.reg_categoria));
+    return isCategoriaBloqueada(cat);
+  }, [eligibleCategories, values.reg_categoria, isCategoriaBloqueada]);
+
+  const CUPO_BLOQUEADO_MSG = 'PRE-REGISTRO NO DISPONIBLE HASTA NUEVO AVISO';
+
+
   /** If changed age/gender/hcp makes the selected category invalid, clear it immediately. */
   useEffect(() => {
     if (!values.reg_categoria) return;
@@ -1497,26 +1523,19 @@ const Registro = () => {
       }
 
       /**
-       * Lista de espera: si la categoría seleccionada ya está llena
-       * (registeredCount >= maxjugadores y max>0/<>99), pedimos
-       * confirmación al jugador antes de enviar. El servidor revalida
-       * el cupo y marca status_pago=67 cuando aplica.
+       * CUPO: si la categoría seleccionada está cerrada (maxjugadores = 0 o
+       * pre-registros >= maxjugadores) NO se permite enviar. El servidor
+       * revalida el cupo y responde con el mismo mensaje.
        */
-      const selectedCatId = values.reg_categoria;
-      const selectedCat = eligibleCategories.find(c => String(c.id) === String(selectedCatId));
-      if (selectedCat) {
-        const maxC = Number(selectedCat.maxPlayers) || 0;
-        const regC = Number(selectedCat.registeredCount) || 0;
-        const unlimitedC = !maxC || maxC === 99;
-        if (!unlimitedC && regC >= maxC) {
-          const ok = window.confirm(
-            'La categoria seleccionada esta llena. Serás registrado en lista de espera '
-            + 'y si se desocupa el lugar de alguien registrado antes que tu, avanzarás '
-            + 'en la cola para la categoría seleccionada.'
-          );
-          if (!ok) { setSubmitting(false); return; }
-          fd.append('_waitlist', '1');
-        }
+      const selectedCat = eligibleCategories.find(c => String(c.id) === String(values.reg_categoria));
+      if (isCategoriaBloqueada(selectedCat)) {
+        toast({
+          title: CUPO_BLOQUEADO_MSG,
+          description: 'La categoría seleccionada ya no acepta pre-registros. Consulta al comité del torneo.',
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+        return;
       }
 
       const res = await fetch(getRegistroSubmitUrl(), { method: 'POST', body: fd });
@@ -1659,31 +1678,23 @@ const Registro = () => {
               {eligibleCategories.map(c => (
                 (() => {
                   /**
-                   * Render category label con sufijo de disponibilidad:
-                   *   "[name] (registrados/max) N espacios disponibles".
-                   * Si la categoría llegó a su cupo (registrados >= max),
-                   * se muestra "LLENO" y el item queda deshabilitado en
-                   * el Select (pero sigue visible para el jugador).
-                   * Se omite el sufijo cuando max es 0 o 99 (ilimitado).
+                   * Render category label con sufijo de disponibilidad.
+                   * Categorías cerradas (maxjugadores = 0 o pre-registros
+                   * >= maxjugadores) se muestran como NO DISPONIBLE y el
+                   * item queda deshabilitado. max = 99 → ilimitado.
                    */
                   const max = Number(c.maxPlayers) || 0;
                   const reg = Number(c.registeredCount) || 0;
-                  const unlimited = !max || max === 99;
+                  const unlimited = max === 99;
                   const left = Math.max(max - reg, 0);
-                  const full = !unlimited && left <= 0;
+                  const full = isCategoriaBloqueada(c);
                   const label = unlimited
                     ? c.name
                     : full
-                      ? `${c.name} (${reg}/${max}) — LLENO (lista de espera)`
+                      ? `${c.name} — NO DISPONIBLE`
                       : `${c.name} (${reg}/${max}) ${left} espacios disponibles`;
                   return (
-                    /*
-                     * No deshabilitar categorías llenas: el jugador puede
-                     * inscribirse de todos modos y entrará a "lista de
-                     * espera" (status_pago=67 en BD). Un confirm en el
-                     * submit le avisa antes de registrar.
-                     */
-                    <SelectItem key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={c.id} disabled={full}>
                       {label}
                     </SelectItem>
                   );
@@ -2453,8 +2464,24 @@ const Registro = () => {
                         </p>
                       </div>
                     )}
+                    {/* Cupo agotado o categoría cerrada: se impide el envío. */}
+                    {selectedCategoriaBloqueada && (
+                      <div className="rounded-lg border-2 border-destructive/40 bg-destructive/10 p-4 text-center">
+                        <p className="text-sm font-bold uppercase tracking-wide text-destructive">
+                          {CUPO_BLOQUEADO_MSG}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          La categoría seleccionada ya no acepta pre-registros.
+                        </p>
+                      </div>
+                    )}
                     <div className="flex justify-end pt-2">
-                      <Button type="submit" disabled={submitting} className="gap-2" size="lg">
+                      <Button
+                        type="submit"
+                        disabled={submitting || selectedCategoriaBloqueada}
+                        className="gap-2"
+                        size="lg"
+                      >
                         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         Enviar pre-registro
                       </Button>
