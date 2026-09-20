@@ -34,7 +34,7 @@ const PdfDocumentViewer = ({ url }: PdfDocumentViewerProps) => {
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-x-hidden bg-muted/30 px-2 py-3"
+      className="w-full overflow-x-hidden bg-foreground/90 px-2 py-3 sm:px-4"
     >
       <Document
         file={url}

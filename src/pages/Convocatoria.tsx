@@ -17,8 +17,16 @@ import { useUploadsList } from '@/hooks/useUploads';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 import { getBasesDocumentUrl } from '@/config/basesDocuments';
-import { Calendar, ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
+import { Calendar, Download, ExternalLink, FileText, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import PdfDocumentViewer from '@/components/convocatoria/PdfDocumentViewer';
 
 // Section components
@@ -189,6 +197,9 @@ const Convocatoria = () => {
   const firstSectionPdf = convocatoriaUploads?.files.find((f) => /\.pdf$/i.test(f.name));
   const configuredPdfUrl = getBasesDocumentUrl(giraId, torneoId);
   const convocatoriaPdfUrl = configuredPdfUrl ?? firstSectionPdf?.url ?? null;
+  const pdfFileName = convocatoriaPdfUrl
+    ? decodeURIComponent(convocatoriaPdfUrl.split('/').pop()?.split('?')[0] || 'Bases.pdf')
+    : 'Bases.pdf';
   const parsed = tournamentData?.name ? parseTournamentName(tournamentData.name) : null;
 
   // ----- Auto-hide sections that have no content -----
@@ -305,40 +316,60 @@ const Convocatoria = () => {
         <div className="container mx-auto px-4">
           {/* PDF viewer — stays inside the Convocatoria page. Hidden when no PDF exists. */}
           {convocatoriaPdfUrl && (
-            <div className="mb-8 space-y-4">
+            <div className="mb-8">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
                   type="button"
                   size="lg"
                   className="gap-2"
                   aria-expanded={isPdfVisible}
-                  aria-controls="bases-pdf-viewer"
-                  onClick={() => setIsPdfVisible((visible) => !visible)}
+                  onClick={() => setIsPdfVisible(true)}
                 >
                   <FileText className="h-5 w-5" />
-                  {isPdfVisible ? 'Ocultar PDF' : 'Ver en PDF'}
-                  {isPdfVisible ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-                {/* Descarga directa del documento oficial */}
-                <Button asChild size="lg" variant="outline" className="gap-2">
-                  <a href={convocatoriaPdfUrl} download>
-                    <Download className="h-5 w-5" />
-                    Descargar PDF
-                  </a>
+                  Ver en PDF
                 </Button>
               </div>
-              {isPdfVisible && (
-                <div
-                  id="bases-pdf-viewer"
-                  className="max-h-[75vh] overflow-y-auto overscroll-contain rounded-md border border-border bg-card md:max-h-[80vh]"
-                >
-                  <PdfDocumentViewer url={convocatoriaPdfUrl} />
-                </div>
-              )}
+
+              <Dialog open={isPdfVisible} onOpenChange={setIsPdfVisible}>
+                <DialogContent className="flex h-[94dvh] w-[96vw] max-w-6xl flex-col gap-0 overflow-hidden p-0 sm:rounded-md">
+                  <DialogHeader className="shrink-0 border-b border-border px-4 py-4 pr-12 text-left sm:px-6">
+                    <DialogTitle className="font-display text-xl">Bases</DialogTitle>
+                    <DialogDescription className="sr-only">
+                      Documento de Bases del torneo en formato PDF.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="flex min-h-0 flex-1 flex-col bg-muted">
+                    <div className="flex h-16 shrink-0 items-center gap-4 bg-foreground px-4 text-background sm:px-6">
+                      <Menu className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0 truncate text-sm font-semibold sm:text-base">
+                        {pdfFileName}
+                      </span>
+                    </div>
+                    <div
+                      id="bases-pdf-viewer"
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-foreground/90 [scrollbar-gutter:stable]"
+                    >
+                      <PdfDocumentViewer url={convocatoriaPdfUrl} />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="shrink-0 gap-2 border-t border-border bg-background p-3 sm:p-4">
+                    <Button asChild variant="outline" className="gap-2">
+                      <a href={convocatoriaPdfUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                        Abrir en pestaña nueva
+                      </a>
+                    </Button>
+                    <Button asChild className="gap-2">
+                      <a href={convocatoriaPdfUrl} download={pdfFileName}>
+                        <Download className="h-4 w-4" />
+                        Descargar PDF
+                      </a>
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
