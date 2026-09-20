@@ -21,12 +21,38 @@ require_once '_staff_auth.php';
 
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
-/** ¿Existe la tabla? Cacheado. */
+/**
+ * ¿Existe la tabla? Cacheado.
+ * Self-healing: si falta (base nueva sin la migración 2026_05_22) se crea
+ * automáticamente para que el admin pueda guardar sin intervención manual.
+ */
 function reglas_table_exists($conn) {
     static $exists = null;
     if ($exists !== null) return $exists;
     $r = $conn->query("SHOW TABLES LIKE 'categorias_reglas'");
     $exists = $r && $r->num_rows > 0;
+    if (!$exists) {
+        $ddl = "CREATE TABLE IF NOT EXISTS `categorias_reglas` (
+                  `id`            INT(11)      NOT NULL AUTO_INCREMENT,
+                  `torneo_id`     INT(11)      NOT NULL,
+                  `categoria`     VARCHAR(255) NOT NULL,
+                  `genero`        VARCHAR(8)   NULL,
+                  `edad_min`      INT(11)      NULL,
+                  `edad_max`      INT(11)      NULL,
+                  `hcp_min`       DECIMAL(4,1) NULL,
+                  `hcp_max`       DECIMAL(4,1) NULL,
+                  `display_order` INT(11)      NOT NULL DEFAULT 0,
+                  `is_active`     TINYINT(1)   NOT NULL DEFAULT 1,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_torneo` (`torneo_id`),
+                  KEY `idx_torneo_cat` (`torneo_id`, `categoria`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        if (@$conn->query($ddl)) {
+            $exists = true;
+        } else {
+            error_log('categorias_reglas auto-create failed: ' . $conn->error);
+        }
+    }
     return $exists;
 }
 
