@@ -20,10 +20,8 @@
  * Tabla backend: `registro_precios` — ver
  * server/migrations/2026_05_19_registro_precios.sql
  *
- * IMPORTANTE (2026-05-22): Los filtros de elegibilidad de categoría
- * (edad/género/hcp) se mueven a la tabla `categorias_reglas`. Este
- * endpoint sigue aceptando las columnas legacy para no romper datos
- * existentes, pero el matching nuevo SÓLO usa `tipo_socio`.
+ * La categoría, género y edad participan en el cálculo del precio. Las
+ * reglas de elegibilidad siguen viviendo por separado en categorias_reglas.
  *
  * Compatibilidad: algunas instalaciones golftour crearon esta tabla con
  * torneoid/monto/activo. El endpoint completa y migra esas columnas al
@@ -174,7 +172,12 @@ function normalize_rule($r) {
  * Para tipo_socio: si la regla pide 'SOCIO' aceptamos cualquier subtipo
  * (TITULAR/EMERITO/DEPENDIENTE). Si pide un subtipo específico, debe coincidir.
  */
-function rule_matches($rule, $tipoSocio, $genero = null, $edad = null) {
+function rule_matches($rule, $categoria, $tipoSocio, $genero = null, $edad = null) {
+    if ($rule['categoria'] !== null) {
+        $rc = trim((string)$rule['categoria']);
+        $uc = trim((string)($categoria ?? ''));
+        if ($uc === '' || strcasecmp($rc, $uc) !== 0) return false;
+    }
     if ($rule['tipo_socio'] !== null) {
         $rt = $rule['tipo_socio'];
         $ut = (string)$tipoSocio;
@@ -214,6 +217,7 @@ function rule_matches($rule, $tipoSocio, $genero = null, $edad = null) {
  */
 function rule_specificity($rule) {
     $s = 0;
+    if ($rule['categoria']  !== null) $s++;
     if ($rule['tipo_socio'] !== null) $s++;
     if ($rule['genero']     !== null) $s++;
     if ($rule['edad_min']   !== null) $s++;
@@ -243,17 +247,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $rows  = array_map('normalize_rule', query_all($conn, $sql));
 
     if ($action === 'match') {
-        // Matching por tipo_socio + genero + edad. categoria/handicap se
-        // siguen aceptando para compatibilidad pero NO entran al match
-        // (las restricciones de categoría viven en categorias_reglas).
+        // Matching de costo por categoría, tipo de socio, género y edad.
+        // Los filtros NULL de una regla funcionan como comodines.
+        $categoria = optional_param('categoria', null);
         $tipo   = optional_param('tipo_socio', null);
         $genero = optional_param('genero', null);
         $edadP  = optional_param('edad', null);
         $edad   = ($edadP === null || $edadP === '') ? null : (int)$edadP;
 
-        $candidates = array_filter($rows, function($r) use ($tipo, $genero, $edad) {
+        $candidates = array_filter($rows, function($r) use ($categoria, $tipo, $genero, $edad) {
             if (!$r['is_active']) return false;
-            return rule_matches($r, $tipo, $genero, $edad);
+            return rule_matches($r, $categoria, $tipo, $genero, $edad);
         });
 
         if (count($candidates) === 0) {

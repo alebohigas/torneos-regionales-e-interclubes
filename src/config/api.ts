@@ -473,6 +473,7 @@ export const getRegistroPrecioMatchUrl = (params: {
   handicap?: string | number;
 }): string => {
   const clean: Record<string, string> = { action: 'match' };
+  if (params.categoria) clean.categoria = params.categoria;
   if (params.tipo_socio)  clean.tipo_socio = params.tipo_socio;
   // Genero y edad participan en el matching del backend (precios
   // diferenciados por sexo y por rango de edad, p.ej. menores de 18).
@@ -480,7 +481,7 @@ export const getRegistroPrecioMatchUrl = (params: {
   if (params.edad !== undefined && params.edad !== null && params.edad !== '') {
     clean.edad = String(params.edad);
   }
-  // categoria/handicap se ignoran — viven en categorias_reglas.
+  // El hándicap se usa sólo para elegibilidad; la categoría sí determina precio.
   return `${API_BASE_URL}/registro_precios.php${buildQuery(clean)}`;
 };
 

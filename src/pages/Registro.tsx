@@ -1258,17 +1258,15 @@ const Registro = () => {
   }, [values.reg_fechanac, visibleFields.length]);
 
   /**
-   * Consulta reactiva al endpoint de matching de precio.
-   * Tras el split (2026-05-22), el precio depende ÚNICAMENTE del tipo de
-   * socio. Se ejecuta sólo cuando ya hay categoría elegida + tipo de
-   * socio resuelto (así evitamos mostrar un precio antes de que el
-   * usuario haya completado los datos relevantes).
+   * Consulta reactiva al endpoint de matching de precio. Para torneos sin
+   * socios no exige ese dato: categoría, género y edad son suficientes.
    */
   const { data: precioMatchData, isFetching: precioFetching } = useRegistroPrecioMatch({
+    categoria: selectedCategoryName,
     tipo_socio: tipoSocioForPricing,
     genero: (values.reg_sexo || '').toUpperCase() || undefined,
     edad: ageForPricing ?? undefined,
-    enabled: !!(selectedCategoryName && tipoSocioForPricing),
+    enabled: !!(selectedCategoryName && values.reg_sexo && ageForPricing !== null),
   });
   const precioMatch = precioMatchData?.match || null;
 
@@ -2410,7 +2408,7 @@ const Registro = () => {
                     {/* Costo de inscripción calculado a partir de los datos
                         del jugador y la tabla `registro_precios` (admin).
                         Sólo se muestra cuando hay al menos un dato útil. */}
-                    {(selectedCategoryName || tipoSocioForPricing || values.reg_sexo) && (
+                    {(selectedCategoryName || values.reg_sexo) && (
                       <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
@@ -2443,7 +2441,7 @@ const Registro = () => {
                                     al matcher de precios para que el admin pueda
                                     revisar por qué ninguna regla aplica. */}
                                 <p className="text-[11px] text-muted-foreground mt-2 font-mono">
-                                  Datos usados: tipo de socio={tipoSocioForPricing || '—'}
+                                  Datos usados: categoría={selectedCategoryName || '—'}, género={values.reg_sexo || '—'}, edad={ageForPricing ?? '—'}
                                 </p>
                               </>
                             )}

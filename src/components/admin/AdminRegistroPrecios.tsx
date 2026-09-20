@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, DollarSign, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { useTorneoId } from '@/hooks/useTorneoId';
+import { useCategories } from '@/hooks/usePlayersData';
 import {
   useRegistroPrecios,
   useSaveRegistroPrecios,
@@ -66,6 +67,7 @@ const blankRule = (order: number): Partial<RegistroPrecioRule> => ({
 const AdminRegistroPrecios = () => {
   const { torneoId } = useTorneoId();
   const { data, isLoading } = useRegistroPrecios();
+  const { data: categories = [] } = useCategories();
   const save = useSaveRegistroPrecios();
   const { toast } = useToast();
 
@@ -118,10 +120,9 @@ const AdminRegistroPrecios = () => {
             Pre-Registro · Precios de inscripción
           </CardTitle>
           <CardDescription>
-            Define el costo de inscripción <strong>por tipo de participante</strong>
-            (socio titular, emérito, no socio, invitado, etc.). El kit incluido es
-            opcional y se muestra al jugador junto al monto. Las restricciones de
-            categoría / edad / género / hándicap viven en la pestaña{' '}
+            Define el costo de inscripción por <strong>categoría, género, edad</strong>
+            y, cuando aplique, tipo de socio. El detalle incluido se muestra al
+            jugador junto al monto. Las restricciones de elegibilidad viven en{' '}
             <strong>Categorías elegibles</strong>.
           </CardDescription>
         </CardHeader>
@@ -162,6 +163,7 @@ const AdminRegistroPrecios = () => {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-2 min-w-[160px]">Etiqueta</th>
+                        <th className="text-left p-2 min-w-[180px]">Categoría</th>
                         <th className="text-left p-2 min-w-[160px]">Tipo socio</th>
                         <th className="text-left p-2 w-32">Género</th>
                         <th className="text-center p-2 w-20">Edad mín</th>
@@ -182,6 +184,20 @@ const AdminRegistroPrecios = () => {
                               onChange={e => update(idx, { etiqueta: e.target.value })}
                               placeholder="Ej: Socio Titular Caballero"
                             />
+                          </td>
+                          <td className="p-2">
+                            <Select
+                              value={r.categoria ?? 'ANY'}
+                              onValueChange={v => update(idx, { categoria: v === 'ANY' ? null : v })}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent className="max-h-[280px]">
+                                <SelectItem value="ANY">Cualquier categoría</SelectItem>
+                                {categories.map(c => (
+                                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </td>
                           <td className="p-2">
                             <Select
@@ -285,7 +301,8 @@ const AdminRegistroPrecios = () => {
               )}
 
               <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                <strong>Tip:</strong> deja una regla con tipo de socio en{' '}
+                <strong>Tip:</strong> configura la categoría, género y edades de cada
+                costo. Deja una regla con categoría y tipo de socio en{' '}
                 <em>Cualquiera</em> (y sin filtros de género/edad) al final
                 como precio por defecto si algún jugador no entra en ninguna
                 regla específica. Para precios diferenciados por sexo o por
