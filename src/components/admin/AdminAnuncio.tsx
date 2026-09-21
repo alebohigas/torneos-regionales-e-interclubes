@@ -241,7 +241,7 @@ const AdminAnuncio = () => {
     }
     saveSiteConfig.mutate(
       // Send the full array so all 3 slots persist in one request.
-      { password: getSuperAdminPassword(), anuncio_config: configs as unknown as AnuncioConfig },
+      { password: getSuperAdminPassword(), anuncio_config: configs },
       {
         onSuccess: () =>
           toast({
