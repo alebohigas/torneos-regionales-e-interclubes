@@ -154,6 +154,8 @@ const App = () => (
               <Route path="/setup" element={<Setup />} />
               {/* Rutas de admin que pertenecen a un módulo opcional. */}
               <Route path="/admin/registros" element={<ModuleGate moduleId="registro"><AdminRegistros /></ModuleGate>} />
+              {/* Tablero de seguimiento: categoría, club y costo. */}
+              <Route path="/admin/registros/seguimiento" element={<ModuleGate moduleId="registro"><AdminRegistrosSeguimiento /></ModuleGate>} />
               <Route path="/admin/brackets" element={<ModuleGate moduleId="matchplay"><AdminBracketsPage /></ModuleGate>} />
               <Route path="/admin/showcase-rotacion" element={<ModuleGate moduleId="showcase"><AdminShowcaseRotacionPage /></ModuleGate>} />
               {/* Public: player upload page after admin sends the email link */}
