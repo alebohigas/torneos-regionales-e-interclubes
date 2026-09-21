@@ -437,6 +437,9 @@ export interface PopupConfig {
  *   - paths:        list of route pathnames where the ribbon should
  *                   appear. Use ['*'] (or empty/undefined for legacy
  *                   configs) to show on every page.
+ *   - sticky*:      independently fixes the ribbon below the menu on
+ *                   celular, tableta and escritorio.
+ *   - timer*:       optional publication window using Mexico City time.
  */
 export interface AnuncioConfig {
   enabled: boolean;
@@ -450,6 +453,16 @@ export interface AnuncioConfig {
   speedSeconds: number;
   /** Routes where the ribbon should be shown. Missing = every page (legacy). */
   paths?: string[];
+  /** Sticky controls per viewport. Missing = not sticky (legacy). */
+  stickyMobile?: boolean;
+  stickyTablet?: boolean;
+  stickyDesktop?: boolean;
+  /** Optional timed publication window. */
+  timerEnabled?: boolean;
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
 }
 
 /** Full server response for site config */
@@ -525,7 +538,7 @@ export interface SaveConfigPayload {
   theme_config?: ThemeConfig | null;
   stats_config?: StatsConfig | null;
   popup_config?: PopupConfig | null;
-  anuncio_config?: AnuncioConfig | null;
+  anuncio_config?: AnuncioConfig | AnuncioConfig[] | null;
   /** Multi-slot payload for saving (up to 3 popups). */
   popup_configs?: PopupConfig[] | null;
   /** Multi-slot payload for saving (up to 3 anuncios). */
