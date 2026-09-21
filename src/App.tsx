@@ -47,6 +47,7 @@ import Hoteles from "./pages/Hoteles";
 import Admin from "./pages/Admin";
 import Registro from "./pages/Registro";
 import AdminRegistros from "./pages/AdminRegistros";
+import AdminRegistrosSeguimiento from "./pages/AdminRegistrosSeguimiento";
 import Comprobante from "./pages/Comprobante";
 import AdminBracketsPage from "./pages/AdminBracketsPage";
 import Showcase300 from "./pages/Showcase300";
