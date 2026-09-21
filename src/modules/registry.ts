@@ -531,7 +531,7 @@ const OPTIONAL_MODULES: ModuleDef[] = [
     core: false,
     group: 'inscripciones',
     pageIds: ['registro'],
-    routes: ['/registro', '/registro/comprobante', '/admin/registros'],
+    routes: ['/registro', '/registro/comprobante', '/admin/registros', '/admin/registros/seguimiento'],
     adminTabs: ['registro', 'registros'],
     staffAreas: ['preregistros'],
     siteConfigKeys: [],
