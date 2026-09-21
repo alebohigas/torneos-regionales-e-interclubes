@@ -8,6 +8,8 @@
  * <AnnouncementRibbon /> mounted inside <Layout />.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   Card,
   CardContent,
@@ -37,6 +39,7 @@ import {
   Bold,
   Italic,
   Type as TypeIcon,
+  CalendarIcon,
 } from 'lucide-react';
 import {
   useSiteConfig,
@@ -47,6 +50,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getSuperAdminPassword } from '@/lib/superAdminAuth';
 import { menuConfig } from '@/data/mockData';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 /** Sensible defaults when no config has been saved yet. */
 const DEFAULT_ANUNCIO: AnuncioConfig = {
@@ -60,6 +66,14 @@ const DEFAULT_ANUNCIO: AnuncioConfig = {
   italic: false,
   speedSeconds: 30,
   paths: ['*'],
+  stickyMobile: false,
+  stickyTablet: false,
+  stickyDesktop: false,
+  timerEnabled: false,
+  startDate: '',
+  startTime: '08:00',
+  endDate: '',
+  endTime: '20:00',
 };
 
 /**
@@ -71,6 +85,65 @@ const PREVIEW_FONT: Record<string, string> = {
   serif: 'ui-serif, Georgia, serif',
   mono: 'ui-monospace, SFMono-Regular, monospace',
   display: '"Playfair Display", Georgia, serif',
+};
+
+const parseDateInput = (value?: string) => {
+  if (!value) return undefined;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
+};
+
+const formatDateInput = (date?: Date) => {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTimerStamp = (date?: string, time?: string) => {
+  if (!date || !time) return null;
+  return `${date}T${time.length === 5 ? `${time}:00` : time}`;
+};
+
+const AnuncioDatePicker = ({
+  id,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) => {
+  const date = parseDateInput(value);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? format(date, 'dd/MM/yyyy', { locale: es }) : <span>{placeholder}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(selected) => onChange(formatDateInput(selected))}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 /**
@@ -150,6 +223,20 @@ const AdminAnuncio = () => {
       toast({ title: 'Falta seleccionar páginas',
         description: 'Cada anuncio activo debe tener al menos una página o "Mostrar en todas".',
         variant: 'destructive' });
+      return;
+    }
+    const invalidTimer = configs.find((c) => {
+      if (!c.enabled || !c.timerEnabled) return false;
+      const startsAt = getTimerStamp(c.startDate, c.startTime);
+      const endsAt = getTimerStamp(c.endDate, c.endTime);
+      return !startsAt || !endsAt || startsAt > endsAt;
+    });
+    if (invalidTimer) {
+      toast({
+        title: 'Revisa el temporizador',
+        description: 'Cada anuncio con temporizador necesita fecha/hora de inicio y final válidas.',
+        variant: 'destructive',
+      });
       return;
     }
     saveSiteConfig.mutate(
@@ -260,6 +347,98 @@ const AdminAnuncio = () => {
               checked={config.enabled}
               onCheckedChange={(v) => setConfig((c) => ({ ...c, enabled: v }))}
             />
+          </div>
+
+          {/* Sticky controls */}
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <div>
+              <Label className="text-base">Fijar arriba (sticky)</Label>
+              <p className="text-xs text-muted-foreground">
+                La tira queda pegada debajo del menú al hacer scroll. Actívala por tipo de dispositivo.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                <span className="text-sm font-medium">Celular</span>
+                <Switch
+                  checked={config.stickyMobile === true}
+                  onCheckedChange={(v) => setConfig((c) => ({ ...c, stickyMobile: v }))}
+                />
+              </label>
+              <label className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                <span className="text-sm font-medium">Tableta</span>
+                <Switch
+                  checked={config.stickyTablet === true}
+                  onCheckedChange={(v) => setConfig((c) => ({ ...c, stickyTablet: v }))}
+                />
+              </label>
+              <label className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                <span className="text-sm font-medium">Escritorio</span>
+                <Switch
+                  checked={config.stickyDesktop === true}
+                  onCheckedChange={(v) => setConfig((c) => ({ ...c, stickyDesktop: v }))}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div className="space-y-4 rounded-lg border border-border p-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Label className="text-base">Temporizador</Label>
+                <p className="text-xs text-muted-foreground">
+                  El anuncio se publica al llegar la fecha/hora de inicio y se detiene al llegar la fecha/hora final (hora de Ciudad de México).
+                </p>
+              </div>
+              <Switch
+                checked={config.timerEnabled === true}
+                onCheckedChange={(v) => setConfig((c) => ({ ...c, timerEnabled: v }))}
+              />
+            </div>
+            <div className={cn('grid grid-cols-1 gap-3 md:grid-cols-4', !config.timerEnabled && 'opacity-50')}>
+              <div className="space-y-2">
+                <Label htmlFor="anuncio-start-date">Fecha inicio</Label>
+                <AnuncioDatePicker
+                  id="anuncio-start-date"
+                  value={config.startDate}
+                  onChange={(value) => setConfig((c) => ({ ...c, startDate: value }))}
+                  placeholder="dd/mm/aaaa"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="anuncio-start-time">Hora inicio</Label>
+                <Input
+                  id="anuncio-start-time"
+                  type="time"
+                  value={config.startTime || '08:00'}
+                  onChange={(e) => setConfig((c) => ({ ...c, startTime: e.target.value }))}
+                  disabled={!config.timerEnabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="anuncio-end-date">Fecha final</Label>
+                <AnuncioDatePicker
+                  id="anuncio-end-date"
+                  value={config.endDate}
+                  onChange={(value) => setConfig((c) => ({ ...c, endDate: value }))}
+                  placeholder="dd/mm/aaaa"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="anuncio-end-time">Hora final</Label>
+                <Input
+                  id="anuncio-end-time"
+                  type="time"
+                  value={config.endTime || '20:00'}
+                  onChange={(e) => setConfig((c) => ({ ...c, endTime: e.target.value }))}
+                  disabled={!config.timerEnabled}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {config.timerEnabled ? 'Activo solo dentro del rango seleccionado.' : 'Sin temporizador'}
+            </p>
           </div>
 
           {/* Text */}
