@@ -9,11 +9,15 @@
 require_once 'config.php';
 require_once '_staff_auth.php';
 
-// La información de salidas y folios requiere superadmin o el área ALIEN SYSTEM.
-$alienStaff = staff_check_area($conn, [], 'alien-system');
-if (!is_superadmin_session() && !$alienStaff) json_error('Unauthorized', 401);
-
 $torneoid = require_torneoid($conn);
+// La información de salidas y folios requiere superadmin o el área ALIEN SYSTEM
+// asignada al mismo torneo solicitado.
+$isSuperadmin = is_superadmin_session();
+$alienStaff = staff_check_area($conn, [], 'alien-system');
+if (!$isSuperadmin && (!$alienStaff || (int)$alienStaff['torneoid'] !== (int)$torneoid)) {
+    json_error('Unauthorized', 401);
+}
+
 $tid = esc($conn, $torneoid);
 $fecha = trim(optional_param('fecha', ''));
 $hasta = trim(optional_param('hasta', ''));
