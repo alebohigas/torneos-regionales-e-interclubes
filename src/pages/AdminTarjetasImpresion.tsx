@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Printer, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
   const backYards = sumHoles(card.holes, 9, 18, 'yards');
   const frontPar = sumHoles(card.holes, 0, 9, 'par');
   const backPar = sumHoles(card.holes, 9, 18, 'par');
-  const cells = <T,>(values: T[], render: (value: T, index: number) => React.ReactNode) => (
+  const cells = <T,>(values: T[], render: (value: T, index: number) => ReactNode) => (
     <>{values.slice(0, 9).map(render)}<td className="alein-sum">{''}</td>{values.slice(9, 18).map((value, index) => render(value, index + 9))}<td className="alein-sum">{''}</td><td className="alein-sum">{''}</td></>
   );
 
@@ -101,7 +101,13 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             {card.holes.slice(9, 18).map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V2</th><th className="alein-sum">TOTAL</th>
           </tr>
-          <tr><th className="alein-row-label">YARDAS</th>{cells(card.holes, h => <td key={h.number}>{h.yards || ''}</td>)}</tr>
+          <tr>
+            <th className="alein-row-label">YARDAS</th>
+            {card.holes.slice(0, 9).map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            <td className="alein-sum">{frontYards || ''}</td>
+            {card.holes.slice(9, 18).map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            <td className="alein-sum">{backYards || ''}</td><td className="alein-sum">{frontYards + backYards || ''}</td>
+          </tr>
           <tr><th className="alein-row-label">PAR TIME</th>{cells(card.holes, h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE GROSS</th>
@@ -113,7 +119,6 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             <td className="alein-sum alein-gross-cell" /><td className="alein-sum alein-gross-cell" />
           </tr>
         </tbody>
-        <tfoot className="sr-only"><tr><td>{frontYards + backYards + frontPar + backPar}</td></tr></tfoot>
       </table>
 
       <footer className="alein-signatures">
@@ -122,6 +127,9 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <div className="alein-sign-line">JUGADOR</div>
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
+      <table className="alein-marker-table" aria-label="Score del anotador">
+        <tbody><tr><th>SCORE<br />ANOTADOR</th>{card.holes.slice(0, 9).map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{card.holes.slice(9, 18).map(h => <td key={h.number}>{h.number}</td>)}<th>V2</th><th>TOTAL</th></tr></tbody>
+      </table>
     </article>
   );
 };
@@ -169,7 +177,7 @@ const AdminTarjetasImpresion = () => {
     setParams(next);
   };
 
-  if (!isAdmin && !session) return <Navigate to="/admin" replace />;
+  if (!isAdmin) return <Navigate to="/admin" replace />;
 
   return (
     <main className="alein-print-page">
