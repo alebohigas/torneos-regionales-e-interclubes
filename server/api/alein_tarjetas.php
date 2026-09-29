@@ -8,6 +8,9 @@
  */
 require_once 'config.php';
 
+// La información de salidas y folios pertenece exclusivamente al administrador.
+if (!is_superadmin_session()) json_error('Unauthorized', 401);
+
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 $fecha = trim(optional_param('fecha', ''));

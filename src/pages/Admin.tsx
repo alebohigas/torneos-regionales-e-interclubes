@@ -43,6 +43,7 @@ import AdminPopup from '@/components/admin/AdminPopup';
 import AdminAnuncio from '@/components/admin/AdminAnuncio';
 import AdminBanderas from '@/components/admin/AdminBanderas';
 import AdminStaffUsers from '@/components/admin/AdminStaffUsers';
+import AdminAleinSystem from '@/components/admin/AdminAleinSystem';
 import { useStaffAuth, type StaffArea } from '@/contexts/StaffAuthContext';
 import { RegistrosDashboard } from '@/pages/AdminRegistros';
 import { 
@@ -79,6 +80,7 @@ import {
   Megaphone,
   History,
   AlertTriangle,
+  Printer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -509,6 +511,7 @@ const AdminDashboard = () => {
             { value: 'sponsors',     icon: ImageIcon,       label: 'Patrocinadores' },
             { value: 'registro',     icon: ClipboardList,   label: 'Pre-Registro' },
             { value: 'registros',    icon: ListChecks,      label: 'Registros' },
+            { value: 'alein-system', icon: Printer,         label: 'ALEIN SYSTEM' },
             { value: 'brackets',     icon: Trophy,          label: 'Brackets Putt' },
             { value: 'matchplay',    icon: Swords,          label: 'Match Play' },
             { value: 'historial',    icon: History,         label: 'Historial' },
@@ -677,6 +680,9 @@ const AdminDashboard = () => {
             /admin/registros para personal del club / ayudantes. */}
         <TabsContent value="registros">
           <RegistrosDashboard password="registros2025" />
+        </TabsContent>
+        <TabsContent value="alein-system">
+          <AdminAleinSystem />
         </TabsContent>
         {/* Brackets Putt Tab — config + visibilidad + captura de resultados
             (mode="full") para que el admin principal pueda hacerlo todo

@@ -770,6 +770,26 @@ const OPTIONAL_MODULES: ModuleDef[] = [
     migrations: [],
   },
   {
+    id: 'alein-system',
+    label: 'ALEIN SYSTEM',
+    description: 'Formatos operativos de tarjetas y salidas preparados para impresión física.',
+    losesOnDisable: 'Se oculta la pestaña ALEIN SYSTEM y sus formatos de impresión.',
+    core: false,
+    group: 'presentacion',
+    pageIds: [],
+    routes: ['/admin/alein-system/tarjetas'],
+    adminTabs: ['alein-system'],
+    staffAreas: [],
+    siteConfigKeys: [],
+    apiFiles: ['server/api/alein_tarjetas.php'],
+    srcFiles: [
+      'src/components/admin/AdminAleinSystem.tsx',
+      'src/pages/AdminTarjetasImpresion.tsx',
+      'src/styles/alein-print.css',
+    ],
+    migrations: [],
+  },
+  {
     id: 'showcase',
     label: 'Showcase para pantallas',
     description:
