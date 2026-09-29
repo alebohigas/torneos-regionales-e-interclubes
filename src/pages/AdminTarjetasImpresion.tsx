@@ -63,14 +63,29 @@ const chunkCards = (cards: AleinCard[]): (AleinCard | null)[][] => {
   return sheets;
 };
 
-const sumHoles = (holes: AleinHole[], start: number, end: number, key: 'yards' | 'par'): number =>
-  holes.slice(start, end).reduce((total, hole) => total + (hole[key] || 0), 0);
+const sumHoles = (holes: AleinHole[], key: 'yards' | 'par'): number =>
+  holes.reduce((total, hole) => total + (hole[key] || 0), 0);
+
+// Solo se muestran los hoyos que tienen distancia (yardaje > 0); si ninguno tiene, se muestran todos.
+const activeHoles = (holes: AleinHole[]): AleinHole[] => {
+  const withYards = holes.filter(hole => hole.yards > 0);
+  return withYards.length ? withYards : holes;
+};
 
 const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
-  const frontYards = sumHoles(card.holes, 0, 9, 'yards');
-  const backYards = sumHoles(card.holes, 9, 18, 'yards');
-  const cells = <T,>(values: T[], render: (value: T, index: number) => ReactNode) => (
-    <>{values.slice(0, 9).map(render)}<td className="alein-sum">{''}</td>{values.slice(9, 18).map((value, index) => render(value, index + 9))}<td className="alein-sum">{''}</td><td className="alein-sum">{''}</td></>
+  const holes = activeHoles(card.holes);
+  const front = holes.filter(hole => hole.number <= 9);
+  const back = holes.filter(hole => hole.number > 9);
+  const frontYards = sumHoles(front, 'yards');
+  const backYards = sumHoles(back, 'yards');
+  const splitCells = (render: (hole: AleinHole) => ReactNode) => (
+    <>
+      {front.map(render)}
+      <td className="alein-sum" />
+      {back.map(render)}
+      <td className="alein-sum" />
+      <td className="alein-sum" />
+    </>
   );
 
   return (
@@ -93,26 +108,24 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <tbody>
           <tr>
             <th className="alein-row-label">HOYO</th>
-            {card.holes.slice(0, 9).map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
+            {front.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V1</th>
-            {card.holes.slice(9, 18).map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
+            {back.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V2</th><th className="alein-sum">TOTAL</th>
           </tr>
           <tr>
             <th className="alein-row-label">YARDAS</th>
-            {card.holes.slice(0, 9).map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            {front.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             <td className="alein-sum">{frontYards || ''}</td>
-            {card.holes.slice(9, 18).map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             <td className="alein-sum">{backYards || ''}</td><td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
-          <tr><th className="alein-row-label">PAR TIME</th>{cells(card.holes, h => <td key={h.number}>{h.parTime}</td>)}</tr>
+          <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE GROSS</th>
-            {card.holes.map(h => <td key={h.number} className="alein-gross-cell" />).reduce<ReactNode[]>((all, cell, index) => {
-              all.push(cell);
-              if (index === 8) all.push(<td key="v1" className="alein-sum alein-gross-cell" />);
-              return all;
-            }, [])}
+            {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
+            <td className="alein-sum alein-gross-cell" />
+            {back.map(h => <td key={h.number} className="alein-gross-cell" />)}
             <td className="alein-sum alein-gross-cell" /><td className="alein-sum alein-gross-cell" />
           </tr>
         </tbody>
@@ -125,7 +138,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
       <table className="alein-marker-table" aria-label="Score del anotador">
-        <tbody><tr><th>SCORE<br />ANOTADOR</th>{card.holes.slice(0, 9).map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{card.holes.slice(9, 18).map(h => <td key={h.number}>{h.number}</td>)}<th>V2</th><th>TOTAL</th></tr></tbody>
+        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{back.map(h => <td key={h.number}>{h.number}</td>)}<th>V2</th><th>TOTAL</th></tr></tbody>
       </table>
     </article>
   );
