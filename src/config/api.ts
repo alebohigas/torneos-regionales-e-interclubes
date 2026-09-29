@@ -244,12 +244,14 @@ export const getSalidasDayUrl = (dayId: string, formato: string = 'individual'):
 /** ALEIN SYSTEM: catálogo y tarjetas imprimibles de una fecha/campo/categoría. */
 export const getAleinTarjetasUrl = (filters: {
   date?: string;
+  endDate?: string;
   courseId?: string;
   categoryId?: string;
   system?: string;
 } = {}): string =>
   `${API_BASE_URL}/alein_tarjetas.php${buildQuery({
     ...(filters.date ? { fecha: filters.date } : {}),
+    ...(filters.endDate ? { hasta: filters.endDate } : {}),
     ...(filters.courseId ? { campoid: filters.courseId } : {}),
     ...(filters.categoryId ? { catid: filters.categoryId } : {}),
     ...(filters.system ? { sistema: filters.system } : {}),

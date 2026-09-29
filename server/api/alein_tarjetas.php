@@ -14,6 +14,7 @@ if (!is_superadmin_session()) json_error('Unauthorized', 401);
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);
 $fecha = trim(optional_param('fecha', ''));
+$hasta = trim(optional_param('hasta', ''));
 $campoid = trim(optional_param('campoid', ''));
 $catid = trim(optional_param('catid', ''));
 $sistemaFiltro = trim(optional_param('sistema', ''));
@@ -86,11 +87,15 @@ $basePayload = [
 ];
 
 if ($fecha === '' || $campoid === '' || $catid === '') json_response($basePayload);
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !ctype_digit($campoid) || !ctype_digit($catid)) {
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)
+    || ($hasta !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta))
+    || ($hasta !== '' && $hasta < $fecha)
+    || !ctype_digit($campoid) || !ctype_digit($catid)) {
     json_error('Filtros inválidos', 400);
 }
 
 $fec = esc($conn, $fecha);
+$fecHasta = esc($conn, $hasta !== '' ? $hasta : $fecha);
 $campo = esc($conn, $campoid);
 $cat = esc($conn, $catid);
 
@@ -108,7 +113,7 @@ foreach (['tarjetaid', 'teesalidaid', 'tee_salida', 'tee', 'clubjug', 'club', 's
     if (api_column_exists($conn, $vTable, $col)) $select[] = "v.`$col`";
 }
 
-$where = "v.torneoid = $tid AND v.fecha_juego = '$fec' AND v.`$vCampo` = $campo AND v.categoriaid = $cat";
+$where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND v.`$vCampo` = $campo AND v.categoriaid = $cat";
 if ($sistemaFiltro !== '' && api_column_exists($conn, $vTable, 'sistema')) {
     $where .= " AND UPPER(v.sistema) = UPPER('" . esc($conn, $sistemaFiltro) . "')";
 }
@@ -219,7 +224,7 @@ foreach ($players as $player) {
         'startTime' => $startTime,
         'system' => $system,
         'course' => $course['campo'] ?? '',
-        'date' => $fecha,
+        'date' => (string)($player['fecha_juego'] ?? $fecha),
         'holes' => $holes,
     ];
 }
