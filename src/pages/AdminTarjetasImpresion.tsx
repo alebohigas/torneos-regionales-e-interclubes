@@ -106,8 +106,8 @@ const cleanTeeColor = (tee: string, teeColor: string): string => {
 
 const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
   const holes = activeHoles(card.holes);
-  const front = holes.filter(hole => hole.number <= 9);
-  const back = holes.filter(hole => hole.number > 9);
+  const front = holes.length <= 9 ? holes : holes.filter(hole => hole.number <= 9);
+  const back = holes.length <= 9 ? [] : holes.filter(hole => hole.number > 9);
   const frontYards = sumHoles(front, 'yards');
   const backYards = sumHoles(back, 'yards');
   const frontPar = sumHoles(front, 'par');
