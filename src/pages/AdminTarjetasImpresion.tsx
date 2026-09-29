@@ -63,14 +63,32 @@ const chunkCards = (cards: AleinCard[]): (AleinCard | null)[][] => {
   return sheets;
 };
 
-const sumHoles = (holes: AleinHole[], start: number, end: number, key: 'yards' | 'par'): number =>
-  holes.slice(start, end).reduce((total, hole) => total + (hole[key] || 0), 0);
+const sumHoles = (holes: AleinHole[], key: 'yards' | 'par'): number =>
+  holes.reduce((total, hole) => total + (hole[key] || 0), 0);
+
+// Solo se muestran los hoyos que tienen distancia (yardaje > 0); si ninguno tiene, se muestran todos.
+const activeHoles = (holes: AleinHole[]): AleinHole[] => {
+  const withYards = holes.filter(hole => hole.yards > 0);
+  return withYards.length ? withYards : holes;
+};
 
 const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
-  const frontYards = sumHoles(card.holes, 0, 9, 'yards');
-  const backYards = sumHoles(card.holes, 9, 18, 'yards');
+  const holes = activeHoles(card.holes);
+  const front = holes.filter(hole => hole.number <= 9);
+  const back = holes.filter(hole => hole.number > 9);
+  const frontYards = sumHoles(front, 'yards');
+  const backYards = sumHoles(back, 'yards');
   const cells = <T,>(values: T[], render: (value: T, index: number) => ReactNode) => (
-    <>{values.slice(0, 9).map(render)}<td className="alein-sum">{''}</td>{values.slice(9, 18).map((value, index) => render(value, index + 9))}<td className="alein-sum">{''}</td><td className="alein-sum">{''}</td></>
+    <>{values.map(render)}</>
+  );
+  const splitCells = <T,>(render: (value: T, index: number) => ReactNode, sumClass = 'alein-sum') => (
+    <>
+      {front.map(render)}
+      <td className={sumClass} />
+      {back.map((value, index) => render(value, index + front.length))}
+      <td className={sumClass} />
+      <td className={sumClass} />
+    </>
   );
 
   return (
