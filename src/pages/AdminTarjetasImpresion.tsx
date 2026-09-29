@@ -178,7 +178,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
       <footer className="alein-signatures">
         <div><span>SISTEMA</span><strong>{card.system || '—'}</strong></div>
         <div className="alein-sign-line">ANOTADOR</div>
-        <div className="alein-sign-line">JUGADOR</div>
+        <div className="alein-sign-line">{card.playerName}</div>
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
       <table className="alein-marker-table" aria-label="Score del anotador">
