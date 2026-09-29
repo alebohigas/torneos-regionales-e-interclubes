@@ -241,6 +241,20 @@ export const getSalidasUrl = (): string => `${API_BASE_URL}/salidas.php${buildQu
 export const getSalidasDayUrl = (dayId: string, formato: string = 'individual'): string =>
   `${API_BASE_URL}/salidas_det.php${buildQuery({ caljgoid: dayId, formato })}`;
 
+/** ALEIN SYSTEM: catálogo y tarjetas imprimibles de una fecha/campo/categoría. */
+export const getAleinTarjetasUrl = (filters: {
+  date?: string;
+  courseId?: string;
+  categoryId?: string;
+  system?: string;
+} = {}): string =>
+  `${API_BASE_URL}/alein_tarjetas.php${buildQuery({
+    ...(filters.date ? { fecha: filters.date } : {}),
+    ...(filters.courseId ? { campoid: filters.courseId } : {}),
+    ...(filters.categoryId ? { catid: filters.categoryId } : {}),
+    ...(filters.system ? { sistema: filters.system } : {}),
+  })}`;
+
 /** All competitions (competición - trofeos) */
 export const getCompeticionUrl = (): string => `${API_BASE_URL}/competicion.php${buildQuery()}`;
 

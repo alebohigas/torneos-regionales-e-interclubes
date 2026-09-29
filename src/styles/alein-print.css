@@ -1,0 +1,162 @@
+.alein-print-page {
+  --print-paper: #ffffff;
+  --print-ink: #111111;
+  --print-grid: #7d8580;
+  --print-soft: #f1f2ef;
+  --print-accent: #365f49;
+  background: var(--print-soft);
+  color: var(--print-ink);
+  min-height: 100vh;
+}
+
+.alein-sheet {
+  width: 8.5in;
+  min-height: 11in;
+  margin: 1rem auto;
+  padding: 0.25in;
+  background: var(--print-paper);
+  display: grid;
+  grid-template-rows: repeat(3, 3.42in);
+  gap: 0.12in;
+  box-shadow: 0 8px 28px hsl(var(--foreground) / 0.12);
+  box-sizing: border-box;
+}
+
+.alein-scorecard {
+  height: 3.42in;
+  overflow: hidden;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  display: grid;
+  grid-template-rows: 0.5in 0.5in 1.12in 0.38in 0.34in;
+  gap: 0.055in;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--print-ink);
+}
+
+.alein-card-head {
+  display: grid;
+  grid-template-columns: 1.45in 1fr;
+  align-items: center;
+}
+
+.alein-card-logo {
+  max-width: 1.25in;
+  max-height: 0.48in;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.alein-card-title {
+  text-align: right;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.alein-card-title strong { display: block; font-size: 12px; }
+.alein-card-title span { display: block; margin-top: 2px; font-size: 8px; font-weight: 700; }
+
+.alein-player-grid {
+  display: grid;
+  grid-template-columns: 0.82in 1fr 1.55in;
+  border: 0.7px solid var(--print-grid);
+}
+
+.alein-player-grid > div {
+  min-width: 0;
+  padding: 0.04in 0.07in;
+  border-right: 0.7px solid var(--print-grid);
+}
+
+.alein-player-grid > div:last-child { border-right: 0; }
+.alein-start { display: flex; flex-direction: column; justify-content: center; font-weight: 800; line-height: 1.08; }
+.alein-start strong { font-size: 14px; }
+.alein-start span { margin-top: 3px; font-size: 13px; }
+.alein-player { display: flex; flex-direction: column; justify-content: center; }
+.alein-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.alein-player span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; font-size: 7.5px; }
+.alein-category { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; }
+.alein-category strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; font-size: 11px; }
+.alein-category span { margin-top: 4px; font-size: 7.5px; text-transform: uppercase; }
+
+.alein-score-table {
+  width: 100%;
+  height: 1.2in;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 6.2px;
+  line-height: 1;
+}
+
+.alein-score-table th,
+.alein-score-table td {
+  height: 0.22in;
+  padding: 0;
+  border: 0.55px solid var(--print-grid);
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.alein-score-table .alein-row-label { width: 0.7in; font-size: 6px; font-weight: 800; }
+.alein-score-table .alein-sum { width: 0.39in; background: var(--print-soft); font-weight: 800; }
+.alein-score-table .alein-gross-cell { height: 0.33in; }
+.alein-score-table .alein-hole-start { background: var(--print-accent); color: var(--print-paper); font-weight: 800; }
+
+.alein-signatures {
+  display: grid;
+  grid-template-columns: 0.8in 1fr 1fr 0.9in;
+  align-items: end;
+  gap: 0.12in;
+  padding: 0 0.08in;
+  font-size: 6.5px;
+  text-transform: uppercase;
+}
+
+.alein-signatures strong { display: block; margin-top: 1px; font-size: 7.5px; }
+.alein-sign-line { min-width: 0; text-align: center; }
+.alein-sign-line::after { content: ''; display: block; margin-top: 0.08in; border-bottom: 0.55px solid var(--print-grid); }
+.alein-signatures .alein-folio { text-align: right; font-weight: 800; }
+
+.alein-marker-table {
+  width: 100%;
+  height: 0.34in;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6px;
+}
+
+.alein-marker-table th,
+.alein-marker-table td {
+  padding: 0;
+  border: 0.55px solid var(--print-grid);
+  text-align: center;
+}
+
+.alein-marker-table th:first-child { width: 0.7in; }
+.alein-marker-table th { font-weight: 800; }
+
+.alein-empty-slot { border: 0.7px dashed var(--print-grid); opacity: 0.25; }
+
+@page { size: letter portrait; margin: 0; }
+
+@media print {
+  html, body { width: 8.5in; background: var(--print-paper); overflow: visible; }
+  body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .alein-no-print { display: none; }
+  .alein-print-page { min-height: 0; background: var(--print-paper); }
+  .alein-sheets { margin: 0; }
+  .alein-sheet {
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .alein-sheet:last-child { break-after: auto; page-break-after: auto; }
+}
+
+@media screen and (max-width: 900px) {
+  .alein-sheet-preview { overflow-x: auto; padding-bottom: 1rem; }
+  .alein-sheet { margin-left: 0; transform-origin: top left; }
+}

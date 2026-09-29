@@ -53,6 +53,7 @@ import AdminBracketsPage from "./pages/AdminBracketsPage";
 import Showcase300 from "./pages/Showcase300";
 import ShowcaseRotator from "./pages/ShowcaseRotator";
 import AdminShowcaseRotacionPage from "./pages/AdminShowcaseRotacionPage";
+import AdminTarjetasImpresion from "./pages/AdminTarjetasImpresion";
 import PuttCalificados from "./pages/PuttCalificados";
 import Banderas from "./pages/Banderas";
 import MatchPlay from "./pages/MatchPlay";
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="/admin/registros/seguimiento" element={<ModuleGate moduleId="registro"><AdminRegistrosSeguimiento /></ModuleGate>} />
               <Route path="/admin/brackets" element={<ModuleGate moduleId="matchplay"><AdminBracketsPage /></ModuleGate>} />
               <Route path="/admin/showcase-rotacion" element={<ModuleGate moduleId="showcase"><AdminShowcaseRotacionPage /></ModuleGate>} />
+              <Route path="/admin/alein-system/tarjetas" element={<ModuleGate moduleId="alein-system"><AdminTarjetasImpresion /></ModuleGate>} />
               {/* Public: player upload page after admin sends the email link */}
               <Route path="/registro/comprobante" element={<ModuleGate moduleId="registro"><Comprobante /></ModuleGate>} />
               
