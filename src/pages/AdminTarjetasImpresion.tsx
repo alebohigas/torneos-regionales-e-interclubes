@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
+import { useStaffAuth } from '@/contexts/StaffAuthContext';
 import { apiFetch } from '@/lib/apiClient';
 import { getAleinTarjetasUrl } from '@/config/api';
 import '@/styles/alein-print.css';
@@ -190,6 +191,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
 
 const AdminTarjetasImpresion = () => {
   const { isAdmin } = usePageVisibility();
+  const { session: staffSession, hasArea } = useStaffAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState<AleinResponse | null>(null);
@@ -207,7 +209,14 @@ const AdminTarjetasImpresion = () => {
     setLoading(true);
     setError('');
     try {
-      setData(await apiFetch<AleinResponse>(getAleinTarjetasUrl({ date, endDate, courseId, categoryId, system })));
+      setData(await apiFetch<AleinResponse>(getAleinTarjetasUrl({
+        date,
+        endDate,
+        courseId,
+        categoryId,
+        system,
+        staffToken: staffSession?.token,
+      })));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'No se pudieron cargar las tarjetas.');
     } finally {
@@ -215,7 +224,7 @@ const AdminTarjetasImpresion = () => {
     }
   };
 
-  useEffect(() => { void load(); }, [date, endDate, courseId, categoryId, system]);
+  useEffect(() => { void load(); }, [date, endDate, courseId, categoryId, system, staffSession?.token]);
 
   const allFilters = data?.filters ?? [];
   const dates = useMemo(() => Array.from(new Set(allFilters.map(item => item.date))), [allFilters]);
@@ -251,14 +260,14 @@ const AdminTarjetasImpresion = () => {
     setParams(next);
   };
 
-  if (!isAdmin) return <Navigate to="/admin" replace />;
+  if (!isAdmin && !hasArea('alien-system')) return <Navigate to="/admin" replace />;
 
   return (
     <main className="alein-print-page" style={printStyle}>
       <section className="alein-no-print mx-auto max-w-6xl space-y-5 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-primary">ALEIN SYSTEM</p>
+            <p className="text-sm font-semibold text-primary">ALIEN SYSTEM</p>
             <h1 className="text-2xl font-bold">Tarjetas para impresión</h1>
           </div>
           <div className="flex gap-2">
