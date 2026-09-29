@@ -120,7 +120,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             <td className="alein-sum">{backYards || ''}</td><td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
-          <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={(h as AleinHole).number}>{(h as AleinHole).parTime}</td>)}</tr>
+          <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE GROSS</th>
             {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
