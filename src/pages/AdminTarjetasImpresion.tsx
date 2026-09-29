@@ -78,6 +78,7 @@ interface PrintSettings {
   sideMarginMm: number;
   scale: number;
   rowHeightMm: number;
+  scoreTableFontPt: number;
   paddingTopMm: number;
   paddingBottomMm: number;
   holeFontPt: number;
@@ -90,6 +91,7 @@ const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   sideMarginMm: 7,
   scale: 100,
   rowHeightMm: 6.2,
+  scoreTableFontPt: 8,
   paddingTopMm: 2,
   paddingBottomMm: 1,
   holeFontPt: 11,
@@ -229,6 +231,7 @@ const AdminTarjetasImpresion = () => {
     '--alein-side-margin': `${printSettings.sideMarginMm}mm`,
     '--alein-scale': String(printSettings.scale / 100),
     '--alein-row-height': `${printSettings.rowHeightMm}mm`,
+    '--alein-score-table-font': `${printSettings.scoreTableFontPt}pt`,
     '--alein-padding-top': `${printSettings.paddingTopMm}mm`,
     '--alein-padding-bottom': `${printSettings.paddingBottomMm}mm`,
     '--alein-hole-font': `${printSettings.holeFontPt}pt`,
@@ -277,7 +280,8 @@ const AdminTarjetasImpresion = () => {
               ['headerMm', 'Cabecera (mm)', 10, 20, 1],
               ['sideMarginMm', 'Margen lateral (mm)', 4, 15, 1],
               ['scale', 'Escala (%)', 85, 105, 1],
-              ['rowHeightMm', 'Alto de renglón (mm)', 5, 8, 0.1],
+              ['rowHeightMm', 'Alto HOYO, PAR, YARDAS y PAR TIME (mm)', 4.5, 8, 0.1],
+              ['scoreTableFontPt', 'Letra HOYO, PAR, YARDAS y PAR TIME (pt)', 6, 12, 0.5],
               ['paddingTopMm', 'Padding superior (mm)', 0, 5, 0.5],
               ['paddingBottomMm', 'Padding inferior (mm)', 0, 4, 0.5],
               ['holeFontPt', 'Letra hoyo y hora (pt)', 9, 15.5, 0.5],
