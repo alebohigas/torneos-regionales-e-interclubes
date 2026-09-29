@@ -10,7 +10,7 @@ const AdminAleinSystem = () => {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold">ALEIN SYSTEM</h2>
+        <h2 className="text-xl font-bold">ALIEN SYSTEM</h2>
         <p className="text-sm text-muted-foreground">Formatos operativos listos para impresión.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">

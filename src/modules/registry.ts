@@ -771,15 +771,15 @@ const OPTIONAL_MODULES: ModuleDef[] = [
   },
   {
     id: 'alein-system',
-    label: 'ALEIN SYSTEM',
+    label: 'ALIEN SYSTEM',
     description: 'Formatos operativos de tarjetas y salidas preparados para impresión física.',
-    losesOnDisable: 'Se oculta la pestaña ALEIN SYSTEM y sus formatos de impresión.',
+    losesOnDisable: 'Se oculta la pestaña ALIEN SYSTEM y sus formatos de impresión.',
     core: false,
     group: 'presentacion',
     pageIds: [],
     routes: ['/admin/alein-system/tarjetas'],
     adminTabs: ['alein-system'],
-    staffAreas: [],
+    staffAreas: ['alien-system'],
     siteConfigKeys: [],
     apiFiles: ['server/api/alein_tarjetas.php'],
     srcFiles: [

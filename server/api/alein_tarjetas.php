@@ -1,15 +1,17 @@
 <?php
 /**
- * ALEIN SYSTEM — tarjetas para impresión.
+ * ALIEN SYSTEM — tarjetas para impresión.
  * GET /api/alein_tarjetas.php?torneoid=NN[&fecha=YYYY-MM-DD&campoid=NN&catid=NN&sistema=...]
  *
  * Sin filtros devuelve catálogo de fechas/campos/categorías. Con fecha,
  * campo y categoría devuelve todas las tarjetas listas para imprimir.
  */
 require_once 'config.php';
+require_once '_staff_auth.php';
 
-// La información de salidas y folios pertenece exclusivamente al administrador.
-if (!is_superadmin_session()) json_error('Unauthorized', 401);
+// La información de salidas y folios requiere superadmin o el área ALIEN SYSTEM.
+$alienStaff = staff_check_area($conn, [], 'alien-system');
+if (!is_superadmin_session() && !$alienStaff) json_error('Unauthorized', 401);
 
 $torneoid = require_torneoid($conn);
 $tid = esc($conn, $torneoid);

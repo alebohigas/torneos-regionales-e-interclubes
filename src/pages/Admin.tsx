@@ -249,6 +249,7 @@ const AdminDashboard = () => {
     live: 'live',
     stats: 'stats',
     'stats-page': 'stats',
+    'alein-system': 'alien-system',
     usuarios: undefined,
     config: undefined,
     gira: undefined,
@@ -277,6 +278,7 @@ const AdminDashboard = () => {
     reglas: 'convocatoria',
     uploads: 'archivos',
     stats: 'stats',
+    'alien-system': 'alein-system',
   };
   /** Tab inicial: la primera área del staff, siempre que su módulo esté activo. */
   const staffFirstTab = isStaffOnly && staffSession && staffSession.areas.length
@@ -511,7 +513,7 @@ const AdminDashboard = () => {
             { value: 'sponsors',     icon: ImageIcon,       label: 'Patrocinadores' },
             { value: 'registro',     icon: ClipboardList,   label: 'Pre-Registro' },
             { value: 'registros',    icon: ListChecks,      label: 'Registros' },
-            { value: 'alein-system', icon: Printer,         label: 'ALEIN SYSTEM' },
+            { value: 'alein-system', icon: Printer,         label: 'ALIEN SYSTEM' },
             { value: 'brackets',     icon: Trophy,          label: 'Brackets Putt' },
             { value: 'matchplay',    icon: Swords,          label: 'Match Play' },
             { value: 'historial',    icon: History,         label: 'Historial' },

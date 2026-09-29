@@ -40,6 +40,7 @@ export const STAFF_AREAS: { id: StaffArea; label: string }[] = [
   { id: 'reglas',       label: 'Reglas' },
   { id: 'uploads',      label: 'Archivos' },
   { id: 'stats',        label: 'Estadísticas' },
+  { id: 'alien-system', label: 'ALIEN SYSTEM' },
 ];
 
 interface StaffUser {
