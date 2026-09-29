@@ -123,14 +123,12 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             <td className="alein-sum">{backYards || ''}</td><td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
-          <tr><th className="alein-row-label">PAR TIME</th>{cells(card.holes, h => <td key={h.number}>{h.parTime}</td>)}</tr>
+          <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={(h as AleinHole).number}>{(h as AleinHole).parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE GROSS</th>
-            {card.holes.map(h => <td key={h.number} className="alein-gross-cell" />).reduce<ReactNode[]>((all, cell, index) => {
-              all.push(cell);
-              if (index === 8) all.push(<td key="v1" className="alein-sum alein-gross-cell" />);
-              return all;
-            }, [])}
+            {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
+            <td className="alein-sum alein-gross-cell" />
+            {back.map(h => <td key={h.number} className="alein-gross-cell" />)}
             <td className="alein-sum alein-gross-cell" /><td className="alein-sum alein-gross-cell" />
           </tr>
         </tbody>
