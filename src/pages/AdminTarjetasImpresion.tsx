@@ -78,16 +78,13 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
   const back = holes.filter(hole => hole.number > 9);
   const frontYards = sumHoles(front, 'yards');
   const backYards = sumHoles(back, 'yards');
-  const cells = <T,>(values: T[], render: (value: T, index: number) => ReactNode) => (
-    <>{values.map(render)}</>
-  );
-  const splitCells = <T,>(render: (value: T, index: number) => ReactNode, sumClass = 'alein-sum') => (
+  const splitCells = (render: (hole: AleinHole) => ReactNode) => (
     <>
       {front.map(render)}
-      <td className={sumClass} />
-      {back.map((value, index) => render(value, index + front.length))}
-      <td className={sumClass} />
-      <td className={sumClass} />
+      <td className="alein-sum" />
+      {back.map(render)}
+      <td className="alein-sum" />
+      <td className="alein-sum" />
     </>
   );
 
