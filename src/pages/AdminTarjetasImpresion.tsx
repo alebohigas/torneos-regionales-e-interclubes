@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
-import { useStaffAuth } from '@/contexts/StaffAuthContext';
 import { apiFetch } from '@/lib/apiClient';
 import { getAleinTarjetasUrl } from '@/config/api';
 import '@/styles/alein-print.css';
@@ -70,8 +69,6 @@ const sumHoles = (holes: AleinHole[], start: number, end: number, key: 'yards' |
 const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
   const frontYards = sumHoles(card.holes, 0, 9, 'yards');
   const backYards = sumHoles(card.holes, 9, 18, 'yards');
-  const frontPar = sumHoles(card.holes, 0, 9, 'par');
-  const backPar = sumHoles(card.holes, 9, 18, 'par');
   const cells = <T,>(values: T[], render: (value: T, index: number) => ReactNode) => (
     <>{values.slice(0, 9).map(render)}<td className="alein-sum">{''}</td>{values.slice(9, 18).map((value, index) => render(value, index + 9))}<td className="alein-sum">{''}</td><td className="alein-sum">{''}</td></>
   );
@@ -111,7 +108,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
           <tr><th className="alein-row-label">PAR TIME</th>{cells(card.holes, h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE GROSS</th>
-            {card.holes.map(h => <td key={h.number} className="alein-gross-cell" />).reduce<React.ReactNode[]>((all, cell, index) => {
+            {card.holes.map(h => <td key={h.number} className="alein-gross-cell" />).reduce<ReactNode[]>((all, cell, index) => {
               all.push(cell);
               if (index === 8) all.push(<td key="v1" className="alein-sum alein-gross-cell" />);
               return all;
@@ -136,7 +133,6 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
 
 const AdminTarjetasImpresion = () => {
   const { isAdmin } = usePageVisibility();
-  const { session } = useStaffAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState<AleinResponse | null>(null);
