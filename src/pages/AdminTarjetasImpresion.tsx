@@ -111,9 +111,9 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <tbody>
           <tr>
             <th className="alein-row-label">HOYO</th>
-            {card.holes.slice(0, 9).map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
+            {front.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V1</th>
-            {card.holes.slice(9, 18).map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
+            {back.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V2</th><th className="alein-sum">TOTAL</th>
           </tr>
           <tr>
