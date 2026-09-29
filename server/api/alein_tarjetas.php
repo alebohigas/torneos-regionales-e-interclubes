@@ -214,7 +214,7 @@ foreach ($players as $player) {
     $cards[] = [
         'id' => (string)($player['tarjetaid'] ?? $player['jugadorid']),
         'folio' => (string)($player['tarjetaid'] ?? $player['numjugador'] ?? $player['jugadorid']),
-        'playerNumber' => (string)($player['numjugador'] ?? ''),
+        'playerNumber' => (string)($player['jugadorid'] ?? ''),
         'playerName' => trim(($player['nombre'] ?? '') . ' ' . ($player['apellido'] ?? '')),
         'club' => $club,
         'category' => $category['categoria'] ?? '',
