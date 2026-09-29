@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Printer, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
@@ -72,18 +73,52 @@ const activeHoles = (holes: AleinHole[]): AleinHole[] => {
   return withYards.length ? withYards : holes;
 };
 
+interface PrintSettings {
+  headerMm: number;
+  sideMarginMm: number;
+  scale: number;
+  rowHeightMm: number;
+  paddingTopMm: number;
+  paddingBottomMm: number;
+  holeFontPt: number;
+  categoryFontPt: number;
+  playerFontPt: number;
+}
+
+const DEFAULT_PRINT_SETTINGS: PrintSettings = {
+  headerMm: 14,
+  sideMarginMm: 7,
+  scale: 100,
+  rowHeightMm: 6.2,
+  paddingTopMm: 2,
+  paddingBottomMm: 1,
+  holeFontPt: 11,
+  categoryFontPt: 10,
+  playerFontPt: 10,
+};
+
+const cleanTeeColor = (tee: string, teeColor: string): string => {
+  const isHex = (value: string) => /^#(?:[\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i.test(value.trim());
+  if (tee && !isHex(tee)) return tee;
+  if (teeColor && !isHex(teeColor)) return teeColor;
+  return 'TEE';
+};
+
 const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
   const holes = activeHoles(card.holes);
-  const front = holes.filter(hole => hole.number <= 9);
-  const back = holes.filter(hole => hole.number > 9);
+  const front = holes.length <= 9 ? holes : holes.filter(hole => hole.number <= 9);
+  const back = holes.length <= 9 ? [] : holes.filter(hole => hole.number > 9);
   const frontYards = sumHoles(front, 'yards');
   const backYards = sumHoles(back, 'yards');
+  const frontPar = sumHoles(front, 'par');
+  const backPar = sumHoles(back, 'par');
+  const hasBackNine = back.length > 0;
   const splitCells = (render: (hole: AleinHole) => ReactNode) => (
     <>
       {front.map(render)}
       <td className="alein-sum" />
       {back.map(render)}
-      <td className="alein-sum" />
+      {hasBackNine && <td className="alein-sum" />}
       <td className="alein-sum" />
     </>
   );
@@ -101,7 +136,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
       <section className="alein-player-grid">
         <div className="alein-start"><strong>H{String(card.startHole).padStart(2, '0')}</strong><span>{card.startTime}</span></div>
         <div className="alein-player"><strong>{card.playerNumber} {card.playerName}</strong><span>{card.club || 'CLUB NO REGISTRADO'}</span></div>
-        <div className="alein-category"><strong>{card.category}</strong><span>{card.tee || 'TEE'}{card.teeColor ? ` · ${card.teeColor}` : ''}</span></div>
+        <div className="alein-category"><strong>{card.category}</strong><span>{cleanTeeColor(card.tee, card.teeColor)}</span></div>
       </section>
 
       <table className="alein-score-table" aria-label={`Tarjeta de ${card.playerName}`}>
@@ -111,14 +146,21 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             {front.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
             <th className="alein-sum">V1</th>
             {back.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
-            <th className="alein-sum">V2</th><th className="alein-sum">TOTAL</th>
+            {hasBackNine && <th className="alein-sum">V2</th>}<th className="alein-sum">TOTAL</th>
           </tr>
           <tr>
             <th className="alein-row-label">YARDAS</th>
             {front.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             <td className="alein-sum">{frontYards || ''}</td>
             {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
-            <td className="alein-sum">{backYards || ''}</td><td className="alein-sum">{frontYards + backYards || ''}</td>
+            {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
+          </tr>
+          <tr>
+            <th className="alein-row-label">PAR</th>
+            {front.map(h => <td key={h.number}>{h.par || ''}</td>)}
+            <td className="alein-sum">{frontPar || ''}</td>
+            {back.map(h => <td key={h.number}>{h.par || ''}</td>)}
+            {hasBackNine && <td className="alein-sum">{backPar || ''}</td>}<td className="alein-sum">{frontPar + backPar || ''}</td>
           </tr>
           <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
@@ -126,7 +168,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
             {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
             <td className="alein-sum alein-gross-cell" />
             {back.map(h => <td key={h.number} className="alein-gross-cell" />)}
-            <td className="alein-sum alein-gross-cell" /><td className="alein-sum alein-gross-cell" />
+            {hasBackNine && <td className="alein-sum alein-gross-cell" />}<td className="alein-sum alein-gross-cell" />
           </tr>
         </tbody>
       </table>
@@ -138,7 +180,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
       <table className="alein-marker-table" aria-label="Score del anotador">
-        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{back.map(h => <td key={h.number}>{h.number}</td>)}<th>V2</th><th>TOTAL</th></tr></tbody>
+        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{back.map(h => <td key={h.number}>{h.number}</td>)}{hasBackNine && <th>V2</th>}<th>TOTAL</th></tr></tbody>
       </table>
     </article>
   );
@@ -156,12 +198,14 @@ const AdminTarjetasImpresion = () => {
   const courseId = params.get('campoid') || '';
   const categoryId = params.get('catid') || '';
   const system = params.get('sistema') || '';
+  const endDate = params.get('hasta') || '';
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      setData(await apiFetch<AleinResponse>(getAleinTarjetasUrl({ date, courseId, categoryId, system })));
+      setData(await apiFetch<AleinResponse>(getAleinTarjetasUrl({ date, endDate, courseId, categoryId, system })));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'No se pudieron cargar las tarjetas.');
     } finally {
@@ -169,16 +213,34 @@ const AdminTarjetasImpresion = () => {
     }
   };
 
-  useEffect(() => { void load(); }, [date, courseId, categoryId, system]);
+  useEffect(() => { void load(); }, [date, endDate, courseId, categoryId, system]);
 
   const allFilters = data?.filters ?? [];
   const dates = useMemo(() => Array.from(new Set(allFilters.map(item => item.date))), [allFilters]);
+  const endDates = useMemo(() => dates.filter(value => !date || value >= date), [dates, date]);
   const courses = useMemo(() => {
     const matches = allFilters.filter(item => !date || item.date === date);
     return Array.from(new Map(matches.map(item => [item.courseId, item.course])).entries());
   }, [allFilters, date]);
   const categories = useMemo(() => allFilters.filter(item => (!date || item.date === date) && (!courseId || item.courseId === courseId)), [allFilters, date, courseId]);
   const sheets = useMemo(() => chunkCards(data?.cards ?? []), [data?.cards]);
+  const printStyle = useMemo(() => ({
+    '--alein-header-height': `${printSettings.headerMm}mm`,
+    '--alein-side-margin': `${printSettings.sideMarginMm}mm`,
+    '--alein-scale': String(printSettings.scale / 100),
+    '--alein-row-height': `${printSettings.rowHeightMm}mm`,
+    '--alein-padding-top': `${printSettings.paddingTopMm}mm`,
+    '--alein-padding-bottom': `${printSettings.paddingBottomMm}mm`,
+    '--alein-hole-font': `${printSettings.holeFontPt}pt`,
+    '--alein-category-font': `${printSettings.categoryFontPt}pt`,
+    '--alein-player-font': `${printSettings.playerFontPt}pt`,
+  } as CSSProperties), [printSettings]);
+
+  const updatePrintSetting = (key: keyof PrintSettings, value: string, min: number, max: number) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return;
+    setPrintSettings(current => ({ ...current, [key]: Math.min(max, Math.max(min, parsed)) }));
+  };
 
   const update = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params);
@@ -189,7 +251,7 @@ const AdminTarjetasImpresion = () => {
   if (!isAdmin) return <Navigate to="/admin" replace />;
 
   return (
-    <main className="alein-print-page">
+    <main className="alein-print-page" style={printStyle}>
       <section className="alein-no-print mx-auto max-w-6xl space-y-5 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -205,11 +267,28 @@ const AdminTarjetasImpresion = () => {
 
         <Card>
           <CardHeader><CardTitle className="text-lg">Selecciona las tarjetas</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-4">
+          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2"><Label>Fecha</Label><Select value={date} onValueChange={value => update({ fecha: value, campoid: '', catid: '', sistema: '' })}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{dates.map(value => <SelectItem key={value} value={value}>{dateLabel(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2"><Label>Hasta (opcional)</Label><Select value={endDate || 'single'} onValueChange={value => update({ hasta: value === 'single' ? '' : value })} disabled={!date}><SelectTrigger><SelectValue placeholder="Solo ese día" /></SelectTrigger><SelectContent><SelectItem value="single">Solo ese día</SelectItem>{endDates.filter(value => value > date).map(value => <SelectItem key={value} value={value}>{dateLabel(value)}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Campo</Label><Select value={courseId} onValueChange={value => update({ campoid: value, catid: '', sistema: '' })} disabled={!date}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{courses.map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Categoría</Label><Select value={categoryId} onValueChange={value => { const selected = categories.find(item => item.categoryId === value); update({ catid: value, sistema: selected?.system || '' }); }} disabled={!courseId}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{categories.map(item => <SelectItem key={`${item.date}-${item.courseId}-${item.categoryId}`} value={item.categoryId}>{item.category}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Sistema</Label><Select value={system} onValueChange={value => update({ sistema: value })} disabled={!categoryId}><SelectTrigger><SelectValue placeholder="Automático" /></SelectTrigger><SelectContent>{Array.from(new Set(categories.map(item => item.system).filter(Boolean))).map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
+            {([
+              ['headerMm', 'Cabecera (mm)', 10, 20, 1],
+              ['sideMarginMm', 'Margen lateral (mm)', 4, 15, 1],
+              ['scale', 'Escala (%)', 85, 105, 1],
+              ['rowHeightMm', 'Alto de renglón (mm)', 5, 8, 0.1],
+              ['paddingTopMm', 'Padding superior (mm)', 0, 5, 0.5],
+              ['paddingBottomMm', 'Padding inferior (mm)', 0, 4, 0.5],
+              ['holeFontPt', 'Letra hoyo y hora (pt)', 9, 15.5, 0.5],
+              ['categoryFontPt', 'Letra categoría (pt)', 8, 15, 0.5],
+              ['playerFontPt', 'Letra jugador (pt)', 8, 14, 0.5],
+            ] as const).map(([key, label, min, max, step]) => (
+              <div className="space-y-2" key={key}>
+                <Label htmlFor={`alein-${key}`}>{label}</Label>
+                <Input id={`alein-${key}`} type="number" min={min} max={max} step={step} value={printSettings[key]} onChange={event => updatePrintSetting(key, event.target.value, min, max)} />
+              </div>
+            ))}
           </CardContent>
         </Card>
 
