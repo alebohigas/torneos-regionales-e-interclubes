@@ -5,7 +5,7 @@
  * Al hacer clic en un club se despliega su lista de jugadores (orden
  * alfabético) con la categoría de cada uno (field_gira.php?clubs=1&clubid=NN).
  */
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageHero from '@/components/shared/PageHero';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
