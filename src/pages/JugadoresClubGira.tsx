@@ -9,9 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Users } from 'lucide-react';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
 import { useFieldGiraClubs } from '@/hooks/useFieldGiraData';
+import { useGiraInfo } from '@/hooks/useGiraData';
 
 const JugadoresClubGira = () => {
   const { data: clubs = [], isLoading } = useFieldGiraClubs();
+  const { data: gira } = useGiraInfo();
   const totals = clubs.reduce(
     (acc, c) => ({ var: acc.var + c.var, fem: acc.fem + c.fem, total: acc.total + c.total }),
     { var: 0, fem: 0, total: 0 },
@@ -31,6 +33,9 @@ const JugadoresClubGira = () => {
             </div>
           ) : (
             <>
+              <h2 className="mb-2 font-serif text-3xl md:text-4xl font-bold text-foreground">
+                {gira?.name || 'GIRA'}
+              </h2>
               <h2 className="mb-6 font-serif text-3xl md:text-4xl font-bold text-foreground">
                 JUGADORES: <span className="text-primary">{totals.total}</span>
               </h2>
