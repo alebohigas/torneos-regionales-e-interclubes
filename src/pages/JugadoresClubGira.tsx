@@ -66,7 +66,8 @@ const JugadoresClubGira = () => {
                   </TableRow>
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </section>
