@@ -139,30 +139,63 @@ $playersGiraFilter = fg_scope_condition_for_table($conn, 'jugadores_seed', 'a', 
 // clubs=1           -> totales por club de toda la gira (acotado por giraid)
 // clubs=1&torneoid  -> totales por club solo de la etapa (jugadores_seed.torneoid)
 if (isset($_GET['clubs'])) {
-    $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
     $hasAbr = fg_column_exists($conn, 'clubs', 'abr');
-    $torneoParam = isset($_GET['torneoid']) ? trim((string)$_GET['torneoid']) : '';
-    $etapaFilter = '';
-    if ($torneoParam !== '' && ctype_digit($torneoParam)) {
-        $torneoCol = fg_first_existing_column($conn, 'jugadores_seed', ['torneoid', 'torneo_id', 'id_torneo', 'torneo']);
-        if ($torneoCol !== null) {
-            $etapaFilter = " AND b.`$torneoCol` = " . (int)$torneoParam . " ";
-        }
-    }
-    // Sexo: columna directa si existe; si no, se deduce del nombre de categoría (FEM/DAMAS).
-    $femExpr = $hasSexo
-        ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
-        : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
     $abrSel = $hasAbr ? 'c.abr' : "''";
-    $sql  = "SELECT c.id, c.nombre, $abrSel AS abr, c.logo, ";
-    $sql .= "COUNT(DISTINCT CASE WHEN $femExpr THEN b.id END) AS fem, ";
-    $sql .= "COUNT(DISTINCT CASE WHEN NOT ($femExpr) THEN b.id END) AS var, ";
-    $sql .= "COUNT(DISTINCT b.id) AS tot ";
-    $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
-    $sql .= "JOIN clubs AS c ON (b.id_club = c.id) ";
-    $sql .= "WHERE 1=1 $joinGiraFilter $etapaFilter ";
-    $sql .= "GROUP BY c.id, c.nombre, abr, c.logo ORDER BY tot DESC, c.nombre ASC";
-    $rows = query_all($conn, $sql);
+    $torneoParam = isset($_GET['torneoid']) ? trim((string)$_GET['torneoid']) : '';
+    $useTorneoDb = $torneoParam !== '' && ctype_digit($torneoParam) && fg_table_exists($conn, 'jugadores');
+
+    if ($useTorneoDb) {
+        // ============= ETAPA: jugadores activos de la BD del torneo en curso =============
+        $colCat  = fg_first_existing_column($conn, 'jugadores', ['categoriaid', 'id_categoria', 'categoria_id', 'categoriasid', 'catid']);
+        $colTor  = fg_first_existing_column($conn, 'jugadores', ['torneoid', 'id_torneo', 'torneo_id']);
+        $colId   = fg_first_existing_column($conn, 'jugadores', ['id', 'jugador_id', 'jugadorid']);
+        $colClub = fg_first_existing_column($conn, 'jugadores', ['clubid', 'id_club', 'club_id']);
+        $colSexo = fg_first_existing_column($conn, 'jugadores', ['sexo']);
+        if (!$colCat || !$colId || !$colClub) json_error('La tabla `jugadores` no tiene columnas de categoría/club', 500);
+
+        $catPk   = fg_first_existing_column($conn, 'categorias', ['categoria_id', 'categoriaid', 'categoriasid', 'id']);
+        $catName = fg_first_existing_column($conn, 'categorias', ['categoria', 'nombre', 'name']);
+        $catJoin = ($catPk && $catName) ? "JOIN categorias AS a ON (a.`$catPk` = b.`$colCat`) " : '';
+        $catExpr = ($catPk && $catName) ? "a.`$catName`" : "''";
+
+        $femExpr = $colSexo
+            ? "UPPER(COALESCE(b.`$colSexo`,'')) = 'F'"
+            : "(UPPER(COALESCE($catExpr,'')) LIKE '%FEM%' OR UPPER(COALESCE($catExpr,'')) LIKE '%DAMA%')";
+        $torFilter = $colTor ? " AND b.`$colTor` = " . (int)$torneoParam . " " : '';
+
+        $sql  = "SELECT c.id, c.nombre, $abrSel AS abr, c.logo, ";
+        $sql .= "COUNT(DISTINCT CASE WHEN $femExpr THEN b.`$colId` END) AS fem, ";
+        $sql .= "COUNT(DISTINCT CASE WHEN NOT ($femExpr) THEN b.`$colId` END) AS var, ";
+        $sql .= "COUNT(DISTINCT b.`$colId`) AS tot ";
+        $sql .= "FROM jugadores AS b $catJoin";
+        $sql .= "JOIN clubs AS c ON (b.`$colClub` = c.id) ";
+        $sql .= "WHERE 1=1 $torFilter ";
+        $sql .= "GROUP BY c.id, c.nombre, abr, c.logo ORDER BY tot DESC, c.nombre ASC";
+        $rows = query_all($conn, $sql);
+    } else {
+        // ============= GIRA: jugadores_seed acotados por giraid =============
+        $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
+        $etapaFilter = '';
+        if ($torneoParam !== '' && ctype_digit($torneoParam)) {
+            $torneoCol = fg_first_existing_column($conn, 'jugadores_seed', ['torneoid', 'torneo_id', 'id_torneo', 'torneo']);
+            if ($torneoCol !== null) {
+                $etapaFilter = " AND b.`$torneoCol` = " . (int)$torneoParam . " ";
+            }
+        }
+        // Sexo: columna directa si existe; si no, se deduce del nombre de categoría (FEM/DAMAS).
+        $femExpr = $hasSexo
+            ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
+            : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
+        $sql  = "SELECT c.id, c.nombre, $abrSel AS abr, c.logo, ";
+        $sql .= "COUNT(DISTINCT CASE WHEN $femExpr THEN b.id END) AS fem, ";
+        $sql .= "COUNT(DISTINCT CASE WHEN NOT ($femExpr) THEN b.id END) AS var, ";
+        $sql .= "COUNT(DISTINCT b.id) AS tot ";
+        $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
+        $sql .= "JOIN clubs AS c ON (b.id_club = c.id) ";
+        $sql .= "WHERE 1=1 $joinGiraFilter $etapaFilter ";
+        $sql .= "GROUP BY c.id, c.nombre, abr, c.logo ORDER BY tot DESC, c.nombre ASC";
+        $rows = query_all($conn, $sql);
+    }
     $clubs = array_map(function ($row) use ($LOGOS_BASE_URL) {
         return [
             'id'    => (string)$row['id'],
