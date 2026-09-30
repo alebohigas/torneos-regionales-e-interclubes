@@ -137,7 +137,7 @@ export const useFieldGiraClubPlayers = (clubId: string | null) => {
           numjugador: p.numjugador || '',
           jugador: p.jugador,
           categoria: p.categoria || '',
-          sexo: p.sexo === 'FEM' ? 'FEM' : 'VAR',
+          sexo: (p.sexo === 'FEM' ? 'FEM' : 'VAR') as 'VAR' | 'FEM',
         }))
         .sort((a, b) => a.jugador.localeCompare(b.jugador, 'es', { sensitivity: 'base' }));
     },
