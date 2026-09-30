@@ -158,6 +158,10 @@ export const getFieldGiraCategoriesUrl = (giraId?: string): string =>
 export const getFieldGiraPlayersUrl = (catId: string, giraId?: string): string =>
   `${API_BASE_URL}/field_gira.php${buildGiraQuery({ catid: catId }, giraId)}`;
 
+/** JUGADORES POR CLUB (gira): totales VAR/FEM por club desde jugadores_seed. */
+export const getFieldGiraClubsUrl = (giraId?: string): string =>
+  `${API_BASE_URL}/field_gira.php${buildGiraQuery({ clubs: '1' }, giraId)}`;
+
 /** RANKING: categorías (catidoriginal) con jugadores de la gira. */
 export const getRankingCategoriesUrl = (giraId?: string): string =>
   `${API_BASE_URL}/ranking.php${buildGiraQuery({}, giraId)}`;

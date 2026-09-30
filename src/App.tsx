@@ -22,6 +22,7 @@ import Jugadores from "./pages/Jugadores";
 import JugadoresEtapa from "./pages/JugadoresEtapa";
 import ResultadosEtapa from "./pages/ResultadosEtapa";
 import FieldGira from "./pages/FieldGira";
+import JugadoresClubGira from "./pages/JugadoresClubGira";
 import Ranking from "./pages/Ranking";
 import RankingFinal from "./pages/RankingFinal";
 import Copa from "./pages/Copa";
@@ -172,6 +173,7 @@ const App = () => (
               <Route path="/jugadores/e/:etapa" element={<ProtectedRoute pageId="gira-etapas"><JugadoresEtapa /></ProtectedRoute>} />
               {/* FIELD-GIRA: mismo layout que /jugadores pero con datos seed de la gira */}
               <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
+              <Route path="/jugadores-club-gira" element={<ProtectedRoute pageId="jugadores-club-gira"><JugadoresClubGira /></ProtectedRoute>} />
               <Route path="/ranking" element={<ProtectedRoute pageId="ranking"><Ranking /></ProtectedRoute>} />
               <Route path="/rankingfinal" element={<ProtectedRoute pageId="rankingfinal"><RankingFinal /></ProtectedRoute>} />
               {/* COPA: puntos por club de las copas de la gira */}
