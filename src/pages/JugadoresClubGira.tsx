@@ -100,7 +100,7 @@ const JugadoresClubGira = () => {
                   {clubs.map((c) => {
                     const isOpen = openClubId === c.id;
                     return (
-                      <>
+                      <Fragment key={c.id}>
                         <TableRow
                           key={c.id}
                           className="cursor-pointer"
@@ -122,7 +122,7 @@ const JugadoresClubGira = () => {
                           <TableCell className="text-center font-bold text-primary">{c.total}</TableCell>
                         </TableRow>
                         {isOpen ? <ClubPlayersRows key={`${c.id}-players`} club={c} /> : null}
-                      </>
+                      </Fragment>
                     );
                   })}
                   <TableRow className="bg-muted/50 font-bold">
