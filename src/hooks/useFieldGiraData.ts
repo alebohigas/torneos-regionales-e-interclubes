@@ -113,3 +113,36 @@ export const useFieldGiraClubsEtapa = (torneoidOverride?: string | number) => {
     refetchInterval: POLL_SLOW,
   });
 };
+
+// ============= Jugadores de un club (gira) =============
+
+export interface FieldGiraClubPlayer {
+  id: string;
+  numjugador: string;
+  jugador: string;
+  categoria: string;
+  sexo: 'VAR' | 'FEM';
+}
+
+/** Detalle de jugadores de un club de la gira, orden alfabético (es). */
+export const useFieldGiraClubPlayers = (clubId: string | null) => {
+  const { giraId } = useGiraId();
+  return useQuery<FieldGiraClubPlayer[]>({
+    queryKey: ['field-gira-club-players', giraId, clubId],
+    queryFn: async () => {
+      const data = await apiFetch<FieldGiraClubPlayer[]>(getFieldGiraClubPlayersUrl(clubId as string, giraId));
+      return (data || [])
+        .map((p) => ({
+          id: p.id,
+          numjugador: p.numjugador || '',
+          jugador: p.jugador,
+          categoria: p.categoria || '',
+          sexo: p.sexo === 'FEM' ? 'FEM' : 'VAR',
+        }))
+        .sort((a, b) => a.jugador.localeCompare(b.jugador, 'es', { sensitivity: 'base' }));
+    },
+    enabled: !!clubId && !!giraId,
+    staleTime: POLL_SLOW,
+    refetchInterval: POLL_SLOW,
+  });
+};
