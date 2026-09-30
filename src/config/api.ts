@@ -169,6 +169,10 @@ export const getFieldGiraClubsEtapaUrl = (giraId?: string, torneoId?: string): s
     giraId,
   )}`;
 
+/** JUGADORES POR CLUB (gira): lista de jugadores de un club con su categoría. */
+export const getFieldGiraClubPlayersUrl = (clubId: string, giraId?: string): string =>
+  `${API_BASE_URL}/field_gira.php${buildGiraQuery({ clubs: '1', clubid: clubId }, giraId)}`;
+
 /** RANKING: categorías (catidoriginal) con jugadores de la gira. */
 export const getRankingCategoriesUrl = (giraId?: string): string =>
   `${API_BASE_URL}/ranking.php${buildGiraQuery({}, giraId)}`;

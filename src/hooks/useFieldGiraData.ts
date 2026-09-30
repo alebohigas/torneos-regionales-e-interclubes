@@ -6,7 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
-import { getFieldGiraCategoriesUrl, getFieldGiraClubsEtapaUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
+import { getFieldGiraCategoriesUrl, getFieldGiraClubPlayersUrl, getFieldGiraClubsEtapaUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 
@@ -109,6 +109,39 @@ export const useFieldGiraClubsEtapa = (torneoidOverride?: string | number) => {
     queryKey: ['field-gira-clubs-etapa', giraId, effective],
     queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsEtapaUrl(giraId, effective)),
     enabled: !!giraId,
+    staleTime: POLL_SLOW,
+    refetchInterval: POLL_SLOW,
+  });
+};
+
+// ============= Jugadores de un club (gira) =============
+
+export interface FieldGiraClubPlayer {
+  id: string;
+  numjugador: string;
+  jugador: string;
+  categoria: string;
+  sexo: 'VAR' | 'FEM';
+}
+
+/** Detalle de jugadores de un club de la gira, orden alfabético (es). */
+export const useFieldGiraClubPlayers = (clubId: string | null) => {
+  const { giraId } = useGiraId();
+  return useQuery<FieldGiraClubPlayer[]>({
+    queryKey: ['field-gira-club-players', giraId, clubId],
+    queryFn: async () => {
+      const data = await apiFetch<FieldGiraClubPlayer[]>(getFieldGiraClubPlayersUrl(clubId as string, giraId));
+      return (data || [])
+        .map((p) => ({
+          id: p.id,
+          numjugador: p.numjugador || '',
+          jugador: p.jugador,
+          categoria: p.categoria || '',
+          sexo: (p.sexo === 'FEM' ? 'FEM' : 'VAR') as 'VAR' | 'FEM',
+        }))
+        .sort((a, b) => a.jugador.localeCompare(b.jugador, 'es', { sensitivity: 'base' }));
+    },
+    enabled: !!clubId && !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });

@@ -144,6 +144,35 @@ if (isset($_GET['clubs'])) {
     $torneoParam = isset($_GET['torneoid']) ? trim((string)$_GET['torneoid']) : '';
     $useTorneoDb = $torneoParam !== '' && ctype_digit($torneoParam) && fg_table_exists($conn, 'jugadores');
 
+    // ============= Detalle: jugadores de un club de la gira =============
+    // clubs=1&clubid=NN -> jugadores del club (gira), con categoría y sexo
+    $clubParam = isset($_GET['clubid']) ? trim((string)$_GET['clubid']) : '';
+    if ($clubParam !== '' && ctype_digit($clubParam)) {
+        $clubId = (int)$clubParam;
+        $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
+        $sexoSel = $hasSexo ? "UPPER(COALESCE(b.sexo,''))" : "''";
+        $femExpr = $hasSexo
+            ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
+            : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
+        $sql  = "SELECT b.id, b.numjugador, CONCAT(b.nombre, ' ', b.apellido) AS jugador, ";
+        $sql .= "a.categoria, $sexoSel AS sexo, ($femExpr) AS es_fem ";
+        $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
+        $sql .= "WHERE b.id_club = $clubId $joinGiraFilter ";
+        $sql .= "ORDER BY b.apellido, b.nombre";
+        $rows = query_all($conn, $sql);
+        $players = array_map(function ($row) {
+            $fem = !empty($row['es_fem']);
+            return [
+                'id'         => (string)$row['id'],
+                'numjugador' => (string)($row['numjugador'] ?? ''),
+                'jugador'    => trim((string)($row['jugador'] ?? '')),
+                'categoria'  => trim((string)($row['categoria'] ?? '')),
+                'sexo'       => $fem ? 'FEM' : 'VAR',
+            ];
+        }, $rows);
+        json_response($players);
+    }
+
     if ($useTorneoDb) {
         // ============= ETAPA: jugadores activos de la BD del torneo en curso =============
         $colCat  = fg_first_existing_column($conn, 'jugadores', ['categoriaid', 'id_categoria', 'categoria_id', 'categoriasid', 'catid']);
