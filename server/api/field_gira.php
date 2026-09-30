@@ -160,7 +160,7 @@ if (isset($_GET['clubs'])) {
     $sql .= "COUNT(DISTINCT b.id) AS tot ";
     $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
     $sql .= "JOIN clubs AS c ON (b.id_club = c.id) ";
-    $sql .= "WHERE 1=1 $joinGiraFilter ";
+    $sql .= "WHERE 1=1 $joinGiraFilter $etapaFilter ";
     $sql .= "GROUP BY c.id, c.nombre, abr, c.logo ORDER BY tot DESC, c.nombre ASC";
     $rows = query_all($conn, $sql);
     $clubs = array_map(function ($row) use ($LOGOS_BASE_URL) {
