@@ -135,6 +135,38 @@ $giraid = isset($_GET['giraid']) ? trim((string)$_GET['giraid']) : '';
 $joinGiraFilter = fg_join_scope_condition($conn, $giraid);
 $playersGiraFilter = fg_scope_condition_for_table($conn, 'jugadores_seed', 'a', $giraid);
 
+// ============= Modo jugadores por club =============
+if (isset($_GET['clubs'])) {
+    $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
+    $hasAbr = fg_column_exists($conn, 'clubs', 'abr');
+    // Sexo: columna directa si existe; si no, se deduce del nombre de categoría (FEM/DAMAS).
+    $femExpr = $hasSexo
+        ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
+        : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
+    $abrSel = $hasAbr ? 'c.abr' : "''";
+    $sql  = "SELECT c.id, c.nombre, $abrSel AS abr, c.logo, ";
+    $sql .= "COUNT(DISTINCT CASE WHEN $femExpr THEN b.id END) AS fem, ";
+    $sql .= "COUNT(DISTINCT CASE WHEN NOT ($femExpr) THEN b.id END) AS var, ";
+    $sql .= "COUNT(DISTINCT b.id) AS tot ";
+    $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
+    $sql .= "JOIN clubs AS c ON (b.id_club = c.id) ";
+    $sql .= "WHERE 1=1 $joinGiraFilter ";
+    $sql .= "GROUP BY c.id, c.nombre, abr, c.logo ORDER BY tot DESC, c.nombre ASC";
+    $rows = query_all($conn, $sql);
+    $clubs = array_map(function ($row) use ($LOGOS_BASE_URL) {
+        return [
+            'id'    => (string)$row['id'],
+            'name'  => $row['nombre'] ?? '',
+            'abr'   => trim((string)($row['abr'] ?? '')),
+            'logo'  => !empty($row['logo']) ? $LOGOS_BASE_URL . $row['logo'] : '',
+            'var'   => (int)$row['var'],
+            'fem'   => (int)$row['fem'],
+            'total' => (int)$row['tot'],
+        ];
+    }, $rows);
+    json_response($clubs);
+}
+
 // ============= Modo lista de categorías =============
 if ($catid === '') {
     $sql  = "SELECT a.categoriasTmp_id, a.categoria, COUNT(DISTINCT b.id) AS tot ";

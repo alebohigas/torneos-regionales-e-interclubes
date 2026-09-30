@@ -81,6 +81,8 @@ export const menuConfig: MenuItem[] = [
   { id: 'jugadores', label: 'JUGADORES', path: '/jugadores', enabled: true, order: 4 },
   /** FIELD-GIRA: duplicado de JUGADORES con datos seed de la gira (categorias_tmp/jugadores_seed) */
   { id: 'field-gira', label: 'FIELD-GIRA', path: '/field-gira', enabled: true, order: 4.5 },
+  /** JUGADORES POR CLUB GIRA: totales VAR/FEM por club */
+  { id: 'jugadores-club-gira', label: 'JUGADORES POR CLUB GIRA', path: '/jugadores-club-gira', enabled: true, order: 4.6 },
   /** RANKING: puntos acumulados de la gira por categoría (catidoriginal) */
   { id: 'ranking', label: 'RANKING', path: '/ranking', enabled: true, order: 7.6 },
   /** RANKING FINAL: mejores 5 resultados de la gira (categorias_tmp + top5) */

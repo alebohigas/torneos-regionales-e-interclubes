@@ -6,7 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
-import { getFieldGiraCategoriesUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
+import { getFieldGiraCategoriesUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
 
 // ============= Types =============
@@ -71,6 +71,29 @@ export const useFieldGiraPlayers = (catId: string | null, enabled = true) => {
       };
     },
     enabled: enabled && !!catId && !!giraId,
+    staleTime: POLL_SLOW,
+    refetchInterval: POLL_SLOW,
+  });
+};
+
+// ============= Jugadores por club =============
+
+export interface FieldGiraClub {
+  id: string;
+  name: string;
+  abr: string;
+  logo: string;
+  var: number;
+  fem: number;
+  total: number;
+}
+
+export const useFieldGiraClubs = () => {
+  const { giraId } = useGiraId();
+  return useQuery<FieldGiraClub[]>({
+    queryKey: ['field-gira-clubs', giraId],
+    queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsUrl(giraId)),
+    enabled: !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
   });

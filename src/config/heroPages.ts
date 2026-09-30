@@ -30,6 +30,7 @@ export const HERO_PAGES: HeroPageDef[] = [
   { path: '/salidas', label: 'Salidas', aiPrompt: 'Primer tee al amanecer con carritos de golf alineados' },
   { path: '/jugadores', label: 'Jugadores', aiPrompt: 'Bolsas y palos de golf recargados en hora dorada' },
   { path: '/field-gira', label: 'Field-Gira', aiPrompt: 'Grupo de golfistas en el tee de salida al amanecer' },
+  { path: '/jugadores-club-gira', label: 'Jugadores por Club Gira', aiPrompt: 'Banderas de clubes de golf junto al green' },
   { path: '/competicion', label: 'Competición', aiPrompt: 'Hoyo par 3 sobre el agua en hora dorada con bandera' },
   { path: '/premios', label: 'Premios', aiPrompt: 'Trofeos dorados sobre paño verde con luz de reflector' },
   { path: '/eventos', label: 'Eventos', aiPrompt: 'Terraza de casa club con luces colgantes de noche' },
