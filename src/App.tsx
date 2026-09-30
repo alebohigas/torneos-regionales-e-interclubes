@@ -176,6 +176,7 @@ const App = () => (
               <Route path="/field-gira" element={<ProtectedRoute pageId="field-gira"><FieldGira /></ProtectedRoute>} />
               <Route path="/jugadores-club-gira" element={<ProtectedRoute pageId="jugadores-club-gira"><JugadoresClubGira /></ProtectedRoute>} />
               <Route path="/jugadores-club-etapa" element={<ProtectedRoute pageId="jugadores-club-etapa"><JugadoresClubEtapa /></ProtectedRoute>} />
+              <Route path="/jugadores-club-etapa/:torneoid" element={<ProtectedRoute pageId="jugadores-club-etapa"><JugadoresClubEtapa /></ProtectedRoute>} />
               <Route path="/ranking" element={<ProtectedRoute pageId="ranking"><Ranking /></ProtectedRoute>} />
               <Route path="/rankingfinal" element={<ProtectedRoute pageId="rankingfinal"><RankingFinal /></ProtectedRoute>} />
               {/* COPA: puntos por club de las copas de la gira */}

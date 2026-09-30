@@ -100,13 +100,14 @@ export const useFieldGiraClubs = () => {
   });
 };
 
-/** JUGADORES POR CLUB ETAPA: mismos totales pero solo del torneo (etapa) activo. */
-export const useFieldGiraClubsEtapa = () => {
+/** JUGADORES POR CLUB ETAPA: mismos totales pero solo del torneo (etapa) indicado. */
+export const useFieldGiraClubsEtapa = (torneoidOverride?: string | number) => {
   const { giraId } = useGiraId();
   const { torneoId } = useTorneoId();
+  const effective = torneoidOverride ? String(torneoidOverride) : torneoId;
   return useQuery<FieldGiraClub[]>({
-    queryKey: ['field-gira-clubs-etapa', giraId, torneoId],
-    queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsEtapaUrl(giraId, torneoId)),
+    queryKey: ['field-gira-clubs-etapa', giraId, effective],
+    queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsEtapaUrl(giraId, effective)),
     enabled: !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,

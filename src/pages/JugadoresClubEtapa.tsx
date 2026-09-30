@@ -8,10 +8,19 @@ import PageHero from '@/components/shared/PageHero';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Users } from 'lucide-react';
 import jugadoresHero from '@/assets/jugadores-hero.jpg';
+import { useParams } from 'react-router-dom';
 import { useFieldGiraClubsEtapa } from '@/hooks/useFieldGiraData';
+import { useJugadoresEtapas } from '@/hooks/useJugadoresEtapas';
+import { formatEtapaLabel } from '@/lib/etapaLabel';
 
 const JugadoresClubEtapa = () => {
-  const { data: clubs = [], isLoading } = useFieldGiraClubsEtapa();
+  const { torneoid } = useParams<{ torneoid?: string }>();
+  const { data: etapas = [] } = useJugadoresEtapas();
+  const etapaInfo = torneoid
+    ? etapas.find((e) => String(e.torneoid) === String(torneoid))
+    : undefined;
+  const etapaTitle = etapaInfo ? formatEtapaLabel(etapaInfo.etapaLabel, etapaInfo.etapa) : '';
+  const { data: clubs = [], isLoading } = useFieldGiraClubsEtapa(torneoid);
   const totals = clubs.reduce(
     (acc, c) => ({ var: acc.var + c.var, fem: acc.fem + c.fem, total: acc.total + c.total }),
     { var: 0, fem: 0, total: 0 },
@@ -19,7 +28,7 @@ const JugadoresClubEtapa = () => {
 
   return (
     <Layout>
-      <PageHero title="Jugadores por Club Etapa" subtitle="Total de jugadores por club de la etapa" backgroundImage={jugadoresHero} />
+      <PageHero title={`Jugadores por Club ${etapaTitle || 'Etapa'}`.trim()} subtitle="Total de jugadores por club de la etapa" backgroundImage={jugadoresHero} />
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 max-w-4xl">
           {isLoading ? (

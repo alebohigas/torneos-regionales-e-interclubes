@@ -351,6 +351,11 @@ const Header = () => {
                     path: `/jugadores/e/${e.etapa}`,
                   },
                   {
+                    id: `jugadores-club-e-${e.etapa}`,
+                    label: `Jugadores por Club ${formatEtapaLabel(e.etapaLabel, e.etapa)}`,
+                    path: `/jugadores-club-etapa/${e.torneoid}`,
+                  },
+                  {
                     id: `resultados-e-${e.etapa}`,
                     label: `Resultados ${formatEtapaLabel(e.etapaLabel, e.etapa)}`,
                     path: `/resultados/e/${e.etapa}`,
