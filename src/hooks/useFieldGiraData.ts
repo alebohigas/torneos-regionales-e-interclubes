@@ -6,7 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
-import { getFieldGiraCategoriesUrl, getFieldGiraClubsEtapaUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
+import { getFieldGiraCategoriesUrl, getFieldGiraClubPlayersUrl, getFieldGiraClubsEtapaUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
 import { useTorneoId } from '@/hooks/useTorneoId';
 
