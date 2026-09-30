@@ -136,9 +136,19 @@ $joinGiraFilter = fg_join_scope_condition($conn, $giraid);
 $playersGiraFilter = fg_scope_condition_for_table($conn, 'jugadores_seed', 'a', $giraid);
 
 // ============= Modo jugadores por club =============
+// clubs=1           -> totales por club de toda la gira (acotado por giraid)
+// clubs=1&torneoid  -> totales por club solo de la etapa (jugadores_seed.torneoid)
 if (isset($_GET['clubs'])) {
     $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
     $hasAbr = fg_column_exists($conn, 'clubs', 'abr');
+    $torneoParam = isset($_GET['torneoid']) ? trim((string)$_GET['torneoid']) : '';
+    $etapaFilter = '';
+    if ($torneoParam !== '' && ctype_digit($torneoParam)) {
+        $torneoCol = fg_first_existing_column($conn, 'jugadores_seed', ['torneoid', 'torneo_id', 'id_torneo', 'torneo']);
+        if ($torneoCol !== null) {
+            $etapaFilter = " AND b.`$torneoCol` = " . (int)$torneoParam . " ";
+        }
+    }
     // Sexo: columna directa si existe; si no, se deduce del nombre de categoría (FEM/DAMAS).
     $femExpr = $hasSexo
         ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
