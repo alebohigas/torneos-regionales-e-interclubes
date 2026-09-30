@@ -30,7 +30,11 @@ const JugadoresClubGira = () => {
               No hay jugadores registrados en la gira
             </div>
           ) : (
-            <div className="rounded-lg border overflow-hidden">
+            <>
+              <h2 className="mb-6 font-serif text-3xl md:text-4xl font-bold text-foreground">
+                JUGADORES: <span className="text-primary">{totals.total}</span>
+              </h2>
+              <div className="rounded-lg border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-primary hover:bg-primary">
@@ -62,7 +66,8 @@ const JugadoresClubGira = () => {
                   </TableRow>
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </section>
