@@ -6,8 +6,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/apiClient';
-import { getFieldGiraCategoriesUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
+import { getFieldGiraCategoriesUrl, getFieldGiraClubsEtapaUrl, getFieldGiraClubsUrl, getFieldGiraPlayersUrl, POLL_SLOW } from '@/config/api';
 import { useGiraId } from '@/hooks/useGiraId';
+import { useTorneoId } from '@/hooks/useTorneoId';
 
 // ============= Types =============
 
@@ -93,6 +94,19 @@ export const useFieldGiraClubs = () => {
   return useQuery<FieldGiraClub[]>({
     queryKey: ['field-gira-clubs', giraId],
     queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsUrl(giraId)),
+    enabled: !!giraId,
+    staleTime: POLL_SLOW,
+    refetchInterval: POLL_SLOW,
+  });
+};
+
+/** JUGADORES POR CLUB ETAPA: mismos totales pero solo del torneo (etapa) activo. */
+export const useFieldGiraClubsEtapa = () => {
+  const { giraId } = useGiraId();
+  const { torneoId } = useTorneoId();
+  return useQuery<FieldGiraClub[]>({
+    queryKey: ['field-gira-clubs-etapa', giraId, torneoId],
+    queryFn: () => apiFetch<FieldGiraClub[]>(getFieldGiraClubsEtapaUrl(giraId, torneoId)),
     enabled: !!giraId,
     staleTime: POLL_SLOW,
     refetchInterval: POLL_SLOW,
