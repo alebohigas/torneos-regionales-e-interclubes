@@ -16,7 +16,7 @@ export interface MenuItem {
  */
 export const giraMenuOrderItem: MenuItem = {
   id: 'gira-etapas',
-  label: 'GIRA',
+  label: 'TEMPORADA',
   path: '/jugadores',
   enabled: true,
   order: 4.75,
