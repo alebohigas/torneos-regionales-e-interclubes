@@ -45,8 +45,7 @@ const ClubPlayersRows = ({ club, torneoid }: { club: FieldGiraClub; torneoid?: s
       {players.map((p) => (
         <TableRow key={p.id} className="bg-muted/30 hover:bg-muted/40">
           <TableCell />
-          <TableCell className="py-1.5 pl-6 text-sm">
-            <span className="mr-2 inline-block w-9 text-xs font-semibold text-muted-foreground">{p.sexo}</span>
+          <TableCell className="py-1.5 pl-4 text-sm">
             {p.jugador}
           </TableCell>
           <TableCell colSpan={3} className="py-1.5 text-xs text-muted-foreground">
