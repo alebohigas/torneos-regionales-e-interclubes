@@ -81,7 +81,7 @@ const JugadoresClubGira = () => {
               <h2 className="mb-2 font-serif text-3xl md:text-4xl font-bold text-foreground/80">
                 {gira?.name || 'GIRA'}
               </h2>
-              <h2 className="mb-6 font-serif text-2xl md:text-[1.8rem] font-bold text-foreground/80">
+              <h2 className="mb-6 font-serif text-3xl md:text-[2.25rem] font-bold text-foreground/80">
                 JUGADORES: <span className="text-primary/80">{totals.total}</span>
               </h2>
               <div className="rounded-lg border overflow-hidden">
