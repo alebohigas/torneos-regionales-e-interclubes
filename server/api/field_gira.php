@@ -144,22 +144,56 @@ if (isset($_GET['clubs'])) {
     $torneoParam = isset($_GET['torneoid']) ? trim((string)$_GET['torneoid']) : '';
     $useTorneoDb = $torneoParam !== '' && ctype_digit($torneoParam) && fg_table_exists($conn, 'jugadores');
 
-    // ============= Detalle: jugadores de un club de la gira =============
-    // clubs=1&clubid=NN -> jugadores del club (gira), con categoría y sexo
+    // ============= Detalle: jugadores de un club =============
+    // clubs=1&clubid=NN            -> jugadores del club (gira, jugadores_seed)
+    // clubs=1&clubid=NN&torneoid=T -> jugadores del club de la etapa (tabla `jugadores`)
     $clubParam = isset($_GET['clubid']) ? trim((string)$_GET['clubid']) : '';
     if ($clubParam !== '' && ctype_digit($clubParam)) {
         $clubId = (int)$clubParam;
-        $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
-        $sexoSel = $hasSexo ? "UPPER(COALESCE(b.sexo,''))" : "''";
-        $femExpr = $hasSexo
-            ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
-            : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
-        $sql  = "SELECT b.id, b.numjugador, CONCAT(b.nombre, ' ', b.apellido) AS jugador, ";
-        $sql .= "a.categoria, $sexoSel AS sexo, ($femExpr) AS es_fem ";
-        $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
-        $sql .= "WHERE b.id_club = $clubId $joinGiraFilter ";
-        $sql .= "ORDER BY b.apellido, b.nombre";
-        $rows = query_all($conn, $sql);
+        if ($useTorneoDb) {
+            // Etapa: jugadores activos de la BD del torneo en curso.
+            $colCat  = fg_first_existing_column($conn, 'jugadores', ['categoriaid', 'id_categoria', 'categoria_id', 'categoriasid', 'catid']);
+            $colTor  = fg_first_existing_column($conn, 'jugadores', ['torneoid', 'id_torneo', 'torneo_id']);
+            $colId   = fg_first_existing_column($conn, 'jugadores', ['id', 'jugador_id', 'jugadorid']);
+            $colClub = fg_first_existing_column($conn, 'jugadores', ['clubid', 'id_club', 'club_id']);
+            $colSexo = fg_first_existing_column($conn, 'jugadores', ['sexo']);
+            $colNom  = fg_first_existing_column($conn, 'jugadores', ['nombre', 'name']);
+            $colApe  = fg_first_existing_column($conn, 'jugadores', ['apellido', 'apellidos', 'lastname']);
+            $colNum  = fg_first_existing_column($conn, 'jugadores', ['numjugador', 'num_jugador']);
+            if (!$colCat || !$colId || !$colClub) json_error('La tabla `jugadores` no tiene columnas de categoría/club', 500);
+
+            $catPk   = fg_first_existing_column($conn, 'categorias', ['categoria_id', 'categoriaid', 'categoriasid', 'id']);
+            $catName = fg_first_existing_column($conn, 'categorias', ['categoria', 'nombre', 'name']);
+            $catJoin = ($catPk && $catName) ? "JOIN categorias AS a ON (a.`$catPk` = b.`$colCat`) " : '';
+            $catExpr = ($catPk && $catName) ? "a.`$catName`" : "''";
+
+            $nomExpr = ($colNom && $colApe) ? "CONCAT(b.`$colNom`, ' ', b.`$colApe`)" : ($colNom ? "b.`$colNom`" : "''");
+            $numSel  = $colNum ? "b.`$colNum`" : "''";
+            $femExpr = $colSexo
+                ? "UPPER(COALESCE(b.`$colSexo`,'')) = 'F'"
+                : "(UPPER(COALESCE($catExpr,'')) LIKE '%FEM%' OR UPPER(COALESCE($catExpr,'')) LIKE '%DAMA%')";
+            $torFilter = $colTor ? " AND b.`$colTor` = " . (int)$torneoParam . " " : '';
+
+            $sql  = "SELECT b.`$colId` AS id, $numSel AS numjugador, $nomExpr AS jugador, ";
+            $sql .= "$catExpr AS categoria, ($femExpr) AS es_fem ";
+            $sql .= "FROM jugadores AS b $catJoin";
+            $sql .= "WHERE b.`$colClub` = $clubId $torFilter ";
+            $sql .= "ORDER BY jugador";
+            $rows = query_all($conn, $sql);
+        } else {
+            // Gira: jugadores_seed acotados por giraid.
+            $hasSexo = fg_column_exists($conn, 'jugadores_seed', 'sexo');
+            $sexoSel = $hasSexo ? "UPPER(COALESCE(b.sexo,''))" : "''";
+            $femExpr = $hasSexo
+                ? "UPPER(COALESCE(b.sexo,'')) = 'F'"
+                : "(UPPER(COALESCE(a.categoria,'')) LIKE '%FEM%' OR UPPER(COALESCE(a.categoria,'')) LIKE '%DAMA%')";
+            $sql  = "SELECT b.id, b.numjugador, CONCAT(b.nombre, ' ', b.apellido) AS jugador, ";
+            $sql .= "a.categoria, $sexoSel AS sexo, ($femExpr) AS es_fem ";
+            $sql .= "FROM categorias_tmp AS a JOIN jugadores_seed AS b ON (a.categoriasTmp_id = b.categoriaid) ";
+            $sql .= "WHERE b.id_club = $clubId $joinGiraFilter ";
+            $sql .= "ORDER BY b.apellido, b.nombre";
+            $rows = query_all($conn, $sql);
+        }
         $players = array_map(function ($row) {
             $fem = !empty($row['es_fem']);
             return [

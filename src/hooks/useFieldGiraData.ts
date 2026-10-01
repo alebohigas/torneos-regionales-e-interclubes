@@ -124,13 +124,18 @@ export interface FieldGiraClubPlayer {
   sexo: 'VAR' | 'FEM';
 }
 
-/** Detalle de jugadores de un club de la gira, orden alfabético (es). */
-export const useFieldGiraClubPlayers = (clubId: string | null) => {
+/**
+ * Detalle de jugadores de un club, orden alfabético (es).
+ * Sin torneoidOverride -> gira (jugadores_seed); con override -> etapa
+ * (tabla `jugadores` del torneo indicado).
+ */
+export const useFieldGiraClubPlayers = (clubId: string | null, torneoidOverride?: string | number) => {
   const { giraId } = useGiraId();
+  const effective = torneoidOverride ? String(torneoidOverride) : undefined;
   return useQuery<FieldGiraClubPlayer[]>({
-    queryKey: ['field-gira-club-players', giraId, clubId],
+    queryKey: ['field-gira-club-players', giraId, clubId, effective ?? 'gira'],
     queryFn: async () => {
-      const data = await apiFetch<FieldGiraClubPlayer[]>(getFieldGiraClubPlayersUrl(clubId as string, giraId));
+      const data = await apiFetch<FieldGiraClubPlayer[]>(getFieldGiraClubPlayersUrl(clubId as string, giraId, effective));
       return (data || [])
         .map((p) => ({
           id: p.id,
