@@ -85,7 +85,7 @@ const JugadoresClubEtapa = () => {
             </div>
           ) : (
             <>
-              <h2 className="mb-6 font-serif text-3xl md:text-4xl font-bold text-foreground">
+              <h2 className="mb-6 font-serif text-2xl md:text-[1.8rem] font-bold text-foreground">
                 JUGADORES: <span className="text-primary">{totals.total}</span>
               </h2>
               <div className="rounded-lg border overflow-hidden">
