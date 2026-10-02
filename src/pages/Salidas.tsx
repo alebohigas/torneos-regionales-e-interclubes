@@ -540,12 +540,12 @@ const Salidas = () => {
                       className="border-border/50 hover:border-primary/50 transition-all hover:shadow-md cursor-pointer bg-card"
                       onClick={() => handleCategoryClick(category)}
                     >
-                      <CardContent className="p-6 text-center min-h-44 flex flex-col items-center justify-center">
-                        <Users className="h-7 w-7 mb-3 text-primary" />
-                        <h3 className="font-serif text-xl font-bold text-foreground">{category.categoryName}</h3>
-                        <p className="mt-1 text-sm font-medium uppercase text-muted-foreground">{category.tee || 'TEE POR DEFINIR'}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">{category.course || selectedDay?.course}</p>
-                        <p className="mt-3 text-foreground"><strong>{category.groupCount}</strong> grupo{category.groupCount === 1 ? '' : 's'}</p>
+                      <CardContent className="p-4 sm:p-6 text-center min-h-36 sm:min-h-44 flex flex-col items-center justify-center">
+                        <Users className="h-6 w-6 sm:h-7 sm:w-7 mb-2 sm:mb-3 text-primary" />
+                        <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">{category.categoryName}</h3>
+                        <p className="mt-1 text-xs sm:text-sm font-medium uppercase text-muted-foreground">{category.tee || 'TEE POR DEFINIR'}</p>
+                        <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{category.course || selectedDay?.course}</p>
+                        <p className="mt-2 sm:mt-3 text-sm text-foreground"><strong>{category.groupCount}</strong> grupo{category.groupCount === 1 ? '' : 's'}</p>
                       </CardContent>
                     </Card>
                   ))}
