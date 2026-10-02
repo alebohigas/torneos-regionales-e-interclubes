@@ -60,6 +60,17 @@ $gcols .= ", $teeSel";
 
 $calDate = esc($conn, $calInfo['fecha']);
 $calTournament = (int)$calInfo['torneoid'];
+
+// tiposalida del torneo: 1 = salida ÚNICA (grupos mezclan categorías);
+//                        0 = NORMAL (grupos separados por categoría).
+$torneoIdCol = api_first_existing_column($conn, 'torneo', ['torneo_id', 'torneoid', 'id_torneo']) ?: 'torneo_id';
+$tipoSalida = 1;
+if (api_column_exists($conn, 'torneo', 'tiposalida')) {
+    $tRow = query_one($conn, "SELECT tiposalida FROM torneo WHERE `$torneoIdCol` = $calTournament");
+    if ($tRow) $tipoSalida = (int)$tRow['tiposalida'];
+}
+$catFilter = ($tipoSalida === 0) ? " AND a.categoriaid = " . (int)$calInfo['categoriaid'] : "";
+
 $gjoin = "JOIN caljuego cg ON (a.caljuegoid = cg.id AND cg.torneoid = $calTournament AND cg.fecha = '$calDate')
           JOIN categorias b ON (a.categoriaid = b.categoria_id)";
 if ($hasSalidaFk) $gjoin .= " LEFT JOIN salidas sal ON (sal.id = b.salida)";
