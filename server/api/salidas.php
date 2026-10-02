@@ -44,7 +44,7 @@ if ($hasCierre)   $where .= " AND c.cierre = 0";
 $tipoSalida = (int)($torneo['tiposalida'] ?? 1);
 
 // Columnas opcionales de categorias (esquema golftour varía)
-$catIdCol   = api_first_existing_column($conn, 'categorias', ['categoriaid', 'id', 'categoria_id']) ?: 'categoriaid';
+$catIdCol   = api_first_existing_column($conn, 'categorias', ['categoria_id', 'categoriaid', 'id']) ?: 'categoria_id';
 $catNameCol = api_first_existing_column($conn, 'categorias', ['categoria', 'nombre', 'categorian']) ?: 'categoria';
 $catSisCol  = api_first_existing_column($conn, 'categorias', ['sistema']);
 $catForCol  = api_first_existing_column($conn, 'categorias', ['formato']);
