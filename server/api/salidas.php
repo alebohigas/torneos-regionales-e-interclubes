@@ -66,7 +66,7 @@ if ($tipoSalida === 0) {
                 LEFT JOIN categorias cat ON (c.categoriaid = cat.`$catIdCol`)
                 WHERE $w
                 GROUP BY c.fecha, c.categoriaid, c.campo
-                ORDER BY c.fecha ASC, campo_nombre ASC, caljgoid ASC";
+                ORDER BY c.fecha ASC, CAST(c.categoriaid AS UNSIGNED) ASC, caljgoid ASC";
     };
 } else {
     // ÚNICA: mezclar categorías
@@ -126,6 +126,17 @@ foreach ($rows as $row) {
         'course'       => $row['campo_nombre'] ?? '',
         'groupCount'   => (int)($groupCountRow['total'] ?? 0)
     ];
+}
+
+// Orden definitivo: categorías por categoria_id de menor a mayor (salida normal)
+if ($tipoSalida === 0) {
+    foreach ($dayMap as &$d) {
+        usort($d['categories'], function ($a, $b) {
+            return ((int)$a['categoryId'] <=> (int)$b['categoryId'])
+                ?: ((int)$a['caljgoid'] <=> (int)$b['caljgoid']);
+        });
+    }
+    unset($d);
 }
 
 json_response([
