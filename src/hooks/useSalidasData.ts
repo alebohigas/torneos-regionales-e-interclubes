@@ -19,6 +19,8 @@ export interface SalidasCategory {
   system: string;
   format: string;
   tee: string;
+  course: string;
+  groupCount: number;
 }
 
 /** Day summary from salidas.php */
@@ -33,6 +35,7 @@ export interface SalidasDay {
 interface SalidasMasterResponse {
   tournament: string;
   club: string;
+  typeSalida: number;
   days: SalidasDay[];
 }
 
@@ -87,6 +90,7 @@ export const useSalidasMaster = () => {
       return {
         tournament: data?.tournament ?? '',
         club: data?.club ?? '',
+        typeSalida: Number(data?.typeSalida ?? 1),
         days: Array.isArray(data?.days) ? data.days : [],
       };
     },

@@ -69,7 +69,9 @@ if (api_column_exists($conn, 'torneo', 'tiposalida')) {
     $tRow = query_one($conn, "SELECT tiposalida FROM torneo WHERE `$torneoIdCol` = $calTournament");
     if ($tRow) $tipoSalida = (int)$tRow['tiposalida'];
 }
-$catFilter = ($tipoSalida === 0) ? " AND a.categoriaid = " . (int)$calInfo['categoriaid'] : "";
+$catFilter = ($tipoSalida === 0)
+    ? " AND a.categoriaid = " . (int)$calInfo['categoriaid'] . " AND cg.campo = " . (int)$calInfo['campo']
+    : "";
 
 $gjoin = "JOIN caljuego cg ON (a.caljuegoid = cg.id AND cg.torneoid = $calTournament AND cg.fecha = '$calDate')
           JOIN categorias b ON (a.categoriaid = b.categoria_id)";

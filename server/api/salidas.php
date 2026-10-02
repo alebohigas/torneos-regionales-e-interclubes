@@ -65,8 +65,8 @@ if ($tipoSalida === 0) {
                 LEFT JOIN campos ca ON (c.campo = ca.id)
                 LEFT JOIN categorias cat ON (c.categoriaid = cat.`$catIdCol`)
                 WHERE $w
-                GROUP BY c.fecha, c.categoriaid
-                ORDER BY c.fecha ASC, categoria ASC";
+                GROUP BY c.fecha, c.categoriaid, c.campo
+                ORDER BY c.fecha ASC, campo_nombre ASC, categoria ASC";
     };
 } else {
     // ÚNICA: mezclar categorías
@@ -113,6 +113,8 @@ foreach ($rows as $row) {
     if (empty($dayMap[$fecha]['course']) && !empty($row['campo_nombre'])) {
         $dayMap[$fecha]['course'] = $row['campo_nombre'];
     }
+    $caljgoid = (int)$row['caljgoid'];
+    $groupCountRow = query_one($conn, "SELECT COUNT(*) AS total FROM salidagrupo WHERE caljuegoid = $caljgoid");
     $dayMap[$fecha]['categories'][] = [
         'caljgoid'     => $row['caljgoid'],
         'categoryId'   => $row['categoriaid'],
@@ -120,12 +122,15 @@ foreach ($rows as $row) {
         'shortName'    => $row['abreviatura'] ?: $row['categoria'],
         'system'       => $row['sistema'] ?? '',
         'format'       => $row['formato'] ?? '',
-        'tee'          => $row['tee'] ?? ''
+        'tee'          => $row['tee'] ?? '',
+        'course'       => $row['campo_nombre'] ?? '',
+        'groupCount'   => (int)($groupCountRow['total'] ?? 0)
     ];
 }
 
 json_response([
     'tournament' => $torneo['nombre'] ?? '',
     'club'       => $torneo['club'] ?? '',
+    'typeSalida' => $tipoSalida,
     'days'       => array_values($dayMap)
 ]);

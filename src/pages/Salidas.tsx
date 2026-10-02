@@ -59,6 +59,8 @@ const groupsHaveAnyCategory = (groups: SalidasGroup[] | undefined): boolean =>
 
 /** Represents a player search match with full group context */
 interface SearchResult {
+  /** ISO date used to scope results to a selected normal departure day. */
+  dayDate: string;
   /** Day display label */
   dayLabel: string;
   /** Course name */
@@ -96,6 +98,7 @@ const Salidas = () => {
   // Fetch master data: days + categories
   const { data: master, isLoading: loadingMaster } = useSalidasMaster();
   const days = master?.days ?? [];
+  const isNormalDeparture = master?.typeSalida === 0;
 
   /** Collect all caljgoids across all days for search queries */
   const allCategories = useMemo(() => {
@@ -103,8 +106,9 @@ const Salidas = () => {
       day.categories.map((cat) => ({
         caljgoid: String(cat.caljgoid),
         formato: cat.format?.toLowerCase().includes('pareja') ? 'parejas' : 'individual',
+        dayDate: day.date,
         dayLabel: day.dateFormatted,
-        course: day.course,
+        course: cat.course || day.course,
       }))
     );
   }, [days]);
@@ -154,7 +158,7 @@ const Salidas = () => {
     const results: SearchResult[] = [];
     for (const query of searchQueries) {
       if (!query.data?.detail) continue;
-      const { dayLabel, course, detail } = query.data;
+      const { dayDate, dayLabel, course, detail } = query.data;
       for (const group of (detail.groups ?? [])) {
         const players = group.players ?? [];
         const matchIdx = players.findIndex((p) =>
@@ -162,6 +166,7 @@ const Salidas = () => {
         );
         if (matchIdx !== -1) {
           results.push({
+            dayDate,
             dayLabel,
             course,
             categoryName: detail.categoryName,
@@ -175,6 +180,13 @@ const Salidas = () => {
     }
     return results;
   }, [normalizedQuery, searchQueries]);
+
+  const visibleSearchResults = useMemo(
+    () => selectedDayIdx === null
+      ? searchResults
+      : searchResults.filter((result) => result.dayDate === days[selectedDayIdx]?.date),
+    [searchResults, selectedDayIdx, days],
+  );
 
   /**
    * Build unique player-name suggestions from already-loaded data.
@@ -230,21 +242,32 @@ const Salidas = () => {
   /** Currently selected day object */
   const selectedDay: SalidasDay | null = selectedDayIdx !== null ? days[selectedDayIdx] : null;
 
-  /** A day always opens its single mixed group list directly. */
+  /** Unique departures open directly; normal departures first select a category. */
   const handleDayClick = (dayIdx: number) => {
     const day = days[dayIdx];
     const departure = day.categories[0];
     setSelectedDayIdx(dayIdx);
-    setSelectedCaljgoid(departure ? String(departure.caljgoid) : null);
-    setSelectedCatMeta(departure ?? null);
+    if (isNormalDeparture) {
+      setSelectedCaljgoid(null);
+      setSelectedCatMeta(null);
+    } else {
+      setSelectedCaljgoid(departure ? String(departure.caljgoid) : null);
+      setSelectedCatMeta(departure ?? null);
+    }
+  };
+
+  const handleCategoryClick = (category: SalidasCategory) => {
+    setSelectedCaljgoid(String(category.caljgoid));
+    setSelectedCatMeta(category);
+    setSearchQuery('');
   };
 
   /** Handle back navigation */
   const handleBack = () => {
     if (selectedCaljgoid) {
-      setSelectedDayIdx(null);
       setSelectedCaljgoid(null);
       setSelectedCatMeta(null);
+      if (!isNormalDeparture) setSelectedDayIdx(null);
     } else {
       setSelectedDayIdx(null);
     }
@@ -291,7 +314,7 @@ const Salidas = () => {
                     <div className="flex justify-center py-12">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
-                  ) : searchResults.length === 0 ? (
+                  ) : visibleSearchResults.length === 0 ? (
                     <div className="text-center py-12">
                       <Search className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
                       <p className="text-muted-foreground">No se encontró ningún jugador con "{searchQuery}"</p>
@@ -299,21 +322,21 @@ const Salidas = () => {
                   ) : (
                     <div className="space-y-6">
                       <p className="text-sm text-muted-foreground text-center mb-4">
-                        {searchResults.length} grupo{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}
+                        {visibleSearchResults.length} grupo{visibleSearchResults.length !== 1 ? 's' : ''} encontrado{visibleSearchResults.length !== 1 ? 's' : ''}
                       </p>
                       {searchFailures > 0 && (
                         <p className="text-sm text-destructive text-center mb-2">
                           ⚠️ {searchFailures} día(s)/categoría(s) no se pudieron cargar — algunos resultados pueden faltar. Revisa la consola.
                         </p>
                       )}
-                      {searchResults.map((result, rIdx) => (
+                      {visibleSearchResults.map((result, rIdx) => (
                         <Card key={rIdx} className="border-border/50 bg-white">
                           <CardContent className="p-0 bg-white">
                             {/* Result context header */}
                             <div className="bg-muted/50 px-4 py-2 border-b border-border/30 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                               <span className="font-semibold text-foreground capitalize">{result.dayLabel}</span>
                               <span className="text-muted-foreground">{result.course}</span>
-                              <span className="text-primary font-medium">Grupos de Juego</span>
+                              <span className="text-primary font-medium">{result.categoryName || 'Grupos de Juego'}</span>
                             </div>
                             {/* Group table */}
                             <div className="overflow-x-auto bg-white">
@@ -451,7 +474,9 @@ const Salidas = () => {
                             <Calendar className="h-8 w-8 mx-auto mb-3 text-primary" />
                             <h3 className="font-bold text-foreground text-lg mb-1 capitalize">{day.dateFormatted}</h3>
                             <p className="text-muted-foreground text-sm mb-3">{day.course}</p>
-                             <p className="text-sm font-medium text-primary">Grupos de Juego</p>
+                  <p className="text-sm font-medium text-primary">
+                    {isNormalDeparture ? `${day.categories.length} categorías` : 'Grupos de Juego'}
+                  </p>
                           </CardContent>
                         </Card>
                       ))}
@@ -461,7 +486,74 @@ const Salidas = () => {
               )}
             </>
 
-          /* ============= Level 2: Mixed Groups Table ============= */
+          /* ============= Level 2: Category Selection (normal departures) ============= */
+          ) : isNormalDeparture && selectedCaljgoid === null ? (
+            <>
+              <Button variant="ghost" onClick={handleBack} className="mb-6 gap-2 bg-primary/10 hover:bg-primary/20">
+                <ArrowLeft className="h-4 w-4" />
+                Volver a días
+              </Button>
+
+              <div className="mb-8 text-center">
+                <h2 className="font-serif text-3xl font-bold capitalize text-foreground">
+                  {selectedDay?.dateFormatted}
+                </h2>
+                <p className="mt-2 text-lg text-muted-foreground">Selecciona una categoría</p>
+              </div>
+
+              <PlayerSearchInput
+                className="max-w-md mx-auto mb-8"
+                value={searchQuery}
+                onChange={setSearchQuery}
+                suggestions={playerSuggestions}
+              />
+
+              {searchActive ? (
+                <div className="max-w-5xl mx-auto">
+                  {searchLoading ? (
+                    <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                  ) : visibleSearchResults.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Search className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+                      <p className="text-muted-foreground">No se encontró ningún jugador con "{searchQuery}" en esta fecha</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {visibleSearchResults.map((result, index) => (
+                        <Card key={`${result.group.id}-${index}`} className="border-border/50 bg-card">
+                          <CardContent className="p-5">
+                            <p className="font-bold text-foreground">{result.group.players[result.matchedPlayerIdx]?.name}</p>
+                            <p className="mt-1 text-sm text-primary">{result.categoryName}</p>
+                            <p className="text-sm text-muted-foreground">{result.course}</p>
+                            <p className="mt-2 text-sm text-foreground">Hoyo {result.group.tee} · {result.group.time}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+                  {(selectedDay?.categories ?? []).map((category) => (
+                    <Card
+                      key={`${category.caljgoid}-${category.categoryId}`}
+                      className="border-border/50 hover:border-primary/50 transition-all hover:shadow-md cursor-pointer bg-card"
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      <CardContent className="p-6 text-center min-h-44 flex flex-col items-center justify-center">
+                        <Users className="h-7 w-7 mb-3 text-primary" />
+                        <h3 className="font-serif text-xl font-bold text-foreground">{category.categoryName}</h3>
+                        <p className="mt-1 text-sm font-medium uppercase text-muted-foreground">{category.tee || 'TEE POR DEFINIR'}</p>
+                        <p className="mt-2 text-sm text-muted-foreground">{category.course || selectedDay?.course}</p>
+                        <p className="mt-3 text-foreground"><strong>{category.groupCount}</strong> grupo{category.groupCount === 1 ? '' : 's'}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+
+          /* ============= Level 3: Groups Table ============= */
           ) : (
             <>
               <Button variant="ghost" onClick={handleBack} className="mb-6 gap-2 bg-primary/10 hover:bg-primary/20">
@@ -478,9 +570,12 @@ const Salidas = () => {
                   {/* Header: left-aligned on mobile, centered on desktop */}
                   <div className="mb-8 text-left md:text-center">
                     <h2 className="text-3xl font-bold text-foreground mb-1">
-                      Grupos de Juego
+                      {isNormalDeparture ? selectedCatMeta?.categoryName : 'Grupos de Juego'}
                     </h2>
-                    <p className="text-muted-foreground text-lg">{detail.course}</p>
+                    <p className="text-muted-foreground text-lg">{detail.course || selectedCatMeta?.course}</p>
+                    {isNormalDeparture && selectedCatMeta?.tee ? (
+                      <p className="text-sm font-medium uppercase text-primary mt-1">Tee {selectedCatMeta.tee}</p>
+                    ) : null}
                     <p className="text-muted-foreground text-lg">{selectedDay?.dateFormatted}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {(detail.groups ?? []).length} grupos
@@ -595,7 +690,7 @@ const Salidas = () => {
                                   colSpan={groupsHaveAnyPair(detail.groups) ? 6 : 5}
                                   className="text-primary-foreground font-bold text-center py-2 text-sm"
                                 >
-                                  GRUPOS DE JUEGO
+                                  {isNormalDeparture ? selectedCatMeta?.categoryName : 'GRUPOS DE JUEGO'}
                                 </td>
                               </tr>
                             </tfoot>
