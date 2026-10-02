@@ -100,19 +100,20 @@ const DistanciaTable = ({ block }: { block: DistanciaBlock }) => {
               </tr>
             </thead>
             <tbody>
-              <tr className="bg-muted/40 border-b border-border/60">
+            {/* PAR arriba (con negrita) y yardas abajo */}
+            <tr className="bg-muted/40 border-b border-border/60">
+                <td className="px-3 py-2 text-center text-muted-foreground font-bold">Par</td>
+                {holes.map((h) => (
+                  <td key={h.numero} className="px-3 py-2 text-center font-bold">{h.par || '—'}</td>
+                ))}
+                <td className="px-3 py-2 text-center font-bold">{totalPar}</td>
+              </tr>
+              <tr>
                 <td className="px-3 py-2 text-center text-muted-foreground">Yardas</td>
                 {holes.map((h) => (
                   <td key={h.numero} className="px-3 py-2 text-center">{h.yardaje}</td>
                 ))}
                 <td className="px-3 py-2 text-center font-bold">{totalYardas}</td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 text-center text-muted-foreground">Par</td>
-                {holes.map((h) => (
-                  <td key={h.numero} className="px-3 py-2 text-center">{h.par || '—'}</td>
-                ))}
-                <td className="px-3 py-2 text-center font-bold">{totalPar}</td>
               </tr>
             </tbody>
           </table>
