@@ -66,7 +66,7 @@ if ($tipoSalida === 0) {
                 LEFT JOIN categorias cat ON (c.categoriaid = cat.`$catIdCol`)
                 WHERE $w
                 GROUP BY c.fecha, c.categoriaid, c.campo
-                ORDER BY c.fecha ASC, campo_nombre ASC, caljgoid ASC";
+                ORDER BY c.fecha ASC, CAST(c.categoriaid AS UNSIGNED) ASC, caljgoid ASC";
     };
 } else {
     // ÚNICA: mezclar categorías
