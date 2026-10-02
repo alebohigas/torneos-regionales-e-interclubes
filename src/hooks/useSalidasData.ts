@@ -19,6 +19,8 @@ export interface SalidasCategory {
   system: string;
   format: string;
   tee: string;
+  /** Nombre del color de la mesa de salida (salidas.color), p.ej. "AZUL". */
+  teeColor?: string;
   course: string;
   groupCount: number;
 }
@@ -75,6 +77,7 @@ export interface SalidasDetailResponse {
   shortName: string;
   system: string;
   tee: string;
+  teeColor?: string;
   groups: SalidasGroup[];
 }
 
@@ -124,6 +127,7 @@ export const useSalidasDetail = (
         shortName: data?.shortName ?? '',
         system: data?.system ?? '',
         tee: data?.tee ?? '',
+        teeColor: data?.teeColor ?? '',
         groups: Array.isArray(data?.groups) ? data.groups : [],
       };
     },

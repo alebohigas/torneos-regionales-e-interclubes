@@ -57,6 +57,13 @@ const groupsHaveAnyCategory = (groups: SalidasGroup[] | undefined): boolean =>
 
 // ============= Search Result Type =============
 
+/** Etiqueta TEE: prefiere el nombre del color (salidas.color); si no hay, el número de tee. */
+const teeLabel = (tee?: string, color?: string): string => {
+  if (color && color.trim()) return `TEE: ${color.trim()}`;
+  if (tee && tee.trim()) return `TEE ${tee.trim()}`;
+  return 'TEE POR DEFINIR';
+};
+
 /** Represents a player search match with full group context */
 interface SearchResult {
   /** ISO date used to scope results to a selected normal departure day. */
@@ -142,6 +149,7 @@ const Salidas = () => {
                 shortName: data?.shortName ?? '',
                 system: data?.system ?? '',
                 tee: data?.tee ?? '',
+                teeColor: data?.teeColor ?? '',
                 groups: Array.isArray(data?.groups) ? data.groups : [],
               } as SalidasDetailResponse,
             };
@@ -543,7 +551,7 @@ const Salidas = () => {
                       <CardContent className="p-4 sm:p-6 text-center min-h-36 sm:min-h-44 flex flex-col items-center justify-center">
                         <Users className="h-6 w-6 sm:h-7 sm:w-7 mb-2 sm:mb-3 text-primary" />
                         <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">{category.categoryName}</h3>
-                        <p className="mt-1 text-xs sm:text-sm font-medium uppercase text-muted-foreground">{category.tee || 'TEE POR DEFINIR'}</p>
+                        <p className="mt-1 text-xs sm:text-sm font-medium uppercase text-muted-foreground">{teeLabel(category.tee, category.teeColor)}</p>
                         <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{category.course || selectedDay?.course}</p>
                         <p className="mt-2 sm:mt-3 text-sm text-foreground"><strong>{category.groupCount}</strong> grupo{category.groupCount === 1 ? '' : 's'}</p>
                       </CardContent>
@@ -573,8 +581,8 @@ const Salidas = () => {
                       {isNormalDeparture ? selectedCatMeta?.categoryName : 'Grupos de Juego'}
                     </h2>
                     <p className="text-muted-foreground text-lg">{detail.course || selectedCatMeta?.course}</p>
-                    {isNormalDeparture && selectedCatMeta?.tee ? (
-                      <p className="text-sm font-medium uppercase text-primary mt-1">Tee {selectedCatMeta.tee}</p>
+                    {isNormalDeparture && (selectedCatMeta?.tee || selectedCatMeta?.teeColor) ? (
+                      <p className="text-sm font-medium uppercase text-primary mt-1">{teeLabel(selectedCatMeta?.tee, selectedCatMeta?.teeColor)}</p>
                     ) : null}
                     <p className="text-muted-foreground text-lg">{selectedDay?.dateFormatted}</p>
                     <p className="text-sm text-muted-foreground mt-1">

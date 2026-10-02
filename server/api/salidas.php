@@ -55,15 +55,16 @@ if ($tipoSalida === 0) {
     $selCat  = "c.categoriaid AS categoriaid, cat.`$catNameCol` AS categoria, cat.`$catNameCol` AS abreviatura";
     $selCat .= $catSisCol ? ", cat.`$catSisCol` AS sistema" : ", '' AS sistema";
     $selCat .= $catForCol ? ", cat.`$catForCol` AS formato" : ", '' AS formato";
-    $selCat .= $catTeeCol ? ", cat.`$catTeeCol` AS tee" : ", '' AS tee";
-    $buildSql = function ($w) use ($selCat, $catIdCol) {
+    $selCat .= $catTeeCol ? ", cat.`$catTeeCol` AS tee, sal.color AS tee_color" : ", '' AS tee, '' AS tee_color";
+    $teeJoin = $catTeeCol ? " LEFT JOIN salidas sal ON (cat.`$catTeeCol` = sal.id)" : "";
+    $buildSql = function ($w) use ($selCat, $catIdCol, $teeJoin) {
         return "SELECT MIN(c.id) AS caljgoid, c.fecha,
                        DATE_FORMAT(c.fecha, '%W %e de %M %Y') AS fecha_formato,
                        $selCat,
                        MIN(ca.campo) AS campo_nombre
                 FROM caljuego c
                 LEFT JOIN campos ca ON (c.campo = ca.id)
-                LEFT JOIN categorias cat ON (c.categoriaid = cat.`$catIdCol`)
+                LEFT JOIN categorias cat ON (c.categoriaid = cat.`$catIdCol`)$teeJoin
                 WHERE $w
                 GROUP BY c.fecha, c.categoriaid, c.campo
                 ORDER BY c.fecha ASC, CAST(c.categoriaid AS UNSIGNED) ASC, caljgoid ASC";
@@ -123,6 +124,7 @@ foreach ($rows as $row) {
         'system'       => $row['sistema'] ?? '',
         'format'       => $row['formato'] ?? '',
         'tee'          => $row['tee'] ?? '',
+        'teeColor'     => trim((string)($row['tee_color'] ?? '')),
         'course'       => $row['campo_nombre'] ?? '',
         'groupCount'   => (int)($groupCountRow['total'] ?? 0)
     ];
