@@ -128,6 +128,17 @@ foreach ($rows as $row) {
     ];
 }
 
+// Orden definitivo: categorías por categoria_id de menor a mayor (salida normal)
+if ($tipoSalida === 0) {
+    foreach ($dayMap as &$d) {
+        usort($d['categories'], function ($a, $b) {
+            return ((int)$a['categoryId'] <=> (int)$b['categoryId'])
+                ?: ((int)$a['caljgoid'] <=> (int)$b['caljgoid']);
+        });
+    }
+    unset($d);
+}
+
 json_response([
     'tournament' => $torneo['nombre'] ?? '',
     'club'       => $torneo['club'] ?? '',
