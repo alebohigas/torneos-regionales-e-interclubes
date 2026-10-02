@@ -75,7 +75,7 @@ $gjoin = "JOIN caljuego cg ON (a.caljuegoid = cg.id AND cg.torneoid = $calTourna
           JOIN categorias b ON (a.categoriaid = b.categoria_id)";
 if ($hasSalidaFk) $gjoin .= " LEFT JOIN salidas sal ON (sal.id = b.salida)";
 
-$sql = "SELECT $gcols FROM salidagrupo a $gjoin ORDER BY a.id";
+$sql = "SELECT $gcols FROM salidagrupo a $gjoin WHERE 1=1$catFilter ORDER BY a.id";
 debug_log_query('salidas_det_grupos', $sql);
 $groupRows = query_all($conn, $sql);
 
