@@ -168,6 +168,7 @@ $holeCache = [];
 $cards = [];
 
 foreach ($players as $player) {
+    $category = $categories[(string)($player['categoriaid'] ?? '')] ?? [];
     $teeRaw = trim((string)($player['teesalidaid'] ?? $player['tee_salida'] ?? $category['salida'] ?? ''));
     $tee = isset($teeById[$teeRaw]) ? $teeById[$teeRaw] : ($teeByName[strtoupper($teeRaw)] ?? null);
     $teeId = $tee ? (string)$tee['id'] : (ctype_digit($teeRaw) ? $teeRaw : '0');
