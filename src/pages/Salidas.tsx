@@ -65,11 +65,12 @@ const TEE_COLOR_NAMES: Record<string, string> = {
   '16': 'NEGRA', '17': 'NARANJA', '18': 'AZUL', '19': 'AMARILLA', '20': 'ROSA',
 };
 
-/** Etiqueta TEE: nombre del color (salidas.color o resuelto por id de tee); si no hay, el número. */
+/** Etiqueta TEE: el id de golftour.salidas manda; nunca mostrar códigos hexadecimales. */
 const teeLabel = (tee?: string, color?: string): string => {
-  if (color && color.trim()) return `TEE: ${color.trim()}`;
   const teeId = (tee ?? '').trim();
   if (teeId && TEE_COLOR_NAMES[teeId]) return `TEE: ${TEE_COLOR_NAMES[teeId]}`;
+  const colorName = (color ?? '').trim();
+  if (colorName && !colorName.startsWith('#')) return `TEE: ${colorName}`;
   if (teeId) return `TEE ${teeId}`;
   return 'TEE POR DEFINIR';
 };

@@ -29,7 +29,7 @@ $hasSalidaFk = api_column_exists($conn, 'categorias', 'salida');
 $cols = "a.id, a.torneoid, a.fecha, a.campo, a.categoriaid, b.categoria, c.campo AS campo_nombre";
 $cols .= $hasAbrev   ? ", b.abreviatura" : ", b.categoria AS abreviatura";
 $cols .= $hasSistema ? ", b.sistema"     : ", '' AS sistema";
-$cols .= $hasSalidaFk ? ", s.tee, s.color AS tee_color" : ", '' AS tee, '' AS tee_color";
+$cols .= $hasSalidaFk ? ", b.salida AS tee, s.tee AS tee_color" : ", '' AS tee, '' AS tee_color";
 $join  = $hasSalidaFk ? " LEFT JOIN salidas s ON (b.salida = s.id)" : "";
 
 $sql = "SELECT $cols
