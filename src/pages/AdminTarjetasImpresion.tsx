@@ -171,12 +171,12 @@ const Scorecard = ({ card, tournament, holeRange }: { card: AleinCard; tournamen
             {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
           <tr className="alein-compact-row"><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
-          <tr>
-            <th className="alein-row-label alein-gross-cell">SCORE<br />GROSS</th>
-            {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
-            {!isNineHole && <td className="alein-sum alein-gross-cell" />}
-            {back.map(h => <td key={h.number} className="alein-gross-cell" />)}
-            {hasBackNine && <td className="alein-sum alein-gross-cell" />}<td className="alein-sum alein-gross-cell" />
+          <tr className="alein-compact-row">
+            <th className="alein-row-label"><strong>GROSS</strong></th>
+            {front.map(h => <td key={h.number} />)}
+            {!isNineHole && <td className="alein-sum" />}
+            {back.map(h => <td key={h.number} />)}
+            {hasBackNine && <td className="alein-sum" />}<td className="alein-sum" />
           </tr>
         </tbody>
       </table>
