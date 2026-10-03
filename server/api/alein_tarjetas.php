@@ -125,7 +125,7 @@ foreach (['tarjetaid', 'teesalidaid', 'tee_salida', 'tee', 'clubjug', 'club', 's
     if (api_column_exists($conn, $vTable, $col)) $select[] = "v.`$col`";
 }
 
-$where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND v.`$vCampo` = $campo AND v.categoriaid = $cat";
+$where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND v.`$vCampo` = $campo AND v.categoriaid IN ($cat)";
 if ($sistemaFiltro !== '' && api_column_exists($conn, $vTable, 'sistema')) {
     $where .= " AND UPPER(v.sistema) = UPPER('" . esc($conn, $sistemaFiltro) . "')";
 }
@@ -137,7 +137,12 @@ $sql = 'SELECT ' . implode(', ', array_unique($select)) . " FROM $vTable v WHERE
 debug_log_query('ALEIN printable players', $sql);
 $players = query_all($conn, $sql);
 
-$category = query_one($conn, "SELECT * FROM categorias WHERE categoria_id = $cat LIMIT 1") ?: [];
+$categories = [];
+foreach (query_all($conn, "SELECT * FROM categorias WHERE categoria_id IN ($cat)") as $catRow) {
+    $categories[(string)$catRow['categoria_id']] = $catRow;
+}
+$order = [];
+if (api_column_exists($conn, $vTable, 'categoriaid')) $order[] = 'v.categoriaid';
 $course = query_one($conn, "SELECT campo FROM campos WHERE id = $campo LIMIT 1") ?: [];
 $teeRows = query_all($conn, 'SELECT id, tee, color, bgcolor FROM salidas');
 $teeById = [];
