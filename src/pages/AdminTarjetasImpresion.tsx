@@ -186,7 +186,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
       <table className="alein-marker-table" aria-label="Score del anotador">
-        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{back.map(h => <td key={h.number}>{h.number}</td>)}{hasBackNine && <th>V2</th>}<th>TOTAL</th></tr></tbody>
+        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}{!isNineHole && <th>V1</th>}{back.map(h => <td key={h.number}>{h.number}</td>)}{hasBackNine && <th>V2</th>}<th>TOTAL</th></tr></tbody>
       </table>
     </article>
   );
