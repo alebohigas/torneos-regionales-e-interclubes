@@ -65,14 +65,47 @@ const TEE_COLOR_NAMES: Record<string, string> = {
   '16': 'NEGRA', '17': 'NARANJA', '18': 'AZUL', '19': 'AMARILLA', '20': 'ROSA',
 };
 
-/** Etiqueta TEE: el id de golftour.salidas manda; nunca mostrar códigos hexadecimales. */
-const teeLabel = (tee?: string, color?: string): string => {
+/** Nombre del color de tee: el id de golftour.salidas manda; nunca códigos hexadecimales. */
+const teeName = (tee?: string, color?: string): string => {
   const teeId = (tee ?? '').trim();
-  if (teeId && TEE_COLOR_NAMES[teeId]) return `TEE: ${TEE_COLOR_NAMES[teeId]}`;
-  const colorName = (color ?? '').trim();
-  if (colorName && !colorName.startsWith('#')) return `TEE: ${colorName}`;
-  if (teeId) return `TEE ${teeId}`;
-  return 'TEE POR DEFINIR';
+  if (teeId && TEE_COLOR_NAMES[teeId]) return TEE_COLOR_NAMES[teeId];
+  const colorName = (color ?? '').trim().toUpperCase();
+  if (colorName && !colorName.startsWith('#')) return colorName;
+  return '';
+};
+
+/** Color físico de la marca de salida (muestra visual del tee, no color de tema). */
+const TEE_SWATCHES: Record<string, string> = {
+  AZUL: '#2563eb', BLANCA: '#ffffff', DORADA: '#d4a017', ROJA: '#ef4444',
+  NEGRA: '#111111', NARANJA: '#f97316', VERDE: '#16a34a', ROSA: '#ec4899',
+  AMARILLA: '#facc15', GRIS: '#9ca3af', MORADA: '#7c3aed',
+};
+const teeSwatch = (name: string): string | undefined => {
+  return TEE_SWATCHES[name] ?? TEE_SWATCHES[name.replace(/S$/, '')] ?? TEE_SWATCHES[name.replace(/ES$/, '')];
+};
+
+/** Pastilla TEE: punto con el color real + nombre (p. ej. ● ROJA). */
+const TeeBadge = ({ tee, color }: { tee?: string; color?: string }) => {
+  const name = teeName(tee, color);
+  const teeId = (tee ?? '').trim();
+  if (!name) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase text-muted-foreground">
+        {teeId ? `TEE ${teeId}` : 'TEE POR DEFINIR'}
+      </span>
+    );
+  }
+  const swatch = teeSwatch(name);
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs sm:text-sm font-bold uppercase text-foreground">
+      <span
+        className="h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full border border-border shrink-0"
+        style={{ backgroundColor: swatch }}
+        aria-hidden="true"
+      />
+      {name}
+    </span>
+  );
 };
 
 /** Represents a player search match with full group context */
@@ -562,7 +595,7 @@ const Salidas = () => {
                       <CardContent className="p-4 sm:p-6 text-center min-h-36 sm:min-h-44 flex flex-col items-center justify-center">
                         <Users className="h-6 w-6 sm:h-7 sm:w-7 mb-2 sm:mb-3 text-primary" />
                         <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">{category.categoryName}</h3>
-                        <p className="mt-1 text-xs sm:text-sm font-medium uppercase text-muted-foreground">{teeLabel(category.tee, category.teeColor)}</p>
+                        <div className="mt-2"><TeeBadge tee={category.tee} color={category.teeColor} /></div>
                         <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{category.course || selectedDay?.course}</p>
                         <p className="mt-2 sm:mt-3 text-sm text-foreground"><strong>{category.groupCount}</strong> grupo{category.groupCount === 1 ? '' : 's'}</p>
                       </CardContent>
@@ -593,7 +626,7 @@ const Salidas = () => {
                     </h2>
                     <p className="text-muted-foreground text-lg">{detail.course || selectedCatMeta?.course}</p>
                     {isNormalDeparture && (selectedCatMeta?.tee || selectedCatMeta?.teeColor) ? (
-                      <p className="text-sm font-medium uppercase text-primary mt-1">{teeLabel(selectedCatMeta?.tee, selectedCatMeta?.teeColor)}</p>
+                      <div className="mt-2"><TeeBadge tee={selectedCatMeta?.tee} color={selectedCatMeta?.teeColor} /></div>
                     ) : null}
                     <p className="text-muted-foreground text-lg">{selectedDay?.dateFormatted}</p>
                     <p className="text-sm text-muted-foreground mt-1">
