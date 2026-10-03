@@ -170,7 +170,7 @@ const Scorecard = ({ card, tournament, holeRange }: { card: AleinCard; tournamen
             {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
-          <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
+          <tr className="alein-compact-row"><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE<br />GROSS</th>
             {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
