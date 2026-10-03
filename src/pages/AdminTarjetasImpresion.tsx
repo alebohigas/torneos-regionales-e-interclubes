@@ -116,10 +116,13 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
   const frontPar = sumHoles(front, 'par');
   const backPar = sumHoles(back, 'par');
   const hasBackNine = back.length > 0;
+  // Ronda de 9 hoyos: sin columna V1, solo TOTAL.
+  const isNineHole = holes.length <= 9;
+  const frontSum = isNineHole ? null : <td className="alein-sum" />;
   const splitCells = (render: (hole: AleinHole) => ReactNode) => (
     <>
       {front.map(render)}
-      <td className="alein-sum" />
+      {frontSum}
       {back.map(render)}
       {hasBackNine && <td className="alein-sum" />}
       <td className="alein-sum" />
@@ -146,22 +149,22 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <tbody>
           <tr className="alein-compact-row">
             <th className="alein-row-label">HOYO</th>
-            {front.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
-            <th className="alein-sum">V1</th>
-            {back.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start' : ''}>{h.number}</th>)}
+            {front.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start alein-hole-num' : 'alein-hole-num'}>{h.number}</th>)}
+            {!isNineHole && <th className="alein-sum">V1</th>}
+            {back.map(h => <th key={h.number} className={h.number === card.startHole ? 'alein-hole-start alein-hole-num' : 'alein-hole-num'}>{h.number}</th>)}
             {hasBackNine && <th className="alein-sum">V2</th>}<th className="alein-sum">TOTAL</th>
           </tr>
           <tr className="alein-compact-row">
             <th className="alein-row-label">YARDAS</th>
             {front.map(h => <td key={h.number}>{h.yards || ''}</td>)}
-            <td className="alein-sum">{frontYards || ''}</td>
+            {!isNineHole && <td className="alein-sum">{frontYards || ''}</td>}
             {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
             {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
           <tr className="alein-compact-row">
             <th className="alein-row-label">PAR</th>
             {front.map(h => <td key={h.number}>{h.par || ''}</td>)}
-            <td className="alein-sum">{frontPar || ''}</td>
+            {!isNineHole && <td className="alein-sum">{frontPar || ''}</td>}
             {back.map(h => <td key={h.number}>{h.par || ''}</td>)}
             {hasBackNine && <td className="alein-sum">{backPar || ''}</td>}<td className="alein-sum">{frontPar + backPar || ''}</td>
           </tr>
@@ -169,7 +172,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
           <tr>
             <th className="alein-row-label alein-gross-cell">SCORE<br />GROSS</th>
             {front.map(h => <td key={h.number} className="alein-gross-cell" />)}
-            <td className="alein-sum alein-gross-cell" />
+            {!isNineHole && <td className="alein-sum alein-gross-cell" />}
             {back.map(h => <td key={h.number} className="alein-gross-cell" />)}
             {hasBackNine && <td className="alein-sum alein-gross-cell" />}<td className="alein-sum alein-gross-cell" />
           </tr>
@@ -183,7 +186,7 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
         <div className="alein-folio">FOLIO {card.folio}</div>
       </footer>
       <table className="alein-marker-table" aria-label="Score del anotador">
-        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}<th>V1</th>{back.map(h => <td key={h.number}>{h.number}</td>)}{hasBackNine && <th>V2</th>}<th>TOTAL</th></tr></tbody>
+        <tbody><tr><th>SCORE<br />ANOTADOR</th>{front.map(h => <td key={h.number}>{h.number}</td>)}{!isNineHole && <th>V1</th>}{back.map(h => <td key={h.number}>{h.number}</td>)}{hasBackNine && <th>V2</th>}<th>TOTAL</th></tr></tbody>
       </table>
     </article>
   );
