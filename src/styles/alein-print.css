@@ -116,7 +116,7 @@
 .alein-score-table .alein-hole-num { font-weight: 800; }
 .alein-score-table .alein-sum { width: 0.39in; background: var(--print-soft); font-weight: 800; }
 .alein-score-table .alein-compact-row > th,
-.alein-score-table .alein-compact-row > td { height: calc(var(--alein-row-height) * 0.78 * 0.6); }
+.alein-score-table .alein-compact-row > td { height: calc(var(--alein-row-height) * 0.78 * 0.45); line-height: 0.85; }
 .alein-score-table .alein-gross-cell { height: calc(var(--alein-row-height) * 1.2 * 0.75); }
 .alein-score-table .alein-hole-start { background: var(--print-accent); color: var(--print-paper); font-weight: 800; }
 
