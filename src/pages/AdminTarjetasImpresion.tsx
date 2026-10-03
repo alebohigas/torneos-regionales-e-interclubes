@@ -325,7 +325,7 @@ const AdminTarjetasImpresion = () => {
               ['sideMarginMm', 'Margen lateral (mm)', 4, 15, 1],
               ['scale', 'Escala (%)', 85, 105, 1],
               ['rowHeightMm', 'Alto HOYO, PAR, YARDAS y PAR TIME (mm)', 4.5, 8, 0.1],
-              ['scoreTableFontPt', 'Letra HOYO, PAR, YARDAS y PAR TIME (pt)', 6, 12, 0.5],
+              ['scoreTableFontPt', 'Letra HOYO, PAR, YARDAS y PAR TIME (pt)', 6, 8, 0.5],
               ['paddingTopMm', 'Padding superior (mm)', 0, 5, 0.5],
               ['paddingBottomMm', 'Padding inferior (mm)', 0, 4, 0.5],
               ['holeFontPt', 'Letra hoyo y hora (pt)', 9, 15.5, 0.5],
