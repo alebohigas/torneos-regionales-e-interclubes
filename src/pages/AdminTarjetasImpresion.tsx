@@ -116,10 +116,13 @@ const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinRes
   const frontPar = sumHoles(front, 'par');
   const backPar = sumHoles(back, 'par');
   const hasBackNine = back.length > 0;
+  // Ronda de 9 hoyos: sin columna V1, solo TOTAL.
+  const isNineHole = holes.length <= 9;
+  const frontSum = isNineHole ? null : <td className="alein-sum" />;
   const splitCells = (render: (hole: AleinHole) => ReactNode) => (
     <>
       {front.map(render)}
-      <td className="alein-sum" />
+      {frontSum}
       {back.map(render)}
       {hasBackNine && <td className="alein-sum" />}
       <td className="alein-sum" />

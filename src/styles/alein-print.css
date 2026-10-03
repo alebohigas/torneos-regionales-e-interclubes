@@ -112,7 +112,8 @@
   white-space: nowrap;
 }
 
-.alein-score-table .alein-row-label { width: 0.78in; font-size: var(--alein-score-table-font); font-weight: 800; }
+.alein-score-table .alein-row-label { width: 0.78in; font-size: var(--alein-score-table-font); font-weight: 400; }
+.alein-score-table .alein-hole-num { font-weight: 800; }
 .alein-score-table .alein-sum { width: 0.39in; background: var(--print-soft); font-weight: 800; }
 .alein-score-table .alein-compact-row > th,
 .alein-score-table .alein-compact-row > td { height: calc(var(--alein-row-height) * 0.78); }
