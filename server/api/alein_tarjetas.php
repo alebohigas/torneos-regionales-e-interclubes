@@ -93,17 +93,23 @@ $basePayload = [
 ];
 
 if ($fecha === '' || $campoid === '' || $catid === '') json_response($basePayload);
+// catid admite varias categorías separadas por coma (p. ej. "1425,1427").
+$catIds = [];
+foreach (preg_split('/\D+/', $catid) as $part) {
+    if ($part !== '' && ctype_digit($part)) $catIds[] = (int)$part;
+}
+$catIds = array_values(array_unique($catIds));
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)
     || ($hasta !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta))
     || ($hasta !== '' && $hasta < $fecha)
-    || !ctype_digit($campoid) || !ctype_digit($catid)) {
+    || !ctype_digit($campoid) || !$catIds) {
     json_error('Filtros inválidos', 400);
 }
 
 $fec = esc($conn, $fecha);
 $fecHasta = esc($conn, $hasta !== '' ? $hasta : $fecha);
 $campo = esc($conn, $campoid);
-$cat = esc($conn, $catid);
+$cat = implode(',', $catIds);
 
 // ============= Columnas tolerantes del view =============
 $vTable = 'v_sal_jug';
