@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePageVisibility } from '@/contexts/PageVisibilityContext';
 import { useStaffAuth } from '@/contexts/StaffAuthContext';
@@ -107,8 +108,9 @@ const cleanTeeColor = (tee: string, teeColor: string): string => {
   return 'TEE';
 };
 
-const Scorecard = ({ card, tournament }: { card: AleinCard; tournament: AleinResponse['tournament'] }) => {
-  const holes = activeHoles(card.holes);
+const Scorecard = ({ card, tournament, holeRange }: { card: AleinCard; tournament: AleinResponse['tournament']; holeRange: [number, number] }) => {
+  const ranged = card.holes.filter(hole => hole.number >= holeRange[0] && hole.number <= holeRange[1]);
+  const holes = activeHoles(ranged.length ? ranged : card.holes);
   const front = holes.length <= 9 ? holes : holes.filter(hole => hole.number <= 9);
   const back = holes.length <= 9 ? [] : holes.filter(hole => hole.number > 9);
   const frontYards = sumHoles(front, 'yards');
