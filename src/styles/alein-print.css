@@ -39,6 +39,8 @@
   page-break-inside: avoid;
   display: grid;
   grid-template-rows: var(--alein-header-height) 0.5in auto 0.38in 0.17in;
+  /* No estirar la tabla: el alto de renglón lo decide el control de alto. */
+  align-content: start;
   gap: 0.035in;
   padding-top: var(--alein-padding-top);
   padding-bottom: var(--alein-padding-bottom);
@@ -96,6 +98,7 @@
 .alein-score-table {
   width: 100%;
   height: auto;
+  align-self: start;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--alein-score-table-font);
