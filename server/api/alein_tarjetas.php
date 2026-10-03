@@ -129,7 +129,7 @@ $where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND
 if ($sistemaFiltro !== '' && api_column_exists($conn, $vTable, 'sistema')) {
     $where .= " AND UPPER(v.sistema) = UPPER('" . esc($conn, $sistemaFiltro) . "')";
 }
-$order = [];
+$order = ['v.categoriaid'];
 if (api_column_exists($conn, $vTable, 'horainicio1a')) $order[] = 'v.horainicio1a';
 if (api_column_exists($conn, $vTable, 'salidagrupoid')) $order[] = 'v.salidagrupoid';
 $order[] = 'v.apellido';
@@ -141,8 +141,6 @@ $categories = [];
 foreach (query_all($conn, "SELECT * FROM categorias WHERE categoria_id IN ($cat)") as $catRow) {
     $categories[(string)$catRow['categoria_id']] = $catRow;
 }
-$order = [];
-if (api_column_exists($conn, $vTable, 'categoriaid')) $order[] = 'v.categoriaid';
 $course = query_one($conn, "SELECT campo FROM campos WHERE id = $campo LIMIT 1") ?: [];
 $teeRows = query_all($conn, 'SELECT id, tee, color, bgcolor FROM salidas');
 $teeById = [];
