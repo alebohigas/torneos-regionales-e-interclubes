@@ -81,8 +81,7 @@ const TEE_SWATCHES: Record<string, string> = {
   AMARILLA: '#facc15', GRIS: '#9ca3af', MORADA: '#7c3aed',
 };
 const teeSwatch = (name: string): string | undefined => {
-  const key = name.replace(/ES$/, '').replace(/S$/, '');
-  return TEE_SWATCHES[name] ?? TEE_SWATCHES[key] ?? TEE_SWATCHES[key + 'A'];
+  return TEE_SWATCHES[name] ?? TEE_SWATCHES[name.replace(/S$/, '')] ?? TEE_SWATCHES[name.replace(/ES$/, '')];
 };
 
 /** Pastilla TEE: punto con el color real + nombre (p. ej. ● ROJA). */
