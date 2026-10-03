@@ -92,7 +92,7 @@ const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   headerMm: 14,
   sideMarginMm: 7,
   scale: 100,
-  rowHeightMm: 6.2,
+  rowHeightMm: 2.8,
   scoreTableFontPt: 8,
   paddingTopMm: 2,
   paddingBottomMm: 1,
@@ -257,9 +257,22 @@ const AdminTarjetasImpresion = () => {
     '--alein-player-font': `${printSettings.playerFontPt}pt`,
   } as CSSProperties), [printSettings]);
 
+  // Mientras se escribe se guarda el texto tal cual (para poder teclear "2.5" o "4.7");
+  // al salir del campo se ajusta a los límites permitidos.
+  const [settingDrafts, setSettingDrafts] = useState<Partial<Record<keyof PrintSettings, string>>>({});
   const updatePrintSetting = (key: keyof PrintSettings, value: string, min: number, max: number) => {
+    setSettingDrafts(current => ({ ...current, [key]: value }));
     const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return;
+    if (value.trim() === '' || !Number.isFinite(parsed)) return;
+    if (parsed < min || parsed > max) return;
+    setPrintSettings(current => ({ ...current, [key]: parsed }));
+  };
+  const commitPrintSetting = (key: keyof PrintSettings, min: number, max: number) => {
+    const raw = settingDrafts[key];
+    setSettingDrafts(current => { const next = { ...current }; delete next[key]; return next; });
+    if (raw === undefined) return;
+    const parsed = Number(raw);
+    if (raw.trim() === '' || !Number.isFinite(parsed)) return;
     setPrintSettings(current => ({ ...current, [key]: Math.min(max, Math.max(min, parsed)) }));
   };
 
@@ -324,8 +337,8 @@ const AdminTarjetasImpresion = () => {
               ['headerMm', 'Cabecera (mm)', 10, 20, 1],
               ['sideMarginMm', 'Margen lateral (mm)', 4, 15, 1],
               ['scale', 'Escala (%)', 85, 105, 1],
-              ['rowHeightMm', 'Alto HOYO, PAR, YARDAS y PAR TIME (mm)', 4.5, 8, 0.1],
-              ['scoreTableFontPt', 'Letra HOYO, PAR, YARDAS y PAR TIME (pt)', 6, 8, 0.5],
+              ['rowHeightMm', 'Alto HOYO, PAR, YARDAS, PAR TIME y GROSS (mm)', 2.2, 6, 0.1],
+              ['scoreTableFontPt', 'Letra HOYO, PAR, YARDAS, PAR TIME y GROSS (pt)', 6, 8, 0.5],
               ['paddingTopMm', 'Padding superior (mm)', 0, 5, 0.5],
               ['paddingBottomMm', 'Padding inferior (mm)', 0, 4, 0.5],
               ['holeFontPt', 'Letra hoyo y hora (pt)', 9, 15.5, 0.5],
@@ -334,7 +347,7 @@ const AdminTarjetasImpresion = () => {
             ] as const).map(([key, label, min, max, step]) => (
               <div className="space-y-2" key={key}>
                 <Label htmlFor={`alein-${key}`}>{label}</Label>
-                <Input id={`alein-${key}`} type="number" min={min} max={max} step={step} value={printSettings[key]} onChange={event => updatePrintSetting(key, event.target.value, min, max)} />
+                <Input id={`alein-${key}`} type="number" min={min} max={max} step={step} value={settingDrafts[key] ?? printSettings[key]} onChange={event => updatePrintSetting(key, event.target.value, min, max)} onBlur={() => commitPrintSetting(key, min, max)} />
               </div>
             ))}
           </CardContent>

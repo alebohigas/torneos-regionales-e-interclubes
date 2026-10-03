@@ -7,7 +7,7 @@
   --alein-header-height: 14mm;
   --alein-side-margin: 7mm;
   --alein-scale: 1;
-  --alein-row-height: 6.2mm;
+  --alein-row-height: 2.8mm;
   --alein-score-table-font: 8pt;
   --alein-padding-top: 2mm;
   --alein-padding-bottom: 1mm;
@@ -39,6 +39,8 @@
   page-break-inside: avoid;
   display: grid;
   grid-template-rows: var(--alein-header-height) 0.5in auto 0.38in 0.17in;
+  /* No estirar la tabla: el alto de renglón lo decide el control de alto. */
+  align-content: start;
   gap: 0.035in;
   padding-top: var(--alein-padding-top);
   padding-bottom: var(--alein-padding-bottom);
@@ -96,6 +98,7 @@
 .alein-score-table {
   width: 100%;
   height: auto;
+  align-self: start;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--alein-score-table-font);
@@ -115,9 +118,9 @@
 .alein-score-table .alein-row-label { width: 0.78in; font-size: var(--alein-score-table-font); font-weight: 400; }
 .alein-score-table .alein-hole-num { font-weight: 800; }
 .alein-score-table .alein-sum { width: 0.39in; background: var(--print-soft); font-weight: 800; }
+/* El control "Alto HOYO, PAR, YARDAS, PAR TIME y GROSS (mm)" fija el alto exacto de las 5 filas. */
 .alein-score-table .alein-compact-row > th,
-.alein-score-table .alein-compact-row > td { height: calc(var(--alein-row-height) * 0.78 * 0.45); line-height: 0.85; }
-.alein-score-table .alein-gross-cell { height: calc(var(--alein-row-height) * 1.2 * 0.75); }
+.alein-score-table .alein-compact-row > td { height: var(--alein-row-height); max-height: var(--alein-row-height); line-height: 0.9; overflow: hidden; }
 .alein-score-table .alein-hole-start { background: var(--print-accent); color: var(--print-paper); font-weight: 800; }
 
 .alein-signatures {
