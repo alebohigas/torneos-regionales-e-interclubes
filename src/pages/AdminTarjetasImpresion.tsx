@@ -157,18 +157,18 @@ const Scorecard = ({ card, tournament, holeRange }: { card: AleinCard; tournamen
             {hasBackNine && <th className="alein-sum">V2</th>}<th className="alein-sum">TOTAL</th>
           </tr>
           <tr className="alein-compact-row">
-            <th className="alein-row-label">YARDAS</th>
-            {front.map(h => <td key={h.number}>{h.yards || ''}</td>)}
-            {!isNineHole && <td className="alein-sum">{frontYards || ''}</td>}
-            {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
-            {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
-          </tr>
-          <tr className="alein-compact-row">
             <th className="alein-row-label">PAR</th>
             {front.map(h => <td key={h.number}>{h.par || ''}</td>)}
             {!isNineHole && <td className="alein-sum">{frontPar || ''}</td>}
             {back.map(h => <td key={h.number}>{h.par || ''}</td>)}
             {hasBackNine && <td className="alein-sum">{backPar || ''}</td>}<td className="alein-sum">{frontPar + backPar || ''}</td>
+          </tr>
+          <tr className="alein-compact-row">
+            <th className="alein-row-label">YARDAS</th>
+            {front.map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            {!isNineHole && <td className="alein-sum">{frontYards || ''}</td>}
+            {back.map(h => <td key={h.number}>{h.yards || ''}</td>)}
+            {hasBackNine && <td className="alein-sum">{backYards || ''}</td>}<td className="alein-sum">{frontYards + backYards || ''}</td>
           </tr>
           <tr><th className="alein-row-label">PAR TIME</th>{splitCells(h => <td key={h.number}>{h.parTime}</td>)}</tr>
           <tr>
