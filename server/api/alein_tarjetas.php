@@ -93,17 +93,23 @@ $basePayload = [
 ];
 
 if ($fecha === '' || $campoid === '' || $catid === '') json_response($basePayload);
+// catid admite varias categorías separadas por coma (p. ej. "1425,1427").
+$catIds = [];
+foreach (preg_split('/\D+/', $catid) as $part) {
+    if ($part !== '' && ctype_digit($part)) $catIds[] = (int)$part;
+}
+$catIds = array_values(array_unique($catIds));
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)
     || ($hasta !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta))
     || ($hasta !== '' && $hasta < $fecha)
-    || !ctype_digit($campoid) || !ctype_digit($catid)) {
+    || !ctype_digit($campoid) || !$catIds) {
     json_error('Filtros inválidos', 400);
 }
 
 $fec = esc($conn, $fecha);
 $fecHasta = esc($conn, $hasta !== '' ? $hasta : $fecha);
 $campo = esc($conn, $campoid);
-$cat = esc($conn, $catid);
+$cat = implode(',', $catIds);
 
 // ============= Columnas tolerantes del view =============
 $vTable = 'v_sal_jug';
@@ -119,11 +125,11 @@ foreach (['tarjetaid', 'teesalidaid', 'tee_salida', 'tee', 'clubjug', 'club', 's
     if (api_column_exists($conn, $vTable, $col)) $select[] = "v.`$col`";
 }
 
-$where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND v.`$vCampo` = $campo AND v.categoriaid = $cat";
+$where = "v.torneoid = $tid AND v.fecha_juego BETWEEN '$fec' AND '$fecHasta' AND v.`$vCampo` = $campo AND v.categoriaid IN ($cat)";
 if ($sistemaFiltro !== '' && api_column_exists($conn, $vTable, 'sistema')) {
     $where .= " AND UPPER(v.sistema) = UPPER('" . esc($conn, $sistemaFiltro) . "')";
 }
-$order = [];
+$order = ['v.categoriaid'];
 if (api_column_exists($conn, $vTable, 'horainicio1a')) $order[] = 'v.horainicio1a';
 if (api_column_exists($conn, $vTable, 'salidagrupoid')) $order[] = 'v.salidagrupoid';
 $order[] = 'v.apellido';
@@ -131,7 +137,10 @@ $sql = 'SELECT ' . implode(', ', array_unique($select)) . " FROM $vTable v WHERE
 debug_log_query('ALEIN printable players', $sql);
 $players = query_all($conn, $sql);
 
-$category = query_one($conn, "SELECT * FROM categorias WHERE categoria_id = $cat LIMIT 1") ?: [];
+$categories = [];
+foreach (query_all($conn, "SELECT * FROM categorias WHERE categoria_id IN ($cat)") as $catRow) {
+    $categories[(string)$catRow['categoria_id']] = $catRow;
+}
 $course = query_one($conn, "SELECT campo FROM campos WHERE id = $campo LIMIT 1") ?: [];
 $teeRows = query_all($conn, 'SELECT id, tee, color, bgcolor FROM salidas');
 $teeById = [];
@@ -159,6 +168,7 @@ $holeCache = [];
 $cards = [];
 
 foreach ($players as $player) {
+    $category = $categories[(string)($player['categoriaid'] ?? '')] ?? [];
     $teeRaw = trim((string)($player['teesalidaid'] ?? $player['tee_salida'] ?? $category['salida'] ?? ''));
     $tee = isset($teeById[$teeRaw]) ? $teeById[$teeRaw] : ($teeByName[strtoupper($teeRaw)] ?? null);
     $teeId = $tee ? (string)$tee['id'] : (ctype_digit($teeRaw) ? $teeRaw : '0');
