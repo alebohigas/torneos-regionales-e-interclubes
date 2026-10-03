@@ -57,10 +57,20 @@ const groupsHaveAnyCategory = (groups: SalidasGroup[] | undefined): boolean =>
 
 // ============= Search Result Type =============
 
-/** Etiqueta TEE: prefiere el nombre del color (salidas.color); si no hay, el número de tee. */
+/** Colores de tee (golftour.salidas): id de salida → nombre del color. */
+const TEE_COLOR_NAMES: Record<string, string> = {
+  '1': 'AZULES', '2': 'BLANCAS', '3': 'DORADAS', '4': 'ROJAS', '6': 'NEGRAS',
+  '7': 'BLANCA', '8': 'ROJA', '9': 'NARANJAS', '10': 'VERDES', '11': 'ROSAS',
+  '12': 'AMARILLAS', '13': 'GRISES', '14': 'MORADAS', '15': 'VERDE',
+  '16': 'NEGRA', '17': 'NARANJA', '18': 'AZUL', '19': 'AMARILLA', '20': 'ROSA',
+};
+
+/** Etiqueta TEE: nombre del color (salidas.color o resuelto por id de tee); si no hay, el número. */
 const teeLabel = (tee?: string, color?: string): string => {
   if (color && color.trim()) return `TEE: ${color.trim()}`;
-  if (tee && tee.trim()) return `TEE ${tee.trim()}`;
+  const teeId = (tee ?? '').trim();
+  if (teeId && TEE_COLOR_NAMES[teeId]) return `TEE: ${TEE_COLOR_NAMES[teeId]}`;
+  if (teeId) return `TEE ${teeId}`;
   return 'TEE POR DEFINIR';
 };
 
