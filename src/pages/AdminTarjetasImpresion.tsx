@@ -257,9 +257,22 @@ const AdminTarjetasImpresion = () => {
     '--alein-player-font': `${printSettings.playerFontPt}pt`,
   } as CSSProperties), [printSettings]);
 
+  // Mientras se escribe se guarda el texto tal cual (para poder teclear "2.5" o "4.7");
+  // al salir del campo se ajusta a los límites permitidos.
+  const [settingDrafts, setSettingDrafts] = useState<Partial<Record<keyof PrintSettings, string>>>({});
   const updatePrintSetting = (key: keyof PrintSettings, value: string, min: number, max: number) => {
+    setSettingDrafts(current => ({ ...current, [key]: value }));
     const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return;
+    if (value.trim() === '' || !Number.isFinite(parsed)) return;
+    if (parsed < min || parsed > max) return;
+    setPrintSettings(current => ({ ...current, [key]: parsed }));
+  };
+  const commitPrintSetting = (key: keyof PrintSettings, min: number, max: number) => {
+    const raw = settingDrafts[key];
+    setSettingDrafts(current => { const next = { ...current }; delete next[key]; return next; });
+    if (raw === undefined) return;
+    const parsed = Number(raw);
+    if (raw.trim() === '' || !Number.isFinite(parsed)) return;
     setPrintSettings(current => ({ ...current, [key]: Math.min(max, Math.max(min, parsed)) }));
   };
 
@@ -334,7 +347,7 @@ const AdminTarjetasImpresion = () => {
             ] as const).map(([key, label, min, max, step]) => (
               <div className="space-y-2" key={key}>
                 <Label htmlFor={`alein-${key}`}>{label}</Label>
-                <Input id={`alein-${key}`} type="number" min={min} max={max} step={step} value={printSettings[key]} onChange={event => updatePrintSetting(key, event.target.value, min, max)} />
+                <Input id={`alein-${key}`} type="number" min={min} max={max} step={step} value={settingDrafts[key] ?? printSettings[key]} onChange={event => updatePrintSetting(key, event.target.value, min, max)} onBlur={() => commitPrintSetting(key, min, max)} />
               </div>
             ))}
           </CardContent>
