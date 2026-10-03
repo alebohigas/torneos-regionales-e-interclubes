@@ -205,9 +205,13 @@ const AdminTarjetasImpresion = () => {
 
   const date = params.get('fecha') || '';
   const courseId = params.get('campoid') || '';
-  const categoryId = params.get('catid') || '';
+  const categoryIds = useMemo(() => (params.get('catid') || '').split(',').map(value => value.trim()).filter(Boolean), [params]);
+  const categoryId = categoryIds.join(',');
   const system = params.get('sistema') || '';
   const endDate = params.get('hasta') || '';
+  const holeFrom = Math.min(18, Math.max(1, Number(params.get('hoyo1')) || 1));
+  const holeTo = Math.min(18, Math.max(holeFrom, Number(params.get('hoyo2')) || 18));
+  const holeRange: [number, number] = [holeFrom, holeTo];
   const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
 
   const load = async () => {
@@ -288,7 +292,33 @@ const AdminTarjetasImpresion = () => {
             <div className="space-y-2"><Label>Fecha</Label><Select value={date} onValueChange={value => update({ fecha: value, campoid: '', catid: '', sistema: '' })}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{dates.map(value => <SelectItem key={value} value={value}>{dateLabel(value)}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Hasta (opcional)</Label><Select value={endDate || 'single'} onValueChange={value => update({ hasta: value === 'single' ? '' : value })} disabled={!date}><SelectTrigger><SelectValue placeholder="Solo ese día" /></SelectTrigger><SelectContent><SelectItem value="single">Solo ese día</SelectItem>{endDates.filter(value => value > date).map(value => <SelectItem key={value} value={value}>{dateLabel(value)}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Campo</Label><Select value={courseId} onValueChange={value => update({ campoid: value, catid: '', sistema: '' })} disabled={!date}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{courses.map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-2"><Label>Categoría</Label><Select value={categoryId} onValueChange={value => { const selected = categories.find(item => item.categoryId === value); update({ catid: value, sistema: selected?.system || '' }); }} disabled={!courseId}><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger><SelectContent>{categories.map(item => <SelectItem key={`${item.date}-${item.courseId}-${item.categoryId}`} value={item.categoryId}>{item.category}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Categorías (puedes elegir varias)</Label>
+              <div className="grid max-h-44 grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-3">
+                {categories.map(item => {
+                  const checked = categoryIds.includes(item.categoryId);
+                  return (
+                    <label key={`${item.date}-${item.courseId}-${item.categoryId}`} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={checked}
+                        disabled={!courseId}
+                        onCheckedChange={value => {
+                          const next = value === true
+                            ? [...categoryIds, item.categoryId]
+                            : categoryIds.filter(id => id !== item.categoryId);
+                          const first = categories.find(entry => entry.categoryId === next[0]);
+                          update({ catid: next.join(','), sistema: first?.system || '' });
+                        }}
+                      />
+                      <span>{item.category}</span>
+                    </label>
+                  );
+                })}
+                {!categories.length && <span className="col-span-full text-sm text-muted-foreground">Selecciona fecha y campo.</span>}
+              </div>
+            </div>
+            <div className="space-y-2"><Label>Desde hoyo</Label><Select value={String(holeFrom)} onValueChange={value => update({ hoyo1: value === '1' ? '' : value, hoyo2: holeTo < Number(value) ? value : String(holeTo) })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Array.from({ length: 18 }, (_, i) => i + 1).map(value => <SelectItem key={value} value={String(value)}>Hoyo {value}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2"><Label>Hasta hoyo</Label><Select value={String(holeTo)} onValueChange={value => update({ hoyo2: value === '18' ? '' : value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Array.from({ length: 18 }, (_, i) => i + 1).filter(value => value >= holeFrom).map(value => <SelectItem key={value} value={String(value)}>Hoyo {value}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Sistema</Label><Select value={system} onValueChange={value => update({ sistema: value })} disabled={!categoryId}><SelectTrigger><SelectValue placeholder="Automático" /></SelectTrigger><SelectContent>{Array.from(new Set(categories.map(item => item.system).filter(Boolean))).map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
             {([
               ['headerMm', 'Cabecera (mm)', 10, 20, 1],
@@ -321,7 +351,7 @@ const AdminTarjetasImpresion = () => {
           {sheets.map((sheet, pageIndex) => (
             <div className="alein-sheet" key={`sheet-${pageIndex}`}>
               {sheet.map((card, slotIndex) => card
-                ? <Scorecard key={card.id} card={card} tournament={data?.tournament ?? { id: '', name: '', logo: '' }} />
+                ? <Scorecard key={card.id} card={card} tournament={data?.tournament ?? { id: '', name: '', logo: '' }} holeRange={holeRange} />
                 : <div className="alein-scorecard alein-empty-slot" key={`empty-${slotIndex}`} />)}
             </div>
           ))}
